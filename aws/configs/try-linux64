@@ -1,0 +1,18 @@
+{
+    "max_instances": 50,
+    "min_running_instances": 2,
+    "hostname": "try-linux64-ec2-%03d",
+    "us-west-1": {
+        "type": "try-linux64",
+        "ami": "ami-696f4a2c",
+        "subnet_id": "subnet-59e94330",
+        "security_group_ids": [],
+        "instance_type": "c1.xlarge",
+        "device_map": {
+            "/dev/sda1": {
+                "size": 50,
+                "instance_dev": "/dev/xvde1"
+            }
+        }
+    }
+}
