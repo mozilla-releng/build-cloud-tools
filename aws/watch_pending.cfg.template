@@ -1,0 +1,8 @@
+{
+"db": "mysql://user@host/db",
+"buildermap": {
+    "B2G ics_armv7a_gecko(-debug)? (?!try)\\S+ build": "bld-linux64",
+    "B2G ics_armv7a_gecko(-debug)? try build": "try-linux64",
+    "Android.* (?!try)\\S+ build": "bld-linux64",
+    "Android.* try build": "try-linux64"
+}}
