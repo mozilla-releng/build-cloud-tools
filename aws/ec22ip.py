@@ -28,7 +28,7 @@ if __name__ == '__main__':
             aws_access_key_id=secrets['aws_access_key_id'],
             aws_secret_access_key=secrets['aws_secret_access_key'])
     res = conn.get_all_instances()
-    instances = [x[0] for x in [r.instances for r in res]]
+    instances = reduce(lambda a,b: a+b, [r.instances for r in res])
     for i in instances:
         for mask in hosts_re:
             if mask.search(i.tags.get('Name', '')):
