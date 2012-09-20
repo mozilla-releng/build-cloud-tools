@@ -73,6 +73,7 @@ def get_last_activity(name, client):
     last_activity = 0
     running_command = False
     t = time.time()
+    line = ""
     for line in stdout:
         t = re.search("^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})", line)
         if t:
