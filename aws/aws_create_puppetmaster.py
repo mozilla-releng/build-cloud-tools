@@ -143,7 +143,7 @@ configs =  {
             "ami": "ami-696f4a2c", # Centos6
             "subnet_id": "subnet-59e94330",
             "security_group_ids": ["sg-38150854"],
-            "instance_type": "m1.small",
+            "instance_type": "m1.medium",
             "repo_snapshot_id": "snap-762ac15a", # This will be mounted at /data
         },
     },
