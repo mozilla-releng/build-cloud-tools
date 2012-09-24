@@ -1,4 +1,4 @@
-{
+{ 
 "db": "mysql://user@host/db",
 "buildermap": {
     "B2G ics_armv7a_gecko(-debug)? (?!try)\\S+ build": "bld-linux64",
@@ -9,6 +9,5 @@
     "^Linux x86-64 (?!try)\\S+ (pgo-)?build": "bld-linux64",
     "^Linux.* nightly": "bld-linux64",
     "^Linux.* valgrind": "bld-linux64",
-    "^Firefox.* linux.* l10n (dep|nightly)": "bld-linux64",
     "^Linux.* try.*build": "try-linux64"
 }}
