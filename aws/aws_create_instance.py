@@ -104,6 +104,19 @@ def assimilate(ip_addr, config, instance_data, create_ami):
     # Set up a stub buildbot.tac
     sudo("/tools/buildbot/bin/buildslave create-slave /builds/slave {buildbot_master} {name} {buildslave_password}".format(**instance_data), user="cltbld")
 
+    hg = "/tools/python27-mercurial/bin/hg"
+    hg_main_mirror = instance_data['hg_main_mirror']
+    for share, bundle in instance_data['hg_shares'].iteritems():
+        target_dir = '/builds/hg-shared/%s' % share
+        sudo('rm -rf {d} && mkdir -p {d}'.format(d=target_dir), user="cltbld")
+        sudo('{hg} init {d}'.format(hg=hg, d=target_dir), user="cltbld")
+        hgrc = "[path]\n"
+        hgrc += "default = http://hg.mozilla.org/%s\n" % share
+        put(StringIO.StringIO(hgrc), '%s/.hg/hgrc' % target_dir)
+        run("chown cltbld: %s/.hg/hgrc" % target_dir)
+        sudo('{hg} -R {d} unbundle {b}'.format(hg=hg, d=target_dir, b=bundle),
+             user="cltbld")
+
     run("reboot")
 
 def create_instance(name, config, region, secrets, key_name, instance_data,

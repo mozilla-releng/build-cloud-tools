@@ -10,7 +10,7 @@
         "instance_type": "c1.xlarge",
         "device_map": {
             "/dev/sda1": {
-                "size": 50,
+                "size": 100,
                 "instance_dev": "/dev/xvde1"
             }
         }

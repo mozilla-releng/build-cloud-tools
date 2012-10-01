@@ -6,5 +6,9 @@
   "hosts": {
     "puppet": "10.130.198.34",
     "puppetmaster-01.srv.releng.aws-us-west-1.mozilla.com": "10.130.198.34"
-  }
+  },
+  "hg_shares": {
+    "try": "http://ftp.mozilla.org/pub/mozilla.org/firefox/bundles/try.hg"
+  },
+  "hg_main_mirror": "http://hg.mozilla.org/"
 }

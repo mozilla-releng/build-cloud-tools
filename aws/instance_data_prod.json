@@ -6,5 +6,10 @@
   "hosts": {
     "puppet": "10.130.198.34",
     "puppetmaster-01.srv.releng.aws-us-west-1.mozilla.com": "10.130.198.34"
-  }
+  },
+  "hg_shares": {
+    "mozilla-central": "http://ftp.mozilla.org/pub/mozilla.org/firefox/bundles/mozilla-central.hg",
+    "integration/mozilla-inbound": "http://ftp.mozilla.org/pub/mozilla.org/firefox/bundles/mozilla-inbound.hg"
+  },
+  "hg_main_mirror": "http://hg.mozilla.org/"
 }
