@@ -100,6 +100,7 @@ configs = {
             "ami": "ami-cdd306a4",  # Any RHEL-6. i386 AMI
             "instance_type": "m1.medium",
             "arch": "i386",
+            "kernel_package": "kernel-PAE",
             "target": {
                 "size": 4,
                 "fs_type": "ext4",
@@ -113,6 +114,7 @@ configs = {
             "ami": "ami-e50e50a0",
             "instance_type": "m1.medium",
             "arch": "i386",
+            "kernel_package": "kernel-PAE",
             "target": {
                 "size": 4,
                 "fs_type": "ext4",
@@ -242,10 +244,16 @@ def create_ami(host_instance, options, config):
                                  mnt=mount_point))
     run('ln -s grub.conf %s/boot/grub/menu.lst' % mount_point)
     run('ln -s ../boot/grub/grub.conf %s/etc/grub.conf' % mount_point)
-    run('sed -i s/@VERSION@/`chroot %s rpm -q '
-        '--queryformat "%%{version}-%%{release}.%%{arch}" '
-        'kernel | tail -n1`/g %s/boot/grub/grub.conf' % (mount_point,
-                                                         mount_point))
+    if config.get('kernel_package') == 'kernel-PAE':
+        run('sed -i s/@VERSION@/`chroot %s rpm -q '
+            '--queryformat "%%{version}-%%{release}.%%{arch}.PAE" '
+            '%s | tail -n1`/g %s/boot/grub/grub.conf' % \
+            (mount_point, config.get('kernel_package', 'kernel'), mount_point))
+    else:
+        run('sed -i s/@VERSION@/`chroot %s rpm -q '
+            '--queryformat "%%{version}-%%{release}.%%{arch}" '
+            '%s | tail -n1`/g %s/boot/grub/grub.conf' % \
+            (mount_point, config.get('kernel_package', 'kernel'), mount_point))
     run('echo "UseDNS no" >> %s/etc/ssh/sshd_config' % mount_point)
     run('echo "PermitRootLogin without-password" >> %s/etc/ssh/sshd_config' \
         % mount_point)
