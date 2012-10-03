@@ -230,7 +230,7 @@ if __name__ == '__main__':
     parser.add_option("-k", "--secrets", dest="secrets")
     parser.add_option("-s", "--key-name", dest="key_name")
     parser.add_option("-v", "--verbose", action="store_const", dest="loglevel", const=logging.DEBUG)
-    parser.add_option("-p", "--paswords", dest="passwords")
+    parser.add_option("-p", "--passwords", dest="passwords")
     parser.add_option("--dry-run", action="store_true", dest="dryrun")
 
     options, args = parser.parse_args()
