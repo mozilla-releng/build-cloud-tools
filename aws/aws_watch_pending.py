@@ -42,6 +42,7 @@ def aws_resume_instances(instance_type, count, regions, secrets):
     for region in regions:
         conn = boto.ec2.connect_to_region(region, **secrets)
         reservations = conn.get_all_instances(filters={
+            'tag:moz-state': 'ready',
             'tag:moz-type': instance_type,
             'instance-state-name': 'stopped',
         })
