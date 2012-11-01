@@ -70,14 +70,14 @@ def get_last_activity(name, client):
     stdin, stdout, stderr = client.exec_command("tail -n 100 /builds/slave/twistd.log.1 /builds/slave/twistd.log")
     stdin.close()
 
-    last_activity = 0
+    last_activity = None
     running_command = False
     t = time.time()
     line = ""
     for line in stdout:
-        t = re.search("^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})", line)
-        if t:
-            t = time.strptime(t.group(1), "%Y-%m-%d %H:%M:%S")
+        m = re.search("^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})", line)
+        if m:
+            t = time.strptime(m.group(1), "%Y-%m-%d %H:%M:%S")
             t = time.mktime(t)
         else:
             # Not sure what to do with this line...
@@ -115,6 +115,13 @@ def get_last_activity(name, client):
             log.warning("%s - rebooting", name)
             stdin, stdout, stderr = client.exec_command("sudo reboot")
             stdin.close()
+
+    # If there's *no* activity (e.g. no twistd.log files), and we've been up a while, then reboot
+    if last_activity is None and uptime > 15*60:
+        log.warning("%s - no activity; rebooting", name)
+        # If longer than 30 minutes, try rebooting
+        stdin, stdout, stderr = client.exec_command("sudo reboot")
+        stdin.close()
 
     log.debug("%s - %s - %s", name, last_activity, line.strip())
     return last_activity
