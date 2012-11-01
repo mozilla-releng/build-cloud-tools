@@ -38,6 +38,16 @@ def find_pending(db):
 
 def aws_resume_instances(instance_type, count, regions, secrets):
     "resume up to `count` stopped instances of the given type in the given regions"
+    instance_config = json.load(open("configs/%s" % instance_type))
+    max_running = instance_config.get('max_running')
+    if max_running is not None:
+        running = aws_count_running(instance_type, regions, secrets)
+        if running + count > max_running:
+            count = max_running - running
+            if count <= 0:
+                log.info("max_running limit hit (%s - %i)", instance_type, max_running)
+                return 0
+        
     started = 0
     for region in regions:
         conn = boto.ec2.connect_to_region(region, **secrets)
@@ -69,6 +79,20 @@ def aws_resume_instances(instance_type, count, regions, secrets):
                 return started
 
     return started
+
+
+def aws_count_running(instance_type, regions, secrets):
+    num = 0
+
+    for region in regions:
+        conn = boto.ec2.connect_to_region(region, **secrets)
+        reservations = conn.get_all_instances(filters={
+            'tag:moz-type': instance_type,
+            'instance-state-name': 'running',
+        })
+        for r in reservations:
+            num += len(r.instances)
+    return num
 
 
 def aws_create_instances(instance_type, count, regions, secrets, key_name, instance_data):
