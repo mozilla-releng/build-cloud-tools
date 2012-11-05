@@ -3,7 +3,7 @@
 import boto
 from boto.ec2 import connect_to_region
 from boto.ec2.blockdevicemapping import BlockDeviceMapping, BlockDeviceType
-from fabric.api import run, put, env, lcd
+from fabric.api import run, put, env, lcd, sudo
 import json
 import uuid
 import time
@@ -125,6 +125,34 @@ configs = {
            },
         }
     },
+    "fedora-17-x86_64-desktop": {
+        "us-west-1": {
+            "ami": "ami-877e24c2",  # See https://fedoraproject.org/wiki/Cloud_images
+            "instance_type": "c1.xlarge",
+            "arch": "x86_64",
+            "target": {
+                "size": 4,
+                "fs_type": "ext4",
+                "e2_label": "root_dev",
+                "aws_dev_name": "/dev/sdh",
+                "int_dev_name": "/dev/xvdh",
+                "mount_point": "/mnt",
+           },
+        },
+        "us-east-1": {
+            "ami": "ami-a1ef36c8",  # See https://fedoraproject.org/wiki/Cloud_images
+            "instance_type": "c1.xlarge",
+            "arch": "x86_64",
+            "target": {
+                "size": 4,
+                "fs_type": "ext4",
+                "e2_label": "root_dev",
+                "aws_dev_name": "/dev/sdh",
+                "int_dev_name": "/dev/xvdh",
+                "mount_point": "/mnt",
+           },
+        }
+    },
 }
 
 
@@ -138,7 +166,7 @@ def create_connection(options):
     return connection
 
 
-def create_instance(connection, instance_name, config, key_name):
+def create_instance(connection, instance_name, config, key_name, user='root'):
 
     bdm = None
     if 'device_map' in config:
@@ -163,7 +191,7 @@ def create_instance(connection, instance_name, config, key_name):
             instance.update()
             if instance.state == 'running':
                 env.host_string = instance.public_dns_name
-                env.user = 'root'
+                env.user = user
                 env.abort_on_prompts = True
                 env.disable_known_hosts = True
                 if run('date').succeeded:
@@ -172,6 +200,9 @@ def create_instance(connection, instance_name, config, key_name):
             log.debug('hit error waiting for instance to come up')
         time.sleep(10)
     instance.add_tag('Name', instance_name)
+    # Overwrite root's limited authorized_keys
+    if user != 'root':
+        sudo('cp -f ~%s/.ssh/authorized_keys /root/.ssh/authorized_keys' % user)
     return instance
 
 
@@ -203,6 +234,8 @@ def create_ami(host_instance, options, config):
             log.debug('hit error waiting for volume to be attached')
             time.sleep(10)
 
+    # Step 0: install required packages
+    run('yum install -f MAKEDEV')
     # Step 1: prepare target FS
     run('/sbin/mkfs.{fs_type} {dev}'.format(
         fs_type=config['target']['fs_type'],
@@ -212,7 +245,7 @@ def create_ami(host_instance, options, config):
     run('mount {dev} {mount_point}'.format(dev=int_dev_name,
                                            mount_point=mount_point))
     run('mkdir {0}/dev {0}/proc {0}/etc'.format(mount_point))
-    run('mount -t proc none %s/proc' % mount_point)
+    run('mount -t proc proc %s/proc' % mount_point)
     run('for i in console null zero ; '
         'do /sbin/MAKEDEV -d %s/dev -x $i ; done' \
         % mount_point)
@@ -350,6 +383,7 @@ if __name__ == '__main__':
                       help="Don't delete target volume")
     parser.add_option('--keep-host-instance', dest='keep_host_instance',
                       action='store_true', help="Don't delete host instance")
+    parser.add_option('--user', dest='user', default='root')
 
     options, args = parser.parse_args()
 
@@ -381,5 +415,5 @@ if __name__ == '__main__':
 
     connection = create_connection(options)
     host_instance = create_instance(connection, args[0], config,
-                                    options.key_name)
+                                    options.key_name, options.user)
     target_ami = create_ami(host_instance, options, config)
