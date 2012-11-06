@@ -1,0 +1,14 @@
+{
+  "buildslave_password": "pass",
+  "buildbot_master": "10.12.48.14:9049",
+  "default_puppet_server": "puppetmaster-01.srv.releng.aws-us-east-1.mozilla.com",
+  "home_tarball": "secrets/try.tar.gz",
+  "hosts": {
+    "puppet": FIXME,
+    "puppetmaster-01.srv.releng.aws-us-west-1.mozilla.com": FIXME
+  },
+  "hg_shares": {
+    "try": "http://ftp.mozilla.org/pub/mozilla.org/firefox/bundles/try.hg"
+  },
+  "hg_main_mirror": "http://hg.mozilla.org/"
+}

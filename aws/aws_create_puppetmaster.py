@@ -10,8 +10,10 @@ from boto.ec2.blockdevicemapping import BlockDeviceMapping, BlockDeviceType
 import logging
 log = logging.getLogger()
 
+
 def create_master(conn, name, options, config):
-    """Creates an AMI instance with the given name and config. The config must specify things like ami id."""
+    """Creates an AMI instance with the given name and config. The config must
+    specify things like ami id."""
     zones = conn.get_all_zones()
 
     # Make sure we don't request the same things twice
@@ -25,20 +27,21 @@ def create_master(conn, name, options, config):
         time.sleep(10)
 
     bdm = BlockDeviceMapping()
-    bdm["/dev/sdh"] = BlockDeviceType(delete_on_termination=True, snapshot_id=config['repo_snapshot_id'])
+    bdm["/dev/sdh"] = BlockDeviceType(delete_on_termination=True,
+                                      snapshot_id=config['repo_snapshot_id'])
     bdm["/dev/sda1"] = BlockDeviceType(delete_on_termination=True)
 
     reservation = conn.run_instances(
-            image_id=config['ami'],
-            key_name=options.key_name,
-            instance_type=config['instance_type'],
-            client_token=token,
-            subnet_id=config.get('subnet_id'),
-            security_group_ids=config.get('security_group_ids', []),
-            block_device_map=bdm,
-            placement=zones[0].name,
-            disable_api_termination=True,
-            )
+        image_id=config['ami'],
+        key_name=options.key_name,
+        instance_type=config['instance_type'],
+        client_token=token,
+        subnet_id=config.get('subnet_id'),
+        security_group_ids=config.get('security_group_ids', []),
+        block_device_map=bdm,
+        placement=zones[0].name,
+        disable_api_termination=True,
+    )
 
     instance = reservation.instances[0]
     log.info("instance %s created, waiting to come up", instance)
@@ -61,6 +64,7 @@ def create_master(conn, name, options, config):
 
     instance.add_tag('moz-state', 'pending')
     puppetize(instance, name, options)
+
 
 def puppetize(instance, name, options):
     env.host_string = instance.private_ip_address
@@ -129,7 +133,7 @@ def puppetize(instance, name, options):
 
     with settings(warn_only=True):
         result = run("bash /etc/puppet/production/setup/masterize.sh")
-        assert result.return_code in (0,2)
+        assert result.return_code in (0, 2)
     instance.add_tag('moz-state', 'ready')
 
     log.info("Got %s", instance.private_ip_address)
@@ -137,14 +141,21 @@ def puppetize(instance, name, options):
     run("reboot")
 
 # TODO: Move this into separate file(s)
-configs =  {
+configs = {
     "centos-6-x64-base": {
         "us-west-1": {
-            "ami": "ami-696f4a2c", # Centos6
+            "ami": "ami-696f4a2c",  # Centos6
             "subnet_id": "subnet-59e94330",
             "security_group_ids": ["sg-38150854"],
             "instance_type": "m1.medium",
-            "repo_snapshot_id": "snap-05eacb29", # This will be mounted at /data
+            "repo_snapshot_id": "snap-05eacb29",  # This will be mounted at /data
+        },
+        "us-east-1": {
+            "ami": "ami-10269d79",  # Centos6
+            "subnet_id": "subnet-28a98343",
+            "security_group_ids": ["sg-b36a84dc"],
+            "instance_type": "m1.medium",
+            "repo_snapshot_id": "snap-efd1ff99",  # This will be mounted at /data
         },
     },
 }
@@ -153,13 +164,13 @@ if __name__ == '__main__':
     from optparse import OptionParser
     parser = OptionParser()
     parser.set_defaults(
-            config=None,
-            region="us-west-1",
-            secrets=None,
-            key_name=None,
-            action="create",
-            instance=None,
-            )
+        config=None,
+        region="us-west-1",
+        secrets=None,
+        key_name=None,
+        action="create",
+        instance=None,
+    )
     parser.add_option("-c", "--config", dest="config", help="instance configuration to use")
     parser.add_option("-r", "--region", dest="region", help="region to use")
     parser.add_option("-k", "--secrets", dest="secrets", help="file where secrets can be found")
