@@ -16,6 +16,7 @@ configs = {
             "ami": "ami-41d00528",  # Any RHEL-6.2 AMI
             "instance_type": "c1.xlarge",
             "arch": "x86_64",
+            "subnet_id": "subnet-33a98358",
             "target": {
                 "size": 4,
                 "fs_type": "ext4",
@@ -29,6 +30,7 @@ configs = {
             "ami": "ami-250e5060",  # Any RHEL-6.2 AMI
             "instance_type": "c1.xlarge",
             "arch": "x86_64",
+            "subnet_id": "subnet-59e94330",
             "target": {
                 "size": 4,
                 "fs_type": "ext4",
@@ -181,6 +183,7 @@ def create_instance(connection, instance_name, config, key_name, user='root'):
         instance_type=config['instance_type'],
         block_device_map=bdm,
         client_token=str(uuid.uuid4())[:16],
+        subnet_id=config['subnet_id'],
     )
 
     instance = reservation.instances[0]
@@ -190,7 +193,7 @@ def create_instance(connection, instance_name, config, key_name, user='root'):
         try:
             instance.update()
             if instance.state == 'running':
-                env.host_string = instance.public_dns_name
+                env.host_string = instance.private_ip_address
                 env.user = user
                 env.abort_on_prompts = True
                 env.disable_known_hosts = True
@@ -211,7 +214,7 @@ def create_ami(host_instance, options, config):
     # TODO: swap?
     # TODO: factor status checks
     connection = host_instance.connection
-    env.host_string = host_instance.public_dns_name
+    env.host_string = host_instance.private_ip_address
     env.user = 'root'
     env.abort_on_prompts = True
     env.disable_known_hosts = True
@@ -235,7 +238,7 @@ def create_ami(host_instance, options, config):
             time.sleep(10)
 
     # Step 0: install required packages
-    run('yum install -f MAKEDEV')
+    run('yum install -y MAKEDEV || :')
     # Step 1: prepare target FS
     run('/sbin/mkfs.{fs_type} {dev}'.format(
         fs_type=config['target']['fs_type'],
@@ -251,6 +254,8 @@ def create_ami(host_instance, options, config):
         % mount_point)
 
     # Step 2: install base system
+    # FIXME: dirty DNS hack
+    run('echo "10.12.51.224 puppet" >> /etc/hosts')
     with lcd(target_name):
         put('etc/yum-local.cfg', '%s/etc/yum-local.cfg' % mount_point)
         put('groupinstall', '/tmp/groupinstall')
@@ -262,6 +267,7 @@ def create_ami(host_instance, options, config):
     run('%s clean packages' % yum)
 
     # Step 3: upload custom configuration files
+    run('mkdir %s/boot/grub' % mount_point)
     with lcd(target_name):
         for f in ('etc/rc.local', 'etc/fstab', 'etc/hosts',
                   'etc/sysconfig/network',
