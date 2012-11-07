@@ -14,7 +14,6 @@ log = logging.getLogger()
 def create_master(conn, name, options, config):
     """Creates an AMI instance with the given name and config. The config must
     specify things like ami id."""
-    zones = conn.get_all_zones()
 
     # Make sure we don't request the same things twice
     token = str(uuid.uuid4())[:16]
@@ -39,7 +38,6 @@ def create_master(conn, name, options, config):
         subnet_id=config.get('subnet_id'),
         security_group_ids=config.get('security_group_ids', []),
         block_device_map=bdm,
-        placement=zones[0].name,
         disable_api_termination=True,
     )
 
@@ -152,7 +150,7 @@ configs = {
         },
         "us-east-1": {
             "ami": "ami-10269d79",  # Centos6
-            "subnet_id": "subnet-28a98343",
+            "subnet_id": "subnet-33a98358",
             "security_group_ids": ["sg-b36a84dc"],
             "instance_type": "m1.medium",
             "repo_snapshot_id": "snap-efd1ff99",  # This will be mounted at /data
