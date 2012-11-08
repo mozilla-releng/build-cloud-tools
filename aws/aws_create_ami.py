@@ -16,7 +16,6 @@ configs = {
             "ami": "ami-41d00528",  # Any RHEL-6.2 AMI
             "instance_type": "c1.xlarge",
             "arch": "x86_64",
-            "subnet_id": "subnet-33a98358",
             "target": {
                 "size": 4,
                 "fs_type": "ext4",
@@ -30,7 +29,6 @@ configs = {
             "ami": "ami-250e5060",  # Any RHEL-6.2 AMI
             "instance_type": "c1.xlarge",
             "arch": "x86_64",
-            "subnet_id": "subnet-59e94330",
             "target": {
                 "size": 4,
                 "fs_type": "ext4",
@@ -38,8 +36,8 @@ configs = {
                 "aws_dev_name": "/dev/sdh",
                 "int_dev_name": "/dev/xvdl",
                 "mount_point": "/mnt",
-           },
-        }
+            },
+        },
     },
     "centos-6-i386-base": {
         "us-east-1": {
@@ -66,8 +64,8 @@ configs = {
                 "aws_dev_name": "/dev/sdh",
                 "int_dev_name": "/dev/xvdl",
                 "mount_point": "/mnt",
-           },
-        }
+            },
+        },
     },
     "fedora-12-x86_64-desktop": {
         "us-east-1": {
@@ -94,8 +92,8 @@ configs = {
                 "aws_dev_name": "/dev/sdh",
                 "int_dev_name": "/dev/xvdl",
                 "mount_point": "/mnt",
-           },
-        }
+            },
+        },
     },
     "fedora-12-i386-desktop": {
         "us-east-1": {
@@ -124,12 +122,13 @@ configs = {
                 "aws_dev_name": "/dev/sdh",
                 "int_dev_name": "/dev/xvdl",
                 "mount_point": "/mnt",
-           },
-        }
+            },
+        },
     },
     "fedora-17-x86_64-desktop": {
         "us-west-1": {
-            "ami": "ami-877e24c2",  # See https://fedoraproject.org/wiki/Cloud_images
+            # See https://fedoraproject.org/wiki/Cloud_images
+            "ami": "ami-877e24c2",
             "instance_type": "c1.xlarge",
             "arch": "x86_64",
             "target": {
@@ -139,10 +138,11 @@ configs = {
                 "aws_dev_name": "/dev/sdh",
                 "int_dev_name": "/dev/xvdh",
                 "mount_point": "/mnt",
-           },
+            },
         },
         "us-east-1": {
-            "ami": "ami-a1ef36c8",  # See https://fedoraproject.org/wiki/Cloud_images
+            # See https://fedoraproject.org/wiki/Cloud_images
+            "ami": "ami-a1ef36c8",
             "instance_type": "c1.xlarge",
             "arch": "x86_64",
             "target": {
@@ -152,8 +152,8 @@ configs = {
                 "aws_dev_name": "/dev/sdh",
                 "int_dev_name": "/dev/xvdh",
                 "mount_point": "/mnt",
-           },
-        }
+            },
+        },
     },
 }
 
@@ -183,7 +183,6 @@ def create_instance(connection, instance_name, config, key_name, user='root'):
         instance_type=config['instance_type'],
         block_device_map=bdm,
         client_token=str(uuid.uuid4())[:16],
-        subnet_id=config['subnet_id'],
     )
 
     instance = reservation.instances[0]
@@ -193,7 +192,7 @@ def create_instance(connection, instance_name, config, key_name, user='root'):
         try:
             instance.update()
             if instance.state == 'running':
-                env.host_string = instance.private_ip_address
+                env.host_string = instance.public_dns_name
                 env.user = user
                 env.abort_on_prompts = True
                 env.disable_known_hosts = True
@@ -214,7 +213,7 @@ def create_ami(host_instance, options, config):
     # TODO: swap?
     # TODO: factor status checks
     connection = host_instance.connection
-    env.host_string = host_instance.private_ip_address
+    env.host_string = host_instance.public_dns_name
     env.user = 'root'
     env.abort_on_prompts = True
     env.disable_known_hosts = True
@@ -238,7 +237,7 @@ def create_ami(host_instance, options, config):
             time.sleep(10)
 
     # Step 0: install required packages
-    run('yum install -y MAKEDEV || :')
+    run('which MAKEDEV >/dev/null || yum install -f MAKEDEV')
     # Step 1: prepare target FS
     run('/sbin/mkfs.{fs_type} {dev}'.format(
         fs_type=config['target']['fs_type'],
@@ -250,12 +249,9 @@ def create_ami(host_instance, options, config):
     run('mkdir {0}/dev {0}/proc {0}/etc'.format(mount_point))
     run('mount -t proc proc %s/proc' % mount_point)
     run('for i in console null zero ; '
-        'do /sbin/MAKEDEV -d %s/dev -x $i ; done' \
-        % mount_point)
+        'do /sbin/MAKEDEV -d %s/dev -x $i ; done' % mount_point)
 
     # Step 2: install base system
-    # FIXME: dirty DNS hack
-    run('echo "10.12.51.224 puppet" >> /etc/hosts')
     with lcd(target_name):
         put('etc/yum-local.cfg', '%s/etc/yum-local.cfg' % mount_point)
         put('groupinstall', '/tmp/groupinstall')
@@ -267,7 +263,6 @@ def create_ami(host_instance, options, config):
     run('%s clean packages' % yum)
 
     # Step 3: upload custom configuration files
-    run('mkdir %s/boot/grub' % mount_point)
     with lcd(target_name):
         for f in ('etc/rc.local', 'etc/fstab', 'etc/hosts',
                   'etc/sysconfig/network',
@@ -286,21 +281,22 @@ def create_ami(host_instance, options, config):
     if config.get('kernel_package') == 'kernel-PAE':
         run('sed -i s/@VERSION@/`chroot %s rpm -q '
             '--queryformat "%%{version}-%%{release}.%%{arch}.PAE" '
-            '%s | tail -n1`/g %s/boot/grub/grub.conf' % \
+            '%s | tail -n1`/g %s/boot/grub/grub.conf' %
             (mount_point, config.get('kernel_package', 'kernel'), mount_point))
     else:
         run('sed -i s/@VERSION@/`chroot %s rpm -q '
             '--queryformat "%%{version}-%%{release}.%%{arch}" '
-            '%s | tail -n1`/g %s/boot/grub/grub.conf' % \
+            '%s | tail -n1`/g %s/boot/grub/grub.conf' %
             (mount_point, config.get('kernel_package', 'kernel'), mount_point))
     run('echo "UseDNS no" >> %s/etc/ssh/sshd_config' % mount_point)
-    run('echo "PermitRootLogin without-password" >> %s/etc/ssh/sshd_config' \
-        % mount_point)
+    run('echo "PermitRootLogin without-password" >> %s/etc/ssh/sshd_config' %
+        mount_point)
 
     run('chroot %s chkconfig --level 2345 network on' % mount_point)
     run('chroot %s chkconfig --level 2345 rc.local on' % mount_point)
     run('chroot %s chkconfig --level 2345 firstboot off || :' % mount_point)
-    run('chroot %s chkconfig --level 2345 NetworkManager off || :' % mount_point)
+    run('chroot %s chkconfig --level 2345 NetworkManager off || :' %
+        mount_point)
 
     run('umount %s/proc' % mount_point)
     run('umount %s' % mount_point)

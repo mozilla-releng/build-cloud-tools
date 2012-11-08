@@ -149,7 +149,7 @@ configs = {
             "repo_snapshot_id": "snap-d31a30ff",  # This will be mounted at /data
         },
         "us-east-1": {
-            "ami": "ami-b6ed68df",  # Centos6
+            "ami": "ami-049b1e6d",  # Centos6
             "subnet_id": "subnet-33a98358",
             "security_group_ids": ["sg-b36a84dc"],
             "instance_type": "m1.medium",
