@@ -17,8 +17,8 @@
     },
     "us-east-1": {
         "type": "bld-linux64",
-        "ami": "ami-10269d79",
-        "subnet_id": "subnet-FIXME",
+        "ami": "ami-049b1e6d",
+        "subnet_id": "subnet-33a98358",
         "security_group_ids": [],
         "instance_type": "c1.xlarge",
         "device_map": {
