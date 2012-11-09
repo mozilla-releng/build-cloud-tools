@@ -75,7 +75,7 @@ def puppetize(instance, name, options):
             run("test -d /data || mkdir /data")
             # TODO: Use label!
             run("test -d /data/lost+found || mount /dev/xvdl /data")
-            run("echo '/dev/xvdl /data ext3 rw 0 0' >> /etc/fstab")
+            run("echo '/dev/xvdl /data ext4 rw 0 0' >> /etc/fstab")
             break
         except:
             log.exception("waiting...")
