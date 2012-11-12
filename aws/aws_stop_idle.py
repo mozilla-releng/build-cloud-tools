@@ -247,6 +247,9 @@ if __name__ == '__main__':
     logging.getLogger("paramiko").setLevel(logging.WARN)
     logging.getLogger('requests').setLevel(logging.WARN)
 
+    if not options.regions:
+        parser.error("at least one region is required")
+
     if not options.secrets:
         parser.error("secrets are required")
 

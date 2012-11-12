@@ -47,7 +47,7 @@ def aws_resume_instances(instance_type, count, regions, secrets):
             if count <= 0:
                 log.info("max_running limit hit (%s - %i)", instance_type, max_running)
                 return 0
-        
+
     started = 0
     for region in regions:
         conn = boto.ec2.connect_to_region(region, **secrets)
@@ -192,7 +192,7 @@ if __name__ == '__main__':
     logging.getLogger("boto").setLevel(logging.INFO)
 
     if not options.regions:
-        options.regions = ['us-west-1']
+        parser.error("at least one region is required")
 
     if not options.secrets:
         parser.error("secrets are required")
