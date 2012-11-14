@@ -2,10 +2,12 @@
 """
 Watches pending jobs and starts or creates EC2 instances if required
 """
-import re, time
+import re
+import time
 
 try:
     import simplejson as json
+    assert json
 except ImportError:
     import json
 
@@ -29,8 +31,8 @@ def find_pending(db):
                submitted_at < :toonew
 
                GROUP BY buildername"""),
-               yesterday=time.time()-86400,
-               toonew=time.time()-60,
+        yesterday=time.time() - 86400,
+        toonew=time.time() - 60,
     )
     retval = result.fetchall()
     return retval
@@ -71,7 +73,7 @@ def aws_resume_instances(instance_type, count, regions, secrets):
         stopped_instances.sort(key=lambda i: i.launch_time)
         stopped_instances.reverse()
         for i in stopped_instances:
-            log.info("%s - starting instance", i.tags['Name'])
+            log.info("%s - %s - starting instance", region, i.tags['Name'])
             i.start()
             started += 1
 
@@ -134,7 +136,7 @@ def aws_create_instances(instance_type, count, regions, secrets, key_name, insta
     return len(to_create)
 
 
-def aws_watch_pending(db, regions, secrets, key_name, instance_data, builder_map, allow_create):
+def aws_watch_pending(db, regions, secrets, key_name, builder_map):
     # First find pending jobs in the db
     pending = find_pending(db)
 
@@ -159,12 +161,6 @@ def aws_watch_pending(db, regions, secrets, key_name, instance_data, builder_map
         count -= started
         log.info("%s - started %i instances; need %i", instance_type, started, count)
 
-        # Then create new instances (subject to max_instances)
-        if allow_create:
-            created = aws_create_instances(instance_type, count, regions, secrets, key_name, instance_data)
-            count -= created
-            log.info("%s - created %i instances; need %i", instance_type, created, count)
-
 if __name__ == '__main__':
     from optparse import OptionParser
     parser = OptionParser()
@@ -173,18 +169,14 @@ if __name__ == '__main__':
         secrets=None,
         loglevel=logging.INFO,
         key_name=None,
-        instance_data=None,
         config=None,
-        allow_create=False,
     )
 
     parser.add_option("-r", "--region", action="append", dest="regions")
     parser.add_option("-k", "--secrets", dest="secrets")
     parser.add_option("-s", "--key-name", dest="key_name")
     parser.add_option("-v", "--verbose", action="store_const", dest="loglevel", const=logging.DEBUG)
-    parser.add_option("-i", "--instance-data", dest="instance_data")
     parser.add_option("-c", "--config", dest="config")
-    parser.add_option("--allow-create", dest="allow_create", action="store_true")
 
     options, args = parser.parse_args()
 
@@ -205,8 +197,7 @@ if __name__ == '__main__':
 
     config = json.load(open(options.config))
     secrets = json.load(open(options.secrets))
-    instance_data = json.load(open(options.instance_data))
     aws_watch_pending(
-        config['db'], options.regions, secrets, options.key_name,
-        instance_data, config['buildermap'], options.allow_create,
+        config['db'], options.regions, secrets,
+        options.key_name, config['buildermap'],
     )
