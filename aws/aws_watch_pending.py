@@ -189,9 +189,6 @@ if __name__ == '__main__':
     if not options.secrets:
         parser.error("secrets are required")
 
-    if not options.instance_data:
-        parser.error("instance data is required")
-
     if not options.config:
         parser.error("you must specify a config file to use")
 
