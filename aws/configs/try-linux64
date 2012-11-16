@@ -1,6 +1,4 @@
 {
-    "max_instances": 50,
-    "min_running_instances": 2,
     "hostname": "try-linux64-ec2-%03d",
     "us-west-1": {
         "type": "try-linux64",
