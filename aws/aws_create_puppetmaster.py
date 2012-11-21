@@ -145,21 +145,21 @@ configs = {
             "ami": "ami-696f4a2c",  # Centos6
             "subnet_id": "subnet-59e94330",
             "security_group_ids": ["sg-38150854"],
-            "instance_type": "m1.medium",
+            "instance_type": "m1.large",
             "repo_snapshot_id": "snap-d31a30ff",  # This will be mounted at /data
         },
         "us-east-1": {
             "ami": "ami-049b1e6d",  # Centos6
             "subnet_id": "subnet-33a98358",
             "security_group_ids": ["sg-b36a84dc"],
-            "instance_type": "m1.medium",
+            "instance_type": "m1.large",
             "repo_snapshot_id": "snap-07a08c4e",  # This will be mounted at /data
         },
         "us-west-2": {
             "ami": "ami-16d15926",  # Centos6
             "subnet_id": "subnet-ae48dac7",
             "security_group_ids": ["sg-4e2d3022"],
-            "instance_type": "m1.medium",
+            "instance_type": "m1.large",
             "repo_snapshot_id": "snap-521b7c74",  # This will be mounted at /data
         },
     },
