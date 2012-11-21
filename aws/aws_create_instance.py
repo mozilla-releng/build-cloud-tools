@@ -5,6 +5,7 @@ import time
 import boto
 import StringIO
 
+from random import choice
 from fabric.api import run, put, env, sudo, settings, local
 from fabric.context_managers import cd
 from boto.ec2 import connect_to_region
@@ -12,6 +13,7 @@ from boto.ec2.blockdevicemapping import BlockDeviceMapping, BlockDeviceType
 
 import logging
 log = logging.getLogger()
+
 
 def assimilate(ip_addr, config, instance_data, create_ami):
     """Assimilate hostname into our collective
@@ -41,9 +43,9 @@ def assimilate(ip_addr, config, instance_data, create_ami):
 
     # Set up /etc/hosts to talk to 'puppet'
     hosts = ['127.0.0.1 localhost.localdomain localhost',
-            '::1 localhost6.localdomain6 localhost6'] + \
+             '::1 localhost6.localdomain6 localhost6'] + \
             ["%s %s" % (ip, host) for host, ip in
-                       instance_data['hosts'].iteritems()]
+             instance_data['hosts'].iteritems()]
     hosts = StringIO.StringIO("\n".join(hosts) + "\n")
     put(hosts, '/etc/hosts')
 
@@ -85,9 +87,9 @@ def assimilate(ip_addr, config, instance_data, create_ami):
     with settings(warn_only=True):
         result = run("puppetd --onetime --no-daemonize --verbose "
                      "--detailed-exitcodes --waitforcert 10 "
-                    "--server {puppet}".format(
-                        puppet=instance_data['default_puppet_server']))
-        assert result.return_code in (0,2)
+                     "--server {puppet}".format(
+                     puppet=instance_data['default_puppet_server']))
+        assert result.return_code in (0, 2)
 
     if create_ami:
         run('find /var/lib/puppet/ssl -type f -delete')
@@ -105,7 +107,6 @@ def assimilate(ip_addr, config, instance_data, create_ami):
     sudo("/tools/buildbot/bin/buildslave create-slave /builds/slave {buildbot_master} {name} {buildslave_password}".format(**instance_data), user="cltbld")
 
     hg = "/tools/python27-mercurial/bin/hg"
-    hg_main_mirror = instance_data['hg_main_mirror']
     for share, bundle in instance_data['hg_shares'].iteritems():
         target_dir = '/builds/hg-shared/%s' % share
         sudo('rm -rf {d} && mkdir -p {d}'.format(d=target_dir), user="cltbld")
@@ -119,13 +120,16 @@ def assimilate(ip_addr, config, instance_data, create_ami):
 
     run("reboot")
 
+
 def create_instance(name, config, region, secrets, key_name, instance_data,
                     create_ami=False):
-    """Creates an AMI instance with the given name and config. The config must specify things like ami id."""
-    conn = connect_to_region(region,
-            aws_access_key_id=secrets['aws_access_key_id'],
-            aws_secret_access_key=secrets['aws_secret_access_key'],
-            )
+    """Creates an AMI instance with the given name and config. The config must
+    specify things like ami id."""
+    conn = connect_to_region(
+        region,
+        aws_access_key_id=secrets['aws_access_key_id'],
+        aws_secret_access_key=secrets['aws_secret_access_key'],
+    )
 
     # Make sure we don't request the same things twice
     token = str(uuid.uuid4())[:16]
@@ -139,16 +143,22 @@ def create_instance(name, config, region, secrets, key_name, instance_data,
     if 'device_map' in config:
         bdm = BlockDeviceMapping()
         for device, device_info in config['device_map'].items():
-            bdm[device] = BlockDeviceType(size=device_info['size'], delete_on_termination=True)
+            bdm[device] = BlockDeviceType(size=device_info['size'],
+                                          delete_on_termination=True)
+
+    subnet_id = config.get('subnet_id')
+    if subnet_id:
+        if isinstance(subnet_id, (list, tuple)):
+            subnet_id = choice(subnet_id)
 
     reservation = conn.run_instances(
-            image_id=config['ami'],
-            key_name=key_name,
-            instance_type=config['instance_type'],
-            block_device_map=bdm,
-            client_token=token,
-            subnet_id=config.get('subnet_id'),
-            )
+        image_id=config['ami'],
+        key_name=key_name,
+        instance_type=config['instance_type'],
+        block_device_map=bdm,
+        client_token=token,
+        subnet_id=subnet_id,
+    )
 
     instance = reservation.instances[0]
     log.info("instance %s created, waiting to come up", instance)
@@ -170,9 +180,11 @@ def create_instance(name, config, region, secrets, key_name, instance_data,
     while True:
         try:
             if instance.subnet_id:
-                assimilate(instance.private_ip_address, config, instance_data, create_ami)
+                assimilate(instance.private_ip_address, config, instance_data,
+                           create_ami)
             else:
-                assimilate(instance.public_dns_name, config, instance_data, create_ami)
+                assimilate(instance.public_dns_name, config, instance_data,
+                           create_ami)
             break
         except:
             log.exception("problem assimilating %s", instance)
@@ -181,6 +193,7 @@ def create_instance(name, config, region, secrets, key_name, instance_data,
         instance.add_tag('moz-state', 'ready')
     else:
         ami_from_instance(instance)
+
 
 def ami_from_instance(instance):
     base_ami = instance.connection.get_image(instance.image_id)
@@ -237,6 +250,7 @@ def ami_from_instance(instance):
 import multiprocessing
 import sys
 
+
 class LoggingProcess(multiprocessing.Process):
     def __init__(self, log, *args, **kwargs):
         self.log = log
@@ -248,6 +262,7 @@ class LoggingProcess(multiprocessing.Process):
         sys.stdout = output
         sys.stderr = output
         return super(LoggingProcess, self).run()
+
 
 def make_instances(names, config, region, secrets, key_name, instance_data,
                    create_ami):
@@ -271,15 +286,15 @@ if __name__ == '__main__':
     from optparse import OptionParser
     parser = OptionParser()
     parser.set_defaults(
-            config=None,
-            region="us-west-1",
-            secrets=None,
-            key_name=None,
-            action="create",
-            create_ami=False,
-            instance_id=None,
-            instance_data=None,
-            )
+        config=None,
+        region="us-west-1",
+        secrets=None,
+        key_name=None,
+        action="create",
+        create_ami=False,
+        instance_id=None,
+        instance_data=None,
+    )
     parser.add_option("-c", "--config", dest="config", help="instance configuration to use")
     parser.add_option("-r", "--region", dest="region", help="region to use")
     parser.add_option("-k", "--secrets", dest="secrets", help="file where secrets can be found")
@@ -318,10 +333,11 @@ if __name__ == '__main__':
 
     instance_data = json.load(open(options.instance_data))
     if options.instance_id:
-        conn = connect_to_region(options.region,
-                aws_access_key_id=secrets['aws_access_key_id'],
-                aws_secret_access_key=secrets['aws_secret_access_key'],
-                )
+        conn = connect_to_region(
+            options.region,
+            aws_access_key_id=secrets['aws_access_key_id'],
+            aws_secret_access_key=secrets['aws_secret_access_key'],
+        )
         instance = conn.get_all_instances([options.instance_id])[0].instances[0]
         instance_data['name'] = args[0]
         instance_data['hostname'] = '{name}.build.aws-{region}.mozilla.com'.format(

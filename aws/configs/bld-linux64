@@ -16,7 +16,7 @@
     "us-west-2": {
         "type": "bld-linux64",
         "ami": "ami-16d15926",
-        "subnet_id": "subnet-ae48dac7",
+        "subnet_id": ["subnet-ae48dac7", "subnet-a348daca", "subnet-a448dacd"],
         "security_group_ids": [],
         "instance_type": "c1.xlarge",
         "device_map": {

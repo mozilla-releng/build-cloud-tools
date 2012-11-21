@@ -10,6 +10,5 @@
   "hg_shares": {
     "mozilla-central": "http://ftp.mozilla.org/pub/mozilla.org/firefox/bundles/mozilla-central.hg",
     "integration/mozilla-inbound": "http://ftp.mozilla.org/pub/mozilla.org/firefox/bundles/mozilla-inbound.hg"
-  },
-  "hg_main_mirror": "http://hg.mozilla.org/"
+  }
 }

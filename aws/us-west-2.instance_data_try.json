@@ -9,6 +9,5 @@
   },
   "hg_shares": {
     "try": "http://ftp.mozilla.org/pub/mozilla.org/firefox/bundles/try.hg"
-  },
-  "hg_main_mirror": "http://hg.mozilla.org/"
+  }
 }
