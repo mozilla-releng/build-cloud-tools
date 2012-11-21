@@ -38,6 +38,19 @@ configs = {
                 "mount_point": "/mnt",
             },
         },
+        "us-west-2": {
+            "ami": "ami-8a25a9ba",  # Any RHEL-6.2 AMI
+            "instance_type": "c1.xlarge",
+            "arch": "x86_64",
+            "target": {
+                "size": 4,
+                "fs_type": "ext4",
+                "e2_label": "root_dev",
+                "aws_dev_name": "/dev/sdh",
+                "int_dev_name": "/dev/xvdl",
+                "mount_point": "/mnt",
+            },
+        },
     },
     "centos-6-i386-base": {
         "us-east-1": {

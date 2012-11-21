@@ -13,6 +13,19 @@
             }
         }
     },
+    "us-west-2": {
+        "type": "try-linux64",
+        "ami": "ami-16d15926",
+        "subnet_id": "subnet-a348daca",
+        "security_group_ids": [],
+        "instance_type": "c1.xlarge",
+        "device_map": {
+            "/dev/sda1": {
+                "size": 100,
+                "instance_dev": "/dev/xvde1"
+            }
+        }
+    },
     "us-east-1": {
         "type": "try-linux64",
         "ami": "ami-049b1e6d",

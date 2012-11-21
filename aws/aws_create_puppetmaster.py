@@ -155,6 +155,13 @@ configs = {
             "instance_type": "m1.medium",
             "repo_snapshot_id": "snap-07a08c4e",  # This will be mounted at /data
         },
+        "us-west-2": {
+            "ami": "ami-16d15926",  # Centos6
+            "subnet_id": "subnet-ae48dac7",
+            "security_group_ids": ["sg-4e2d3022"],
+            "instance_type": "m1.medium",
+            "repo_snapshot_id": "snap-521b7c74",  # This will be mounted at /data
+        },
     },
 }
 
