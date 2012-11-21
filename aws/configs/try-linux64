@@ -29,7 +29,7 @@
     "us-east-1": {
         "type": "try-linux64",
         "ami": "ami-049b1e6d",
-        "subnet_id": "subnet-2ba98340",
+        "subnet_id": ["subnet-2ba98340", "subnet-2da98346", "subnet-22a98349"],
         "security_group_ids": [],
         "instance_type": "c1.xlarge",
         "device_map": {

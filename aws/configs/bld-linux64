@@ -29,7 +29,7 @@
     "us-east-1": {
         "type": "bld-linux64",
         "ami": "ami-049b1e6d",
-        "subnet_id": "subnet-39a98352",
+        "subnet_id": ["subnet-33a98358", "subnet-39a98352", "subnet-3ea98355"],
         "security_group_ids": [],
         "instance_type": "c1.xlarge",
         "device_map": {
