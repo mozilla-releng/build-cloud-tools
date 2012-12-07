@@ -32,4 +32,4 @@ if __name__ == '__main__':
     for i in instances:
         for mask in hosts_re:
             if mask.search(i.tags.get('Name', '')):
-                print i.tags.get('Name'), i.private_ip_address
+                print i.private_ip_address, i.tags.get('Name')
