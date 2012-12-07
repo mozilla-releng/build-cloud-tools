@@ -1,11 +1,11 @@
 {
     "hostname": "try-linux64-ec2-%03d",
-    "us-west-1": {
+    "us-east-1": {
         "type": "try-linux64",
-        "ami": "ami-696f4a2c",
-        "subnet_id": "subnet-59e94330",
+        "ami": "ami-049b1e6d",
+        "subnet_id": ["subnet-27a9834c", "subnet-24a9834f", "subnet-39a98352", "subnet-3ea98355"],
         "security_group_ids": [],
-        "instance_type": "c1.xlarge",
+        "instance_type": "m3.xlarge",
         "device_map": {
             "/dev/sda1": {
                 "size": 100,
@@ -16,22 +16,9 @@
     "us-west-2": {
         "type": "try-linux64",
         "ami": "ami-16d15926",
-        "subnet_id": ["subnet-b948dad0", "subnet-ba48dad3", "subnet-ad48dac4"],
+        "subnet_id": ["subnet-ae48dac7", "subnet-a348daca", "subnet-a448dacd"],
         "security_group_ids": [],
         "instance_type": "c1.xlarge",
-        "device_map": {
-            "/dev/sda1": {
-                "size": 100,
-                "instance_dev": "/dev/xvde1"
-            }
-        }
-    },
-    "us-east-1": {
-        "type": "try-linux64",
-        "ami": "ami-049b1e6d",
-        "subnet_id": ["subnet-2ba98340", "subnet-2da98346", "subnet-22a98349"],
-        "security_group_ids": [],
-        "instance_type": "m3.xlarge",
         "device_map": {
             "/dev/sda1": {
                 "size": 100,
