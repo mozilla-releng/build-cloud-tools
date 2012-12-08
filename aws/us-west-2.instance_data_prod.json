@@ -1,11 +1,11 @@
 {
   "buildslave_password": "pass",
   "buildbot_master": "10.12.48.14:9033",
-  "default_puppet_server": "puppetmaster-01.srv.releng.aws-us-west-2.mozilla.com",
+  "default_puppet_server": "puppetmaster-02.srv.releng.aws-us-west-2.mozilla.com",
   "home_tarball": "secrets/prod.tar.gz",
   "hosts": {
-    "puppet": "10.132.64.66",
-    "puppetmaster-01.srv.releng.aws-us-west-2.mozilla.com": "10.132.64.66"
+    "puppet": "10.132.49.10",
+    "puppetmaster-02.srv.releng.aws-us-west-2.mozilla.com": "10.132.49.10"
   },
   "hg_shares": {
     "mozilla-central": "http://ftp.mozilla.org/pub/mozilla.org/firefox/bundles/mozilla-central.hg",
