@@ -149,7 +149,7 @@ configs = {
     "centos-6-x64-base": {
         "us-east-1": {
             "ami": "ami-049b1e6d",  # Centos6
-            "subnet_id": ["subnet-33a98358", "subnet-30a9835b", "subnet-35a9835e", " subnet-0aa98361"],
+            "subnet_id": ["subnet-33a98358", "subnet-35a9835e", " subnet-0aa98361"],
             "security_group_ids": ["sg-b36a84dc"],
             "instance_type": "m1.large",
             "repo_snapshot_id": "snap-6f9a8924",  # This will be mounted at /data
