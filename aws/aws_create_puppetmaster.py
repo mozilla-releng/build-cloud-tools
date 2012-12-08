@@ -3,6 +3,7 @@ import json
 import uuid
 import time
 
+from random import choice
 from fabric.api import run, put, env, local, settings
 from boto.ec2 import connect_to_region
 from boto.ec2.blockdevicemapping import BlockDeviceMapping, BlockDeviceType
@@ -30,12 +31,17 @@ def create_master(conn, name, options, config):
                                       snapshot_id=config['repo_snapshot_id'])
     bdm["/dev/sda1"] = BlockDeviceType(delete_on_termination=True)
 
+    subnet_id = config.get('subnet_id')
+    if subnet_id:
+        if isinstance(subnet_id, (list, tuple)):
+            subnet_id = choice(subnet_id)
+
     reservation = conn.run_instances(
         image_id=config['ami'],
         key_name=options.key_name,
         instance_type=config['instance_type'],
         client_token=token,
-        subnet_id=config.get('subnet_id'),
+        subnet_id=subnet_id,
         security_group_ids=config.get('security_group_ids', []),
         block_device_map=bdm,
         disable_api_termination=True,
@@ -141,23 +147,16 @@ def puppetize(instance, name, options):
 # TODO: Move this into separate file(s)
 configs = {
     "centos-6-x64-base": {
-        "us-west-1": {
-            "ami": "ami-696f4a2c",  # Centos6
-            "subnet_id": "subnet-59e94330",
-            "security_group_ids": ["sg-38150854"],
-            "instance_type": "m1.large",
-            "repo_snapshot_id": "snap-d31a30ff",  # This will be mounted at /data
-        },
         "us-east-1": {
             "ami": "ami-049b1e6d",  # Centos6
-            "subnet_id": "subnet-33a98358",
+            "subnet_id": ["subnet-33a98358", "subnet-30a9835b", "subnet-35a9835e", " subnet-0aa98361"],
             "security_group_ids": ["sg-b36a84dc"],
             "instance_type": "m1.large",
             "repo_snapshot_id": "snap-07a08c4e",  # This will be mounted at /data
         },
         "us-west-2": {
             "ami": "ami-16d15926",  # Centos6
-            "subnet_id": "subnet-ae48dac7",
+            "subnet_id": ["subnet-b948dad0", "subnet-ba48dad3", "subnet-bf48dad6"],
             "security_group_ids": ["sg-4e2d3022"],
             "instance_type": "m1.large",
             "repo_snapshot_id": "snap-521b7c74",  # This will be mounted at /data
