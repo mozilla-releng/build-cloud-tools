@@ -11,6 +11,22 @@ import logging
 log = logging.getLogger()
 
 configs = {
+    "ubuntu-12.04-x86_64-desktop": {
+        "us-east-1": {
+            "ami": "ami-3d4ff254",
+            "instance_type": "c1.xlarge",
+            "arch": "x86_64",
+            "distro": "ubuntu",
+            "target": {
+                "size": 8,
+                "fs_type": "ext4",
+                "e2_label": "cloudimg-rootfs",
+                "aws_dev_name": "/dev/sdh",
+                "int_dev_name": "/dev/xvdh",
+                "mount_point": "/mnt1",
+            },
+        },
+    },
     "centos-6-x86_64-base": {
         "us-east-1": {
             "ami": "ami-41d00528",  # Any RHEL-6.2 AMI
@@ -181,6 +197,14 @@ def create_connection(options):
     return connection
 
 
+def manage_service(service, target, state, distro="centos"):
+    assert state in ("on", "off")
+    if distro in ("debian", "ubuntu"):
+        pass
+    else:
+        run('chroot %s chkconfig --level 2345 %s %s' % (target, service, state))
+
+
 def create_instance(connection, instance_name, config, key_name, user='root'):
 
     bdm = None
@@ -222,9 +246,8 @@ def create_instance(connection, instance_name, config, key_name, user='root'):
 
 
 def create_ami(host_instance, options, config):
-    # TODO: use mozilla yum repos
-    # TODO: swap?
     # TODO: factor status checks
+    # TODO: create_ami_$distro
     connection = host_instance.connection
     env.host_string = host_instance.public_dns_name
     env.user = 'root'
@@ -250,68 +273,102 @@ def create_ami(host_instance, options, config):
             time.sleep(10)
 
     # Step 0: install required packages
-    run('which MAKEDEV >/dev/null || yum install -f MAKEDEV')
+    if config.get('distro') not in ('debian', 'ubuntu'):
+        run('which MAKEDEV >/dev/null || yum install -f MAKEDEV')
     # Step 1: prepare target FS
     run('/sbin/mkfs.{fs_type} {dev}'.format(
         fs_type=config['target']['fs_type'],
         dev=int_dev_name))
     run('/sbin/e2label {dev} {label}'.format(
         dev=int_dev_name, label=config['target']['e2_label']))
+    run('mkdir -p %s' % mount_point)
     run('mount {dev} {mount_point}'.format(dev=int_dev_name,
                                            mount_point=mount_point))
     run('mkdir {0}/dev {0}/proc {0}/etc'.format(mount_point))
-    run('mount -t proc proc %s/proc' % mount_point)
-    run('for i in console null zero ; '
-        'do /sbin/MAKEDEV -d %s/dev -x $i ; done' % mount_point)
+    if config.get('distro') not in ('debian', 'ubuntu'):
+        run('mount -t proc proc %s/proc' % mount_point)
+        run('for i in console null zero ; '
+            'do /sbin/MAKEDEV -d %s/dev -x $i ; done' % mount_point)
 
     # Step 2: install base system
-    with lcd(target_name):
-        put('etc/yum-local.cfg', '%s/etc/yum-local.cfg' % mount_point)
-        put('groupinstall', '/tmp/groupinstall')
-        put('additional_packages', '/tmp/additional_packages')
-    yum = 'yum -c {0}/etc/yum-local.cfg -y --installroot={0} '.format(
-        mount_point)
-    run('%s groupinstall "`cat /tmp/groupinstall`"' % yum)
-    run('%s install `cat /tmp/additional_packages`' % yum)
-    run('%s clean packages' % yum)
+    if config.get('distro') in ('debian', 'ubuntu'):
+        run('apt-get update')
+        run('which debootstrap >/dev/null || apt-get install -y debootstrap')
+        run('debootstrap precise %s http://archive.ubuntu.com/ubuntu' % mount_point)
+        run('chroot %s mount -t proc none /proc' % mount_point)
+        run('mount -o bind /dev %s/dev' % mount_point)
+        run('cp /etc/apt/sources.list %s/etc/apt/' % mount_point)
+        with lcd(target_name):
+            put('usr/sbin/policy-rc.d', '%s/usr/sbin/' % mount_point, mirror_local_mode=True)
+        run('chroot %s apt-get update' % mount_point)
+        run('DEBIAN_FRONTEND=text chroot %s apt-get install -y ubuntu-desktop openssh-server makedev curl' % mount_point)
+        run('rm -f %s/usr/sbin/policy-rc.d' % mount_point)
+        run('umount %s/dev' % mount_point)
+        run('chroot %s ln -s /sbin/MAKEDEV /dev/' % mount_point)
+        for dev in ('zero', 'null', 'console', 'generic'):
+            run('chroot %s sh -c "cd /dev && ./MAKEDEV %s"' % (mount_point, dev))
+        run('which rsync >/dev/null || apt-get install -y rsync')
+        run('rsync -av /boot/ %s/boot/' % mount_point)
+        run('rsync -av /lib/modules/ %s/lib/modules/' % mount_point)
+        run('chroot %s apt-get clean' % mount_point)
+    else:
+        with lcd(target_name):
+            put('etc/yum-local.cfg', '%s/etc/yum-local.cfg' % mount_point)
+            put('groupinstall', '/tmp/groupinstall')
+            put('additional_packages', '/tmp/additional_packages')
+        yum = 'yum -c {0}/etc/yum-local.cfg -y --installroot={0} '.format(
+            mount_point)
+        run('%s groupinstall "`cat /tmp/groupinstall`"' % yum)
+        run('%s install `cat /tmp/additional_packages`' % yum)
+        run('%s clean packages' % yum)
 
     # Step 3: upload custom configuration files
-    with lcd(target_name):
-        for f in ('etc/rc.local', 'etc/fstab', 'etc/hosts',
-                  'etc/sysconfig/network',
-                  'etc/sysconfig/network-scripts/ifcfg-eth0',
-                  'etc/init.d/rc.local',
-                  'boot/grub/grub.conf'):
-            put(f, '%s/%s' % (mount_point, f), mirror_local_mode=True)
+    if config.get('distro') in ('debian', 'ubuntu'):
+        with lcd(target_name):
+            for f in ('etc/rc.local', 'etc/fstab', 'etc/hosts',
+                      'etc/network/interfaces'):
+                put(f, '%s/%s' % (mount_point, f), mirror_local_mode=True)
+    else:
+        with lcd(target_name):
+            for f in ('etc/rc.local', 'etc/fstab', 'etc/hosts',
+                    'etc/sysconfig/network',
+                    'etc/sysconfig/network-scripts/ifcfg-eth0',
+                    'etc/init.d/rc.local',
+                    'boot/grub/grub.conf'):
+                put(f, '%s/%s' % (mount_point, f), mirror_local_mode=True)
 
     # Step 4: tune configs
     run('sed -i -e s/@ROOT_DEV_LABEL@/{label}/g -e s/@FS_TYPE@/{fs}/g '
         '{mnt}/etc/fstab'.format(label=config['target']['e2_label'],
-                                 fs=config['target']['fs_type'],
-                                 mnt=mount_point))
-    run('ln -s grub.conf %s/boot/grub/menu.lst' % mount_point)
-    run('ln -s ../boot/grub/grub.conf %s/etc/grub.conf' % mount_point)
-    if config.get('kernel_package') == 'kernel-PAE':
-        run('sed -i s/@VERSION@/`chroot %s rpm -q '
-            '--queryformat "%%{version}-%%{release}.%%{arch}.PAE" '
-            '%s | tail -n1`/g %s/boot/grub/grub.conf' %
-            (mount_point, config.get('kernel_package', 'kernel'), mount_point))
-    else:
-        run('sed -i s/@VERSION@/`chroot %s rpm -q '
-            '--queryformat "%%{version}-%%{release}.%%{arch}" '
-            '%s | tail -n1`/g %s/boot/grub/grub.conf' %
-            (mount_point, config.get('kernel_package', 'kernel'), mount_point))
+                                fs=config['target']['fs_type'],
+                                mnt=mount_point))
+    if config.get('distro') not in ('debian', 'ubuntu'):
+        run('ln -s grub.conf %s/boot/grub/menu.lst' % mount_point)
+        run('ln -s ../boot/grub/grub.conf %s/etc/grub.conf' % mount_point)
+        if config.get('kernel_package') == 'kernel-PAE':
+            run('sed -i s/@VERSION@/`chroot %s rpm -q '
+                '--queryformat "%%{version}-%%{release}.%%{arch}.PAE" '
+                '%s | tail -n1`/g %s/boot/grub/grub.conf' %
+                (mount_point, config.get('kernel_package', 'kernel'), mount_point))
+        else:
+            run('sed -i s/@VERSION@/`chroot %s rpm -q '
+                '--queryformat "%%{version}-%%{release}.%%{arch}" '
+                '%s | tail -n1`/g %s/boot/grub/grub.conf' %
+                (mount_point, config.get('kernel_package', 'kernel'), mount_point))
+
     run('echo "UseDNS no" >> %s/etc/ssh/sshd_config' % mount_point)
     run('echo "PermitRootLogin without-password" >> %s/etc/ssh/sshd_config' %
         mount_point)
 
-    run('chroot %s chkconfig --level 2345 network on' % mount_point)
-    run('chroot %s chkconfig --level 2345 rc.local on' % mount_point)
-    run('chroot %s chkconfig --level 2345 firstboot off || :' % mount_point)
-    run('chroot %s chkconfig --level 2345 NetworkManager off || :' %
-        mount_point)
+    if config.get('distro') in ('debian', 'ubuntu'):
+        pass
+    else:
+        manage_service("network", mount_point, "on")
+        manage_service("rc.local", mount_point, "on")
+        manage_service("firstboot", mount_point, "off")
+        manage_service("NetworkManager", mount_point, "off")
 
-    run('umount %s/proc' % mount_point)
+    run('umount %s/proc || :' % mount_point)
     run('umount %s' % mount_point)
 
     v.detach()

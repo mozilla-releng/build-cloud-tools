@@ -1,0 +1,16 @@
+{
+    "hostname": "tst-linux64-ec2-%03d",
+    "us-east-1": {
+        "type": "tst-linux64",
+        "ami": "ami-b128aad8",
+        "subnet_id": ["subnet-8f32cbe5, "subnet-3835cc52", "subnet-ed35cc87", "subnet-ae35ccc4"],
+        "security_group_ids": [],
+        "instance_type": "m1.medium",
+        "device_map": {
+            "/dev/xvda1": {
+                "size": 30,
+                "instance_dev": "/dev/xvda1"
+            }
+        }
+    },
+}
