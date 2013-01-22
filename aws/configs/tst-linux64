@@ -6,6 +6,7 @@
         "subnet_id": ["subnet-8f32cbe5, "subnet-3835cc52", "subnet-ed35cc87", "subnet-ae35ccc4"],
         "security_group_ids": [],
         "instance_type": "m1.medium",
+        "distro": "ubuntu",
         "device_map": {
             "/dev/xvda1": {
                 "size": 30,

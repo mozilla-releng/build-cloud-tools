@@ -49,13 +49,20 @@ def assimilate(ip_addr, config, instance_data, create_ami):
     hosts = StringIO.StringIO("\n".join(hosts) + "\n")
     put(hosts, '/etc/hosts')
 
-    # Set up yum repos
-    run('rm -f /etc/yum.repos.d/*')
-    put('releng-public.repo', '/etc/yum.repos.d/releng-public.repo')
-    run('yum clean all')
+    distro = config.get('distro')
+    if distro in ('ubuntu', 'debian'):
+        run("apt-get update")
+        run("apt-get install -y puppet")
+        run("apt-get clean")
+    else:
+        # Set up yum repos
+        run('rm -f /etc/yum.repos.d/*')
+        put('releng-public.repo', '/etc/yum.repos.d/releng-public.repo')
+        run('yum clean all')
 
-    # Get puppet installed
-    run('yum install -q -y puppet')
+        # Get puppet installed
+        run('yum install -q -y puppet')
+
     # /var/lib/puppet skel
     run("test -d /var/lib/puppet/ssl || mkdir -m 771 /var/lib/puppet/ssl")
     run("test -d /var/lib/puppet/ssl/ca || mkdir -m 755 /var/lib/puppet/ssl/ca")
