@@ -5,6 +5,6 @@
   "hosts": {
     "puppet": "10.134.48.39",
     "puppetmaster-02.srv.releng.aws-us-east-1.mozilla.com": "10.134.48.39"
-  }
+  },
   "hg_shares": {}
 }
