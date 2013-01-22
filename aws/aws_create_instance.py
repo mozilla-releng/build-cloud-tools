@@ -99,8 +99,8 @@ def assimilate(ip_addr, config, instance_data, create_ami):
         put(instance_data['home_tarball'], '/tmp/home.tar.gz')
         with cd('~cltbld'):
             sudo('tar xzf /tmp/home.tar.gz', user="cltbld")
-            sudo('chmod 700 .ssh .android', user="cltbld")
-            sudo('chmod 600 .ssh/* .android/* .mozpass.cfg', user="cltbld")
+            sudo('chmod 700 .ssh', user="cltbld")
+            sudo('chmod 600 .ssh/*', user="cltbld")
         run('rm -f /tmp/home.tar.gz')
 
     # Set up a stub buildbot.tac
