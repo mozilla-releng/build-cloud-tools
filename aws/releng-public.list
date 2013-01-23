@@ -1,2 +1,2 @@
 deb http://puppetagain.pub.build.mozilla.org/data/repos/apt/ubuntu precise main restricted
-deb http://puppetagain.pub.build.mozilla.org/data/repos/apt/releng precise main restricted
+deb http://puppetagain.pub.build.mozilla.org/data/repos/apt/releng precise main

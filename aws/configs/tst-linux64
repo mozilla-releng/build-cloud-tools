@@ -2,7 +2,7 @@
     "hostname": "tst-linux64-ec2-%03d",
     "us-east-1": {
         "type": "tst-linux64",
-        "ami": "ami-c333b9aa",
+        "ami": "ami-7131bb18",
         "subnet_id": ["subnet-8f32cbe5", "subnet-3835cc52", "subnet-ed35cc87", "subnet-ae35ccc4"],
         "security_group_ids": [],
         "instance_type": "m1.medium",

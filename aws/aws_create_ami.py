@@ -297,7 +297,7 @@ def create_ami(host_instance, options, config):
         run('debootstrap precise %s http://puppetagain.pub.build.mozilla.org/data/repos/apt/ubuntu/' % mount_point)
         run('chroot %s mount -t proc none /proc' % mount_point)
         run('mount -o bind /dev %s/dev' % mount_point)
-        put('releng-public.list', '%s/etc/apt/sources.list ' % mount_point)
+        put('releng-public.list', '%s/etc/apt/sources.list' % mount_point)
         with lcd(target_name):
             put('usr/sbin/policy-rc.d', '%s/usr/sbin/' % mount_point, mirror_local_mode=True)
         run('chroot %s apt-get update' % mount_point)
