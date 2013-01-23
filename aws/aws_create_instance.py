@@ -51,8 +51,9 @@ def assimilate(ip_addr, config, instance_data, create_ami):
 
     distro = config.get('distro')
     if distro in ('ubuntu', 'debian'):
+        put('releng.list', '/etc/apt/sources.list')
         run("apt-get update")
-        run("apt-get install -y puppet")
+        run("apt-get install -y --allow-unauthenticated puppet")
         run("apt-get clean")
     else:
         # Set up yum repos
