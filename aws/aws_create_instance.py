@@ -30,6 +30,7 @@ def assimilate(ip_addr, config, instance_data, create_ami):
     # Sanity check
     run("date")
 
+    distro = config.get('distro')
     # Set our hostname
     hostname = "{hostname}".format(**instance_data)
     run("hostname %s" % hostname)
@@ -51,7 +52,6 @@ def assimilate(ip_addr, config, instance_data, create_ami):
     hosts = StringIO.StringIO("\n".join(hosts) + "\n")
     put(hosts, '/etc/hosts')
 
-    distro = config.get('distro')
     if distro in ('ubuntu', 'debian'):
         put('releng.list', '/etc/apt/sources.list')
         run("apt-get update")
