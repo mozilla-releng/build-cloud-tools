@@ -47,10 +47,12 @@ def enable(i, dry_run):
         i.add_tag("moz-state", "ready")
 
 
-def disable(i, dry_run):
+def disable(i, dry_run, comments=None):
     name = i.tags.get('Name', '')
     moz_state = "disabled at %s" % strftime("%Y-%m-%d %H:%M:%S +0000",
                                             gmtime())
+    if comments:
+        moz_state += ". %s" % comments
     log.info("Disabling %s, setting moz-state tag to '%s'..." % (name, moz_state))
     if dry_run:
         log.info("Dry run mode, skipping...")
@@ -86,6 +88,7 @@ if __name__ == '__main__':
     parser.add_argument("action", choices=["stop", "start", "restart",
                                            "enable", "disable", "status"],
                         help="action to be performed")
+    parser.add_argument("-m", "--comments", help="reason to disable")
     parser.add_argument("-n", "--dry-run", action="store_true",
                         help="Dry run mode")
     parser.add_argument("-q", "--quiet", action="store_true",
@@ -139,6 +142,6 @@ if __name__ == '__main__':
                 elif args.action == "enable":
                     enable(i, args.dry_run)
                 elif args.action == "disable":
-                    disable(i, args.dry_run)
+                    disable(i, args.dry_run, args.comments)
                 elif args.action == "status":
                     status(i)
