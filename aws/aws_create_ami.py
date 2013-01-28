@@ -27,6 +27,22 @@ configs = {
             },
         },
     },
+    "ubuntu-12.04-i386-desktop": {
+        "us-east-1": {
+            "ami": "ami-3b4ff252",
+            "instance_type": "m1.medium",
+            "arch": "i386",
+            "distro": "ubuntu",
+            "target": {
+                "size": 8,
+                "fs_type": "ext4",
+                "e2_label": "cloudimg-rootfs",
+                "aws_dev_name": "/dev/sdh",
+                "int_dev_name": "/dev/xvdh",
+                "mount_point": "/mnt1",
+            },
+        },
+    },
     "centos-6-x86_64-base": {
         "us-east-1": {
             "ami": "ami-41d00528",  # Any RHEL-6.2 AMI
