@@ -26,10 +26,38 @@ configs = {
                 "mount_point": "/mnt1",
             },
         },
+        "us-west-2": {
+            "ami": "ami-b47af484",
+            "instance_type": "c1.xlarge",
+            "arch": "x86_64",
+            "distro": "ubuntu",
+            "target": {
+                "size": 8,
+                "fs_type": "ext4",
+                "e2_label": "cloudimg-rootfs",
+                "aws_dev_name": "/dev/sdh",
+                "int_dev_name": "/dev/xvdh",
+                "mount_point": "/mnt1",
+            },
+        },
     },
     "ubuntu-12.04-i386-desktop": {
         "us-east-1": {
             "ami": "ami-3b4ff252",
+            "instance_type": "m1.medium",
+            "arch": "i386",
+            "distro": "ubuntu",
+            "target": {
+                "size": 8,
+                "fs_type": "ext4",
+                "e2_label": "cloudimg-rootfs",
+                "aws_dev_name": "/dev/sdh",
+                "int_dev_name": "/dev/xvdh",
+                "mount_point": "/mnt1",
+            },
+        },
+        "us-west-2": {
+            "ami": "ami-8c109ebc",
             "instance_type": "m1.medium",
             "arch": "i386",
             "distro": "ubuntu",
