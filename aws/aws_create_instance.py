@@ -64,7 +64,7 @@ def assimilate(ip_addr, config, instance_data, create_ami):
         run('yum clean all')
 
         # Get puppet installed
-        run('yum install -q -y puppet')
+        run('yum install -q -y puppet-2.7.17-1.el6')
 
     # /var/lib/puppet skel
     run("test -d /var/lib/puppet/ssl || mkdir -m 771 /var/lib/puppet/ssl")
