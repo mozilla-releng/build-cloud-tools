@@ -95,7 +95,7 @@ def assimilate(ip_addr, config, instance_data, create_ami):
     # We need --detailed-exitcodes here otherwise puppet will return 0
     # sometimes when it fails to install dependencies
     with settings(warn_only=True):
-        result = run("puppetd --onetime --no-daemonize --verbose "
+        result = run("puppet agent --onetime --no-daemonize --verbose "
                      "--detailed-exitcodes --waitforcert 10 "
                      "--server {puppet}".format(
                      puppet=instance_data['default_puppet_server']))
