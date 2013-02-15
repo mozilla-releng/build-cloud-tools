@@ -16,7 +16,7 @@
     },
     "us-west-2": {
         "type": "tst-linux32",
-        "ami": "ami-c80a80f8",
+        "ami": "ami-040c8634",
         "subnet_id": ["subnet-d6cba8bf", "subnet-aecba8c7", "subnet-a4cba8cd"],
         "security_group_ids": [],
         "instance_type": "m1.medium",

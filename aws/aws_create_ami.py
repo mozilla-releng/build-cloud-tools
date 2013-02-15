@@ -17,6 +17,8 @@ configs = {
             "instance_type": "c1.xlarge",
             "arch": "x86_64",
             "distro": "ubuntu",
+            "kernel_package": "linux-image-generic",
+            "kernel_version": "3.2.0-23-generic",
             "target": {
                 "size": 8,
                 "fs_type": "ext4",
@@ -24,7 +26,6 @@ configs = {
                 "aws_dev_name": "/dev/sdh",
                 "int_dev_name": "/dev/xvdh",
                 "mount_point": "/mnt1",
-                "kernel_version": "3.2.0-23-generic",
             },
         },
         "us-west-2": {
@@ -32,6 +33,8 @@ configs = {
             "instance_type": "c1.xlarge",
             "arch": "x86_64",
             "distro": "ubuntu",
+            "kernel_package": "linux-image-generic",
+            "kernel_version": "3.2.0-23-generic",
             "target": {
                 "size": 8,
                 "fs_type": "ext4",
@@ -39,7 +42,6 @@ configs = {
                 "aws_dev_name": "/dev/sdh",
                 "int_dev_name": "/dev/xvdh",
                 "mount_point": "/mnt1",
-                "kernel_version": "3.2.0-23-generic",
             },
         },
     },
@@ -49,6 +51,8 @@ configs = {
             "instance_type": "m1.medium",
             "arch": "i386",
             "distro": "ubuntu",
+            "kernel_package": "linux-image-generic-pae",
+            "kernel_version": "3.2.0-23-generic-pae",
             "target": {
                 "size": 8,
                 "fs_type": "ext4",
@@ -56,7 +60,6 @@ configs = {
                 "aws_dev_name": "/dev/sdh",
                 "int_dev_name": "/dev/xvdh",
                 "mount_point": "/mnt1",
-                "kernel_version": "3.2.0-23-generic",
             },
         },
         "us-west-2": {
@@ -64,6 +67,8 @@ configs = {
             "instance_type": "m1.medium",
             "arch": "i386",
             "distro": "ubuntu",
+            "kernel_package": "linux-image-generic-pae",
+            "kernel_version": "3.2.0-23-generic-pae",
             "target": {
                 "size": 8,
                 "fs_type": "ext4",
@@ -71,7 +76,6 @@ configs = {
                 "aws_dev_name": "/dev/sdh",
                 "int_dev_name": "/dev/xvdh",
                 "mount_point": "/mnt1",
-                "kernel_version": "3.2.0-23-generic",
             },
         },
     },
@@ -349,9 +353,9 @@ def create_ami(host_instance, options, config):
         with lcd(target_name):
             put('usr/sbin/policy-rc.d', '%s/usr/sbin/' % mount_point, mirror_local_mode=True)
         run('chroot %s apt-get update' % mount_point)
-        run('DEBIAN_FRONTEND=text chroot %s apt-get install -y '
-            'ubuntu-desktop openssh-server makedev curl grub '
-            'linux-image-generic' % mount_point)
+        run('DEBIAN_FRONTEND=text chroot {mnt} apt-get install -y '
+            'ubuntu-desktop openssh-server makedev curl grub {kernel}'.format(
+            mnt=mount_point, kernel=config['kernel_package']))
         run('rm -f %s/usr/sbin/policy-rc.d' % mount_point)
         run('umount %s/dev' % mount_point)
         run('chroot %s ln -s /sbin/MAKEDEV /dev/' % mount_point)
@@ -392,10 +396,9 @@ def create_ami(host_instance, options, config):
                                 mnt=mount_point))
     if config.get('distro') in ('debian', 'ubuntu'):
         # sanity check
-        run('ls -l %s/boot/vmlinuz-%s' % (mount_point,
-                                          config['target']['kernel_version']))
+        run('ls -l %s/boot/vmlinuz-%s' % (mount_point, config['kernel_version']))
         run('sed -i s/@VERSION@/%s/g %s/boot/grub/menu.lst' %
-            (config['target']['kernel_version'], mount_point))
+            (config['kernel_version'], mount_point))
     else:
         run('ln -s grub.conf %s/boot/grub/menu.lst' % mount_point)
         run('ln -s ../boot/grub/grub.conf %s/etc/grub.conf' % mount_point)
