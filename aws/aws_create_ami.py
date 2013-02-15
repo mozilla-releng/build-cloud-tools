@@ -24,6 +24,7 @@ configs = {
                 "aws_dev_name": "/dev/sdh",
                 "int_dev_name": "/dev/xvdh",
                 "mount_point": "/mnt1",
+                "kernel_version": "3.2.0-23-generic",
             },
         },
         "us-west-2": {
@@ -38,6 +39,7 @@ configs = {
                 "aws_dev_name": "/dev/sdh",
                 "int_dev_name": "/dev/xvdh",
                 "mount_point": "/mnt1",
+                "kernel_version": "3.2.0-23-generic",
             },
         },
     },
@@ -54,6 +56,7 @@ configs = {
                 "aws_dev_name": "/dev/sdh",
                 "int_dev_name": "/dev/xvdh",
                 "mount_point": "/mnt1",
+                "kernel_version": "3.2.0-23-generic",
             },
         },
         "us-west-2": {
@@ -68,6 +71,7 @@ configs = {
                 "aws_dev_name": "/dev/sdh",
                 "int_dev_name": "/dev/xvdh",
                 "mount_point": "/mnt1",
+                "kernel_version": "3.2.0-23-generic",
             },
         },
     },
@@ -345,15 +349,14 @@ def create_ami(host_instance, options, config):
         with lcd(target_name):
             put('usr/sbin/policy-rc.d', '%s/usr/sbin/' % mount_point, mirror_local_mode=True)
         run('chroot %s apt-get update' % mount_point)
-        run('DEBIAN_FRONTEND=text chroot %s apt-get install -y ubuntu-desktop openssh-server makedev curl' % mount_point)
+        run('DEBIAN_FRONTEND=text chroot %s apt-get install -y '
+            'ubuntu-desktop openssh-server makedev curl grub '
+            'linux-image-generic' % mount_point)
         run('rm -f %s/usr/sbin/policy-rc.d' % mount_point)
         run('umount %s/dev' % mount_point)
         run('chroot %s ln -s /sbin/MAKEDEV /dev/' % mount_point)
         for dev in ('zero', 'null', 'console', 'generic'):
             run('chroot %s sh -c "cd /dev && ./MAKEDEV %s"' % (mount_point, dev))
-        run('which rsync >/dev/null || apt-get install -y rsync')
-        run('rsync -av /boot/ %s/boot/' % mount_point)
-        run('rsync -av /lib/modules/ %s/lib/modules/' % mount_point)
         run('chroot %s apt-get clean' % mount_point)
     else:
         with lcd(target_name):
@@ -368,9 +371,10 @@ def create_ami(host_instance, options, config):
 
     # Step 3: upload custom configuration files
     if config.get('distro') in ('debian', 'ubuntu'):
+        run('chroot %s mkdir -p /boot/grub' % mount_point)
         with lcd(target_name):
             for f in ('etc/rc.local', 'etc/fstab', 'etc/hosts',
-                      'etc/network/interfaces'):
+                      'etc/network/interfaces', 'boot/grub/menu.lst'):
                 put(f, '%s/%s' % (mount_point, f), mirror_local_mode=True)
     else:
         with lcd(target_name):
@@ -386,7 +390,13 @@ def create_ami(host_instance, options, config):
         '{mnt}/etc/fstab'.format(label=config['target']['e2_label'],
                                 fs=config['target']['fs_type'],
                                 mnt=mount_point))
-    if config.get('distro') not in ('debian', 'ubuntu'):
+    if config.get('distro') in ('debian', 'ubuntu'):
+        # sanity check
+        run('ls -l %s/boot/vmlinuz-%s' % (mount_point,
+                                          config['target']['kernel_version']))
+        run('sed -i s/@VERSION@/%s/g %s/boot/grub/menu.lst' %
+            (config['target']['kernel_version'], mount_point))
+    else:
         run('ln -s grub.conf %s/boot/grub/menu.lst' % mount_point)
         run('ln -s ../boot/grub/grub.conf %s/etc/grub.conf' % mount_point)
         if config.get('kernel_package') == 'kernel-PAE':
