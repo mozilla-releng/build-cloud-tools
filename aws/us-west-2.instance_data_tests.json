@@ -4,6 +4,7 @@
   "default_puppet_server": "puppetmaster-02.srv.releng.aws-us-west-2.mozilla.com",
   "hosts": {
     "puppet": "10.132.49.10",
+    "repos": "10.132.49.10",
     "puppetmaster-02.srv.releng.aws-us-west-2.mozilla.com": "10.132.49.10"
   },
   "hg_shares": {}

@@ -4,8 +4,8 @@
   "default_puppet_server": "puppetmaster-01.srv.releng.aws-us-west-1.mozilla.com",
   "home_tarball": "secrets/try.tar.gz",
   "hosts": {
-    "puppet": "10.130.198.34",
-    "puppetmaster-01.srv.releng.aws-us-west-1.mozilla.com": "10.130.198.34"
+    "puppet": "FIXME",
+    "puppetmaster-01.srv.releng.aws-us-west-1.mozilla.com": "FIXME"
   },
   "hg_shares": {
     "try": "http://ftp.mozilla.org/pub/mozilla.org/firefox/bundles/try.hg"
