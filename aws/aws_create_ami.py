@@ -10,233 +10,7 @@ import time
 import logging
 log = logging.getLogger()
 
-configs = {
-    "ubuntu-12.04-x86_64-desktop": {
-        "us-east-1": {
-            "ami": "ami-3d4ff254",
-            "instance_type": "c1.xlarge",
-            "arch": "x86_64",
-            "distro": "ubuntu",
-            "kernel_package": "linux-image-generic",
-            "kernel_version": "3.2.0-23-generic",
-            "target": {
-                "size": 8,
-                "fs_type": "ext4",
-                "e2_label": "cloudimg-rootfs",
-                "aws_dev_name": "/dev/sdh",
-                "int_dev_name": "/dev/xvdh",
-                "mount_point": "/mnt1",
-            },
-        },
-        "us-west-2": {
-            "ami": "ami-b47af484",
-            "instance_type": "c1.xlarge",
-            "arch": "x86_64",
-            "distro": "ubuntu",
-            "kernel_package": "linux-image-generic",
-            "kernel_version": "3.2.0-23-generic",
-            "target": {
-                "size": 8,
-                "fs_type": "ext4",
-                "e2_label": "cloudimg-rootfs",
-                "aws_dev_name": "/dev/sdh",
-                "int_dev_name": "/dev/xvdh",
-                "mount_point": "/mnt1",
-            },
-        },
-    },
-    "ubuntu-12.04-i386-desktop": {
-        "us-east-1": {
-            "ami": "ami-3b4ff252",
-            "instance_type": "m1.medium",
-            "arch": "i386",
-            "distro": "ubuntu",
-            "kernel_package": "linux-image-generic-pae",
-            "kernel_version": "3.2.0-23-generic-pae",
-            "target": {
-                "size": 8,
-                "fs_type": "ext4",
-                "e2_label": "cloudimg-rootfs",
-                "aws_dev_name": "/dev/sdh",
-                "int_dev_name": "/dev/xvdh",
-                "mount_point": "/mnt1",
-            },
-        },
-        "us-west-2": {
-            "ami": "ami-8c109ebc",
-            "instance_type": "m1.medium",
-            "arch": "i386",
-            "distro": "ubuntu",
-            "kernel_package": "linux-image-generic-pae",
-            "kernel_version": "3.2.0-23-generic-pae",
-            "target": {
-                "size": 8,
-                "fs_type": "ext4",
-                "e2_label": "cloudimg-rootfs",
-                "aws_dev_name": "/dev/sdh",
-                "int_dev_name": "/dev/xvdh",
-                "mount_point": "/mnt1",
-            },
-        },
-    },
-    "centos-6-x86_64-base": {
-        "us-east-1": {
-            "ami": "ami-41d00528",  # Any RHEL-6.2 AMI
-            "instance_type": "c1.xlarge",
-            "arch": "x86_64",
-            "target": {
-                "size": 4,
-                "fs_type": "ext4",
-                "e2_label": "root_dev",
-                "aws_dev_name": "/dev/sdh",
-                "int_dev_name": "/dev/xvdl",
-                "mount_point": "/mnt",
-            },
-        },
-        "us-west-1": {
-            "ami": "ami-250e5060",  # Any RHEL-6.2 AMI
-            "instance_type": "c1.xlarge",
-            "arch": "x86_64",
-            "target": {
-                "size": 4,
-                "fs_type": "ext4",
-                "e2_label": "root_dev",
-                "aws_dev_name": "/dev/sdh",
-                "int_dev_name": "/dev/xvdl",
-                "mount_point": "/mnt",
-            },
-        },
-        "us-west-2": {
-            "ami": "ami-8a25a9ba",  # Any RHEL-6.2 AMI
-            "instance_type": "c1.xlarge",
-            "arch": "x86_64",
-            "target": {
-                "size": 4,
-                "fs_type": "ext4",
-                "e2_label": "root_dev",
-                "aws_dev_name": "/dev/sdh",
-                "int_dev_name": "/dev/xvdl",
-                "mount_point": "/mnt",
-            },
-        },
-    },
-    "centos-6-i386-base": {
-        "us-east-1": {
-            "ami": "ami-cdd306a4",  # Any RHEL-6. i386 AMI
-            "instance_type": "m1.medium",
-            "arch": "i386",
-            "target": {
-                "size": 4,
-                "fs_type": "ext4",
-                "e2_label": "root_dev",
-                "aws_dev_name": "/dev/sdh",
-                "int_dev_name": "/dev/xvdl",
-                "mount_point": "/mnt",
-            },
-        },
-        "us-west-1": {
-            "ami": "ami-e50e50a0",
-            "instance_type": "m1.medium",
-            "arch": "i386",
-            "target": {
-                "size": 4,
-                "fs_type": "ext4",
-                "e2_label": "root_dev",
-                "aws_dev_name": "/dev/sdh",
-                "int_dev_name": "/dev/xvdl",
-                "mount_point": "/mnt",
-            },
-        },
-    },
-    "fedora-12-x86_64-desktop": {
-        "us-east-1": {
-            "ami": "ami-41d00528",  # Any RHEL-6.2 AMI
-            "instance_type": "c1.xlarge",
-            "arch": "x86_64",
-            "target": {
-                "size": 4,
-                "fs_type": "ext4",
-                "e2_label": "root_dev",
-                "aws_dev_name": "/dev/sdh",
-                "int_dev_name": "/dev/xvdl",
-                "mount_point": "/mnt",
-            },
-        },
-        "us-west-1": {
-            "ami": "ami-250e5060",  # Any RHEL-6.2 AMI
-            "instance_type": "c1.xlarge",
-            "arch": "x86_64",
-            "target": {
-                "size": 4,
-                "fs_type": "ext4",
-                "e2_label": "root_dev",
-                "aws_dev_name": "/dev/sdh",
-                "int_dev_name": "/dev/xvdl",
-                "mount_point": "/mnt",
-            },
-        },
-    },
-    "fedora-12-i386-desktop": {
-        "us-east-1": {
-            "ami": "ami-cdd306a4",  # Any RHEL-6. i386 AMI
-            "instance_type": "m1.medium",
-            "arch": "i386",
-            "kernel_package": "kernel-PAE",
-            "target": {
-                "size": 4,
-                "fs_type": "ext4",
-                "e2_label": "root_dev",
-                "aws_dev_name": "/dev/sdh",
-                "int_dev_name": "/dev/xvdl",
-                "mount_point": "/mnt",
-            },
-        },
-        "us-west-1": {
-            "ami": "ami-e50e50a0",
-            "instance_type": "m1.medium",
-            "arch": "i386",
-            "kernel_package": "kernel-PAE",
-            "target": {
-                "size": 4,
-                "fs_type": "ext4",
-                "e2_label": "root_dev",
-                "aws_dev_name": "/dev/sdh",
-                "int_dev_name": "/dev/xvdl",
-                "mount_point": "/mnt",
-            },
-        },
-    },
-    "fedora-17-x86_64-desktop": {
-        "us-west-1": {
-            # See https://fedoraproject.org/wiki/Cloud_images
-            "ami": "ami-877e24c2",
-            "instance_type": "c1.xlarge",
-            "arch": "x86_64",
-            "target": {
-                "size": 4,
-                "fs_type": "ext4",
-                "e2_label": "root_dev",
-                "aws_dev_name": "/dev/sdh",
-                "int_dev_name": "/dev/xvdh",
-                "mount_point": "/mnt",
-            },
-        },
-        "us-east-1": {
-            # See https://fedoraproject.org/wiki/Cloud_images
-            "ami": "ami-a1ef36c8",
-            "instance_type": "c1.xlarge",
-            "arch": "x86_64",
-            "target": {
-                "size": 4,
-                "fs_type": "ext4",
-                "e2_label": "root_dev",
-                "aws_dev_name": "/dev/sdh",
-                "int_dev_name": "/dev/xvdh",
-                "mount_point": "/mnt",
-            },
-        },
-    },
-}
+AM_CONFIGS_DIR = "ami_configs"
 
 
 def create_connection(options):
@@ -298,8 +72,6 @@ def create_instance(connection, instance_name, config, key_name, user='root'):
 
 
 def create_ami(host_instance, options, config):
-    # TODO: factor status checks
-    # TODO: create_ami_$distro
     connection = host_instance.connection
     env.host_string = host_instance.public_dns_name
     env.user = 'root'
@@ -307,6 +79,9 @@ def create_ami(host_instance, options, config):
     env.disable_known_hosts = True
 
     target_name = options.config
+    config_dir = "%s/%s" % (AM_CONFIGS_DIR, target_name)
+    dated_target_name = "%s-%s" % (
+        options.config, time.strftime("%Y-%m-%d-%H-%M", time.gmtime()))
     int_dev_name = config['target']['int_dev_name']
     mount_point = config['target']['mount_point']
 
@@ -350,7 +125,7 @@ def create_ami(host_instance, options, config):
         run('chroot %s mount -t proc none /proc' % mount_point)
         run('mount -o bind /dev %s/dev' % mount_point)
         put('releng-public.list', '%s/etc/apt/sources.list' % mount_point)
-        with lcd(target_name):
+        with lcd(config_dir):
             put('usr/sbin/policy-rc.d', '%s/usr/sbin/' % mount_point, mirror_local_mode=True)
         run('chroot %s apt-get update' % mount_point)
         run('DEBIAN_FRONTEND=text chroot {mnt} apt-get install -y '
@@ -363,7 +138,7 @@ def create_ami(host_instance, options, config):
             run('chroot %s sh -c "cd /dev && ./MAKEDEV %s"' % (mount_point, dev))
         run('chroot %s apt-get clean' % mount_point)
     else:
-        with lcd(target_name):
+        with lcd(config_dir):
             put('etc/yum-local.cfg', '%s/etc/yum-local.cfg' % mount_point)
             put('groupinstall', '/tmp/groupinstall')
             put('additional_packages', '/tmp/additional_packages')
@@ -376,12 +151,12 @@ def create_ami(host_instance, options, config):
     # Step 3: upload custom configuration files
     if config.get('distro') in ('debian', 'ubuntu'):
         run('chroot %s mkdir -p /boot/grub' % mount_point)
-        with lcd(target_name):
+        with lcd(config_dir):
             for f in ('etc/rc.local', 'etc/fstab', 'etc/hosts',
                       'etc/network/interfaces', 'boot/grub/menu.lst'):
                 put(f, '%s/%s' % (mount_point, f), mirror_local_mode=True)
     else:
-        with lcd(target_name):
+        with lcd(config_dir):
             for f in ('etc/rc.local', 'etc/fstab', 'etc/hosts',
                     'etc/sysconfig/network',
                     'etc/sysconfig/network-scripts/ifcfg-eth0',
@@ -392,8 +167,8 @@ def create_ami(host_instance, options, config):
     # Step 4: tune configs
     run('sed -i -e s/@ROOT_DEV_LABEL@/{label}/g -e s/@FS_TYPE@/{fs}/g '
         '{mnt}/etc/fstab'.format(label=config['target']['e2_label'],
-                                fs=config['target']['fs_type'],
-                                mnt=mount_point))
+                                 fs=config['target']['fs_type'],
+                                 mnt=mount_point))
     if config.get('distro') in ('debian', 'ubuntu'):
         # sanity check
         run('ls -l %s/boot/vmlinuz-%s' % (mount_point, config['kernel_version']))
@@ -440,7 +215,7 @@ def create_ami(host_instance, options, config):
 
     # Step 5: Create a snapshot
     log.info('Creating a snapshot')
-    snapshot = v.create_snapshot('EBS-backed %s' % target_name)
+    snapshot = v.create_snapshot('EBS-backed %s' % dated_target_name)
     while True:
         try:
             snapshot.update()
@@ -449,7 +224,7 @@ def create_ami(host_instance, options, config):
         except:
             log.exception('hit error waiting for snapshot to be taken')
             time.sleep(10)
-    snapshot.add_tag('Name', target_name)
+    snapshot.add_tag('Name', dated_target_name)
 
     # Step 6: Create an AMI
     log.info('Creating AMI')
@@ -458,8 +233,8 @@ def create_ami(host_instance, options, config):
     block_map[host_img.root_device_name] = BlockDeviceType(
         snapshot_id=snapshot.id)
     ami_id = connection.register_image(
-        target_name,
-        '%s EBS AMI' % target_name,
+        dated_target_name,
+        '%s EBS AMI' % dated_target_name,
         architecture=config['arch'],
         kernel_id=host_img.kernel_id,
         ramdisk_id=host_img.ramdisk_id,
@@ -469,7 +244,7 @@ def create_ami(host_instance, options, config):
     while True:
         try:
             ami = connection.get_image(ami_id)
-            ami.add_tag('Name', target_name)
+            ami.add_tag('Name', dated_target_name)
             log.info('AMI created')
             log.info('ID: {id}, name: {name}'.format(id=ami.id, name=ami.name))
             break
@@ -506,8 +281,6 @@ if __name__ == '__main__':
     parser.add_option("-k", "--secrets", dest="secrets",
                       help="file where secrets can be found")
     parser.add_option("-s", "--key-name", dest="key_name", help="SSH key name")
-    parser.add_option("-l", "--list", dest="action", action="store_const",
-                      const="list", help="list available configs")
     parser.add_option('--keep-volume', dest='keep_volume', action='store_true',
                       help="Don't delete target volume")
     parser.add_option('--keep-host-instance', dest='keep_host_instance',
@@ -517,12 +290,6 @@ if __name__ == '__main__':
     options, args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO)
-
-    if options.action == "list":
-        for config, regions in configs.items():
-            print config, regions.keys()
-        # All done!
-        raise SystemExit(0)
 
     if not args:
         parser.error("at least one instance name is required")
@@ -537,10 +304,10 @@ if __name__ == '__main__':
         parser.error("SSH key name name is required")
 
     try:
-        config = configs[options.config][options.region]
+        config = json.load(open("%s/%s.json" % (AM_CONFIGS_DIR,
+                                                options.config)))[options.region]
     except KeyError:
-        parser.error('unknown configuration; run with '
-                     '--list for list of supported configs')
+        parser.error("unknown configuration")
 
     connection = create_connection(options)
     host_instance = create_instance(connection, args[0], config,

@@ -1,0 +1,41 @@
+{
+    "us-east-1": {
+        "ami": "ami-41d00528",
+        "instance_type": "c1.xlarge",
+        "arch": "x86_64",
+        "target": {
+            "size": 4,
+            "fs_type": "ext4",
+            "e2_label": "root_dev",
+            "aws_dev_name": "/dev/sdh",
+            "int_dev_name": "/dev/xvdl",
+            "mount_point": "/mnt"
+        }
+    },
+    "us-west-1": {
+        "ami": "ami-250e5060",
+        "instance_type": "c1.xlarge",
+        "arch": "x86_64",
+        "target": {
+            "size": 4,
+            "fs_type": "ext4",
+            "e2_label": "root_dev",
+            "aws_dev_name": "/dev/sdh",
+            "int_dev_name": "/dev/xvdl",
+            "mount_point": "/mnt"
+        }
+    },
+    "us-west-2": {
+        "ami": "ami-8a25a9ba",
+        "instance_type": "c1.xlarge",
+        "arch": "x86_64",
+        "target": {
+            "size": 4,
+            "fs_type": "ext4",
+            "e2_label": "root_dev",
+            "aws_dev_name": "/dev/sdh",
+            "int_dev_name": "/dev/xvdl",
+            "mount_point": "/mnt"
+        }
+    }
+}

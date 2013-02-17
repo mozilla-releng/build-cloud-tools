@@ -1,0 +1,28 @@
+{
+    "us-east-1": {
+        "ami": "ami-cdd306a4",
+        "instance_type": "m1.medium",
+        "arch": "i386",
+        "target": {
+            "size": 4,
+            "fs_type": "ext4",
+            "e2_label": "root_dev",
+            "aws_dev_name": "/dev/sdh",
+            "int_dev_name": "/dev/xvdl",
+            "mount_point": "/mnt"
+        }
+    },
+    "us-west-1": {
+        "ami": "ami-e50e50a0",
+        "instance_type": "m1.medium",
+        "arch": "i386",
+        "target": {
+            "size": 4,
+            "fs_type": "ext4",
+            "e2_label": "root_dev",
+            "aws_dev_name": "/dev/sdh",
+            "int_dev_name": "/dev/xvdl",
+            "mount_point": "/mnt"
+        }
+    }
+}
