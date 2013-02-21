@@ -148,14 +148,14 @@ def puppetize(instance, name, options):
 configs = {
     "centos-6-x64-base": {
         "us-east-1": {
-            "ami": "ami-049b1e6d",  # Centos6
+            "ami": "snap-479ac304",  # Centos6
             "subnet_id": ["subnet-33a98358", "subnet-35a9835e", " subnet-0aa98361"],
             "security_group_ids": ["sg-b36a84dc"],
             "instance_type": "m1.large",
             "repo_snapshot_id": "snap-1e68ed5e",  # This will be mounted at /data
         },
         "us-west-2": {
-            "ami": "ami-16d15926",  # Centos6
+            "ami": "snap-97d099ae",  # Centos6
             "subnet_id": ["subnet-b948dad0", "subnet-ba48dad3", "subnet-bf48dad6"],
             "security_group_ids": ["sg-4e2d3022"],
             "instance_type": "m1.large",
