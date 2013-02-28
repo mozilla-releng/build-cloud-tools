@@ -12,6 +12,7 @@ except ImportError:
     import json
 
 import boto.ec2
+from boto.exception import BotoServerError
 import sqlalchemy as sa
 
 import logging
@@ -188,19 +189,26 @@ def aws_resume_instances(moz_instance_type, start_count, regions, secrets, regio
 
     # Limit ourselves to start only start_count instances
     log.debug("starting up to %i instances", start_count)
-    to_start = to_start[:start_count]
-
     log.debug("to_start: %s", to_start)
 
+    started = 0
     for i, is_reserved in to_start:
         r = "reserved instance" if is_reserved else "instance"
         if not dryrun:
             log.info("%s - %s - starting %s", i.placement, i.tags['Name'], r)
-            i.start()
+            try:
+                i.start()
+                started += 1
+            except BotoServerError:
+                log.warning("Cannot start %s" % i.tags['Name'], exc_info=True)
         else:
             log.info("%s - %s - would start %s", i.placement, i.tags['Name'], r)
+            started += 1
+        if started >= start_count:
+            log.info("Started %s instaces, breaking early" % started)
+            break
 
-    return len(to_start)
+    return started
 
 
 def aws_watch_pending(db, regions, secrets, key_name, builder_map, region_priorities, dryrun):
