@@ -205,7 +205,7 @@ def aws_resume_instances(moz_instance_type, start_count, regions, secrets, regio
             log.info("%s - %s - would start %s", i.placement, i.tags['Name'], r)
             started += 1
         if started >= start_count:
-            log.info("Started %s instaces, breaking early" % started)
+            log.debug("Started %s instaces, breaking early" % started)
             break
 
     return started
