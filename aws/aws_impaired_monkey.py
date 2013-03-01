@@ -49,5 +49,6 @@ if __name__ == '__main__':
             res = conn.get_all_instances(instance_ids=impaired_ids)
             instances = reduce(lambda a, b: a + b, [r.instances for r in res])
             log.info("Rebooting the following instances:")
-            log.info("\n" + "\n".join(i.tags.get('Name', i.id) for i in instances))
+            for name in (i.tags.get('Name', i.id) for i in instances):
+                log.info(name)
             conn.reboot_instances(impaired_ids)
