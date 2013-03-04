@@ -18,7 +18,7 @@
         "ami": "ami-16d15926",
         "subnet_id": ["subnet-ae48dac7", "subnet-a348daca", "subnet-a448dacd"],
         "security_group_ids": [],
-        "instance_type": "c1.xlarge",
+        "instance_type": "m3.xlarge",
         "device_map": {
             "/dev/sda1": {
                 "size": 100,
