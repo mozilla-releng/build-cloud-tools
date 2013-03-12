@@ -2,6 +2,7 @@
     "hostname": "try-linux64-ec2-%03d",
     "us-east-1": {
         "type": "try-linux64",
+        "domain": "try.use1.mozilla.com",
         "ami": "ami-049b1e6d",
         "subnet_id": ["subnet-27a9834c", "subnet-39a98352", "subnet-3ea98355"],
         "security_group_ids": [],
@@ -15,6 +16,7 @@
     },
     "us-west-2": {
         "type": "try-linux64",
+        "domain": "try.usw2.mozilla.com",
         "ami": "ami-16d15926",
         "subnet_id": ["subnet-ae48dac7", "subnet-a348daca", "subnet-a448dacd"],
         "security_group_ids": [],

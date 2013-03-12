@@ -2,6 +2,7 @@
     "hostname": "tst-linux32-ec2-%03d",
     "us-east-1": {
         "type": "tst-linux32",
+        "domain": "test.use1.mozilla.com",
         "ami": "ami-ea8e1e83",
         "subnet_id": ["subnet-8f32cbe5", "subnet-3835cc52", "subnet-ed35cc87", "subnet-ae35ccc4"],
         "security_group_ids": [],
@@ -16,6 +17,7 @@
     },
     "us-west-2": {
         "type": "tst-linux32",
+        "domain": "test.usw2.mozilla.com",
         "ami": "ami-040c8634",
         "subnet_id": ["subnet-d6cba8bf", "subnet-aecba8c7", "subnet-a4cba8cd"],
         "security_group_ids": [],

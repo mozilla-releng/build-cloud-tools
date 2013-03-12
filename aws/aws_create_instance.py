@@ -146,8 +146,8 @@ def create_instance(name, config, region, secrets, key_name, instance_data,
 
     instance_data = instance_data.copy()
     instance_data['name'] = name
-    instance_data['hostname'] = '{name}.build.aws-{region}.mozilla.com'.format(
-        name=name, region=region)
+    instance_data['hostname'] = '{name}.{domain}'.format(
+        name=name, domain=config['domain'])
 
     bdm = None
     if 'device_map' in config:
@@ -297,7 +297,7 @@ if __name__ == '__main__':
     parser = OptionParser()
     parser.set_defaults(
         config=None,
-        region="us-west-1",
+        region="us-east-1",
         secrets=None,
         key_name=None,
         action="create",
@@ -350,8 +350,8 @@ if __name__ == '__main__':
         )
         instance = conn.get_all_instances([options.instance_id])[0].instances[0]
         instance_data['name'] = args[0]
-        instance_data['hostname'] = '{name}.build.aws-{region}.mozilla.com'.format(
-            name=args[0], region=options.region)
+        instance_data['hostname'] = '{name}.{domain}'.format(
+            name=args[0], domain=config['domain'])
         assimilate(instance.private_ip_address, config, instance_data, False)
     else:
         make_instances(args, config, options.region, secrets, options.key_name,
