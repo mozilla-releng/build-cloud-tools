@@ -149,8 +149,8 @@ def create_ami(host_instance, options, config):
         run('%s clean packages' % yum)
 
     # Step 3: upload custom configuration files
+    run('chroot %s mkdir -p /boot/grub' % mount_point)
     if config.get('distro') in ('debian', 'ubuntu'):
-        run('chroot %s mkdir -p /boot/grub' % mount_point)
         with lcd(config_dir):
             for f in ('etc/rc.local', 'etc/fstab', 'etc/hosts',
                       'etc/network/interfaces', 'boot/grub/menu.lst'):
@@ -197,8 +197,6 @@ def create_ami(host_instance, options, config):
     else:
         manage_service("network", mount_point, "on")
         manage_service("rc.local", mount_point, "on")
-        manage_service("firstboot", mount_point, "off")
-        manage_service("NetworkManager", mount_point, "off")
 
     run('umount %s/proc || :' % mount_point)
     run('umount %s' % mount_point)
