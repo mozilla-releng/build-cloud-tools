@@ -169,6 +169,9 @@ def aws_stop_idle(secrets, passwords, regions, dryrun=False):
         conn = boto.ec2.connect_to_region(r, **secrets)
 
         instances = get_buildbot_instances(conn)
+        impaired = conn.get_all_instance_status(
+            filters={'instance-status.status': 'impaired'})
+        impaired_ids = [i.id for i in impaired]
         instances_by_type = {}
         for i in instances:
             # TODO: Check if launch_time is too old, and terminate the instance
@@ -190,6 +193,12 @@ def aws_stop_idle(secrets, passwords, regions, dryrun=False):
             ip = i.private_ip_address
             ssh_client = get_ssh_client(name, ip, passwords)
             if not ssh_client:
+                if i.id in impaired_ids:
+                    launch_time = time.mktime(time.strptime(
+                        i.launch_time[:19], '%Y-%m-%dT%H:%M:%S'))
+                    if time.time() - launch_time > 60 * 10:
+                        log.warning("%s - rebooting instance with impaired status" % name)
+                        i.reboot()
                 continue
             last_activity = get_last_activity(name, ssh_client)
             if last_activity == "stopped":
