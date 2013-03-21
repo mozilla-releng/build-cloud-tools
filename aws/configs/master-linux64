@@ -7,6 +7,7 @@
         "subnet_id": ["subnet-33a98358", "subnet-30a9835b", "subnet-35a9835e", "subnet-0aa98361"],
         "security_group_ids": ["sg-31e8185e"],
         "instance_type": "m1.large",
+        "disable_api_termination": true,
         "device_map": {
             "/dev/sda1": {
                 "size": 100,
@@ -21,6 +22,7 @@
         "subnet_id": ["subnet-b948dad0", " subnet-ba48dad3", "subnet-bf48dad6"],
         "security_group_ids": ["sg-932e33ff"],
         "instance_type": "m1.large",
+        "disable_api_termination": true,
         "device_map": {
             "/dev/sda1": {
                 "size": 100,

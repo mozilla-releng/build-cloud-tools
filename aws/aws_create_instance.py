@@ -170,6 +170,7 @@ def create_instance(name, config, region, secrets, key_name, instance_data,
         block_device_map=bdm,
         client_token=token,
         subnet_id=subnet_id,
+        disable_api_termination=bool(config.get('disable_api_termination')),
     )
 
     instance = reservation.instances[0]
