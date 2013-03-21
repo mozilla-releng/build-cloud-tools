@@ -152,14 +152,14 @@ configs = {
             "subnet_id": ["subnet-33a98358", "subnet-35a9835e", " subnet-0aa98361"],
             "security_group_ids": ["sg-b36a84dc"],
             "instance_type": "m1.large",
-            "repo_snapshot_id": "snap-8cbcddc8",  # This will be mounted at /data
+            "repo_snapshot_id": "snap-e5d1eda1",  # This will be mounted at /data
         },
         "us-west-2": {
             "ami": "ami-16d15926",
             "subnet_id": ["subnet-b948dad0", "subnet-ba48dad3", "subnet-bf48dad6"],
             "security_group_ids": ["sg-4e2d3022"],
             "instance_type": "m1.large",
-            "repo_snapshot_id": "snap-53c4356b",  # This will be mounted at /data
+            "repo_snapshot_id": "snap-800dc8b8",  # This will be mounted at /data
         },
     },
 }
