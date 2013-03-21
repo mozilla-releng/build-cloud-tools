@@ -197,8 +197,8 @@ def aws_stop_idle(secrets, passwords, regions, dryrun=False):
                     launch_time = time.mktime(time.strptime(
                         i.launch_time[:19], '%Y-%m-%dT%H:%M:%S'))
                     if time.time() - launch_time > 60 * 10:
-                        log.warning("%s - rebooting instance with impaired status" % name)
-                        i.reboot()
+                        log.warning("%s - shut down an instance with impaired status" % name)
+                        i.stop()
                 continue
             last_activity = get_last_activity(name, ssh_client)
             if last_activity == "stopped":
