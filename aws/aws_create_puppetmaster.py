@@ -31,10 +31,7 @@ def create_master(conn, name, options, config):
                                       snapshot_id=config['repo_snapshot_id'])
     bdm["/dev/sda1"] = BlockDeviceType(delete_on_termination=True)
 
-    subnet_id = config.get('subnet_id')
-    if subnet_id:
-        if isinstance(subnet_id, (list, tuple)):
-            subnet_id = choice(subnet_id)
+    subnet_id = choice(config.get('subnet_ids'))
 
     reservation = conn.run_instances(
         image_id=config['ami'],

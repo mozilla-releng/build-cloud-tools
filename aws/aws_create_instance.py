@@ -4,15 +4,25 @@ import uuid
 import time
 import boto
 import StringIO
+from socket import gethostbyname, gaierror
 
 from random import choice
 from fabric.api import run, put, env, sudo, settings, local
 from fabric.context_managers import cd
 from boto.ec2 import connect_to_region
 from boto.ec2.blockdevicemapping import BlockDeviceMapping, BlockDeviceType
+from boto.vpc import VPCConnection
+from IPy import IP
 
 import logging
 log = logging.getLogger()
+
+
+def get_ip(hostname):
+    try:
+        return gethostbyname(hostname)
+    except gaierror:
+        return None
 
 
 def assimilate(ip_addr, config, instance_data, create_ami):
@@ -140,8 +150,12 @@ def create_instance(name, config, region, secrets, key_name, instance_data,
     conn = connect_to_region(
         region,
         aws_access_key_id=secrets['aws_access_key_id'],
-        aws_secret_access_key=secrets['aws_secret_access_key'],
+        aws_secret_access_key=secrets['aws_secret_access_key']
     )
+    vpc = VPCConnection(
+        region=conn.region,
+        aws_access_key_id=secrets['aws_access_key_id'],
+        aws_secret_access_key=secrets['aws_secret_access_key'])
 
     # Make sure we don't request the same things twice
     token = str(uuid.uuid4())[:16]
@@ -158,10 +172,26 @@ def create_instance(name, config, region, secrets, key_name, instance_data,
             bdm[device] = BlockDeviceType(size=device_info['size'],
                                           delete_on_termination=True)
 
-    subnet_id = config.get('subnet_id')
-    if subnet_id:
-        if isinstance(subnet_id, (list, tuple)):
-            subnet_id = choice(subnet_id)
+    ip_address = get_ip(instance_data['hostname'])
+    if ip_address:
+        # check if the address matches allowed subnets
+        subnets = vpc.get_all_subnets(config.get('subnet_ids'))
+        if any(IP(ip_address) in IP(s.cidr_block) for s in subnets):
+            # check if the address avalable
+            res = conn.get_all_instances()
+            instances = reduce(lambda a, b: a + b, [r.instances for r in res])
+            ips = [i.private_ip_address for i in instances]
+            if ip_address in ips:
+                log.warning("%s already assigned" % ip_address)
+                ip_address = None
+        else:
+            log.warning("%s doesn't belong to any of allowed subnets" % ip_address)
+            ip_address = None
+
+    if ip_address:
+        subnet_id = None
+    else:
+        subnet_id = choice(config.get('subnet_ids'))
 
     reservation = conn.run_instances(
         image_id=config['ami'],
@@ -170,6 +200,7 @@ def create_instance(name, config, region, secrets, key_name, instance_data,
         block_device_map=bdm,
         client_token=token,
         subnet_id=subnet_id,
+        private_ip_address=ip_address,
         disable_api_termination=bool(config.get('disable_api_termination')),
     )
 
@@ -186,18 +217,15 @@ def create_instance(name, config, region, secrets, key_name, instance_data,
         time.sleep(10)
 
     instance.add_tag('Name', name)
+    instance.add_tag('FQDN', instance_data['hostname'])
     instance.add_tag('moz-type', config['type'])
 
     log.info("assimilating %s", instance)
     instance.add_tag('moz-state', 'pending')
     while True:
         try:
-            if instance.subnet_id:
-                assimilate(instance.private_ip_address, config, instance_data,
-                           create_ami)
-            else:
-                assimilate(instance.public_dns_name, config, instance_data,
-                           create_ami)
+            assimilate(instance.private_ip_address, config, instance_data,
+                       create_ami)
             break
         except:
             log.exception("problem assimilating %s", instance)
