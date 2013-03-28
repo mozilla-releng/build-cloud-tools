@@ -19,7 +19,7 @@
         "type": "buildbot-master",
         "domain": "srv.releng.usw2.mozilla.com",
         "ami": "ami-15cb5f25",
-        "subnet_ids": ["subnet-b948dad0", " subnet-ba48dad3", "subnet-bf48dad6"],
+        "subnet_ids": ["subnet-b948dad0", "subnet-ba48dad3", "subnet-bf48dad6"],
         "security_group_ids": ["sg-932e33ff"],
         "instance_type": "m1.large",
         "disable_api_termination": true,
