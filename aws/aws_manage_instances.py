@@ -53,7 +53,8 @@ def disable(i, dry_run, comments=None):
                                             gmtime())
     if comments:
         moz_state += ". %s" % comments
-    log.info("Disabling %s, setting moz-state tag to '%s'..." % (name, moz_state))
+    log.info("Disabling %s, setting moz-state tag to '%s'..." % (name,
+                                                                 moz_state))
     if dry_run:
         log.info("Dry run mode, skipping...")
     else:
@@ -127,8 +128,8 @@ if __name__ == '__main__':
             instance_id = i.id
             if not i.private_ip_address:
                 # Terminated instances has no IP address assinged
-                log.warn("Skipping (terminated?) %s (%s)..." % (name,
-                                                                instance_id))
+                log.debug("Skipping (terminated?) %s (%s)..." % (name,
+                                                                 instance_id))
                 continue
             if name in args.hosts:
                 log.info("Found %s (%s)..." % (name, instance_id))
