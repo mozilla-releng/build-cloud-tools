@@ -202,6 +202,7 @@ def create_instance(name, config, region, secrets, key_name, instance_data,
         subnet_id=subnet_id,
         private_ip_address=ip_address,
         disable_api_termination=bool(config.get('disable_api_termination')),
+        security_group_ids=config.get('security_group_ids', []),
     )
 
     instance = reservation.instances[0]
