@@ -4,6 +4,7 @@ Watches running EC2 instances and shuts them down when idle
 """
 import re
 import time
+import calendar
 try:
     import simplejson as json
 except ImportError:
@@ -168,7 +169,7 @@ def aws_safe_stop_instance(i, impaired_ids, passwords, dryrun=False):
     ssh_client = get_ssh_client(name, ip, passwords)
     if not ssh_client:
         if i.id in impaired_ids:
-            launch_time = time.mktime(time.strptime(
+            launch_time = calendar.timegm(time.strptime(
                 i.launch_time[:19], '%Y-%m-%dT%H:%M:%S'))
             if time.time() - launch_time > 60 * 10:
                 log.warning("%s - shut down an instance with impaired status" % name)
