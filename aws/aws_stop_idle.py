@@ -9,6 +9,9 @@ try:
 except ImportError:
     import json
 
+import threading
+from Queue import Queue, Empty
+
 import boto.ec2
 from paramiko import SSHClient
 import requests
@@ -50,7 +53,7 @@ def get_ssh_client(name, ip, passwords):
         except:
             pass
 
-    log.warn("Couldn't log into {name} at {ip} with any known passwords".format(name=name, ip=ip))
+    log.warning("Couldn't log into {name} at {ip} with any known passwords".format(name=name, ip=ip))
     return None
 
 
@@ -156,13 +159,63 @@ def graceful_shutdown(name, ip, client):
     requests.post(url, allow_redirects=False)
 
 
-def aws_stop_idle(secrets, passwords, regions, dryrun=False):
+def aws_safe_stop_instance(i, impaired_ids, passwords, dryrun=False):
+    name = i.tags['Name']
+    # TODO: Check with slavealloc
+
+    ip = i.private_ip_address
+    ssh_client = get_ssh_client(name, ip, passwords)
+    if not ssh_client:
+        if i.id in impaired_ids:
+            launch_time = time.mktime(time.strptime(
+                i.launch_time[:19], '%Y-%m-%dT%H:%M:%S'))
+            if time.time() - launch_time > 60 * 10:
+                log.warning("%s - shut down an instance with impaired status" % name)
+                i.stop()
+        return
+    last_activity = get_last_activity(name, ssh_client)
+    if last_activity == "stopped":
+        # TODO: could be that the machine is just starting up....
+        if not dryrun:
+            log.info("%s - stopping instance (launched %s)", name, i.launch_time)
+            i.stop()
+        else:
+            log.info("%s - would have stopped", name)
+        return
+
+    if last_activity == "booting":
+        # Wait harder
+        return
+
+    log.debug("%s - last activity %is ago", name, last_activity)
+    # Determine if the machine is idle for more than 10 minutes
+    if last_activity > 300:
+        if not dryrun:
+            # Hit graceful shutdown on the master
+            log.debug("%s - starting graceful shutdown", name)
+            graceful_shutdown(name, ip, ssh_client)
+
+            # Check if we've exited right away
+            if get_last_activity(name, ssh_client) == "stopped":
+                log.debug("%s - stopping instance", name)
+                i.stop()
+            else:
+                log.info("%s - not stopping, waiting for graceful shutdown", name)
+        else:
+            log.info("%s - would have started graceful shutdown", name)
+    else:
+        log.debug("%s - not stopping", name)
+
+
+def aws_stop_idle(secrets, passwords, regions, dryrun=False, concurrency=8):
     if not regions:
         # Look at all regions
         log.debug("loading all regions")
         regions = [r.name for r in boto.ec2.regions(**secrets)]
 
     min_running_by_type = 0
+
+    all_instances = []
 
     for r in regions:
         log.debug("looking at region %s", r)
@@ -186,52 +239,33 @@ def aws_stop_idle(secrets, passwords, regions, dryrun=False):
                 log.debug("%s - keep running (min %i instances of type %s)", i.tags['Name'], min_running_by_type, i.tags['moz-type'])
                 instances.remove(i)
 
-        for i in instances:
-            name = i.tags['Name']
-            # TODO: Check with slavealloc
+        all_instances.extend(instances)
 
-            ip = i.private_ip_address
-            ssh_client = get_ssh_client(name, ip, passwords)
-            if not ssh_client:
-                if i.id in impaired_ids:
-                    launch_time = time.mktime(time.strptime(
-                        i.launch_time[:19], '%Y-%m-%dT%H:%M:%S'))
-                    if time.time() - launch_time > 60 * 10:
-                        log.warning("%s - shut down an instance with impaired status" % name)
-                        i.stop()
-                continue
-            last_activity = get_last_activity(name, ssh_client)
-            if last_activity == "stopped":
-                # TODO: could be that the machine is just starting up....
-                if not dryrun:
-                    log.info("%s - stopping instance (launched %s)", name, i.launch_time)
-                    i.stop()
-                else:
-                    log.info("%s - would have stopped", name)
-                continue
+    q = Queue()
 
-            if last_activity == "booting":
-                # Wait harder
-                continue
+    def worker():
+        while True:
+            try:
+                i = q.get(timeout=0.1)
+            except Empty:
+                return
+            aws_safe_stop_instance(i, impaired_ids, passwords, dryrun=dryrun)
 
-            log.debug("%s - last activity %is ago", name, last_activity)
-            # Determine if the machine is idle for more than 10 minutes
-            if last_activity > 300:
-                if not dryrun:
-                    # Hit graceful shutdown on the master
-                    log.debug("%s - starting graceful shutdown", name)
-                    graceful_shutdown(name, ip, ssh_client)
+    for i in all_instances:
+        q.put(i)
 
-                    # Check if we've exited right away
-                    if get_last_activity(name, ssh_client) == "stopped":
-                        log.debug("%s - stopping instance", name)
-                        i.stop()
-                    else:
-                        log.info("%s - not stopping, waiting for graceful shutdown" % name)
-                else:
-                    log.info("%s - would have started graceful shutdown", name)
+    threads = []
+    for i in range(concurrency):
+        t = threading.Thread(target=worker)
+        t.start()
+
+    while threads:
+        for t in threads[:]:
+            if t.is_alive():
+                t.join(timeout=0.5)
             else:
-                log.debug("%s - not stopping", name)
+                t.join()
+                threads.remove(t)
 
 if __name__ == '__main__':
     from optparse import OptionParser
@@ -242,6 +276,7 @@ if __name__ == '__main__':
         passwords=None,
         loglevel=logging.INFO,
         dryrun=False,
+        concurrency=8,
     )
 
     parser.add_option("-r", "--region", action="append", dest="regions")
@@ -249,6 +284,7 @@ if __name__ == '__main__':
     parser.add_option("-s", "--key-name", dest="key_name")
     parser.add_option("-v", "--verbose", action="store_const", dest="loglevel", const=logging.DEBUG)
     parser.add_option("-p", "--passwords", dest="passwords")
+    parser.add_option("-j", "--concurrency", dest="concurrency", type="int")
     parser.add_option("--dry-run", action="store_true", dest="dryrun")
 
     options, args = parser.parse_args()
@@ -270,4 +306,4 @@ if __name__ == '__main__':
     secrets = json.load(open(options.secrets))
     passwords = json.load(open(options.passwords))
 
-    aws_stop_idle(secrets, passwords, options.regions, dryrun=options.dryrun)
+    aws_stop_idle(secrets, passwords, options.regions, dryrun=options.dryrun, concurrency=options.concurrency)
