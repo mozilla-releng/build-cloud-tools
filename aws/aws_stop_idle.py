@@ -9,6 +9,7 @@ try:
 except ImportError:
     import json
 
+import random
 import threading
 from Queue import Queue, Empty
 
@@ -216,6 +217,7 @@ def aws_stop_idle(secrets, passwords, regions, dryrun=False, concurrency=8):
     min_running_by_type = 0
 
     all_instances = []
+    impaired_ids = []
 
     for r in regions:
         log.debug("looking at region %s", r)
@@ -224,7 +226,7 @@ def aws_stop_idle(secrets, passwords, regions, dryrun=False, concurrency=8):
         instances = get_buildbot_instances(conn)
         impaired = conn.get_all_instance_status(
             filters={'instance-status.status': 'impaired'})
-        impaired_ids = [i.id for i in impaired]
+        impaired_ids.extend(i.id for i in impaired)
         instances_by_type = {}
         for i in instances:
             # TODO: Check if launch_time is too old, and terminate the instance
@@ -240,6 +242,8 @@ def aws_stop_idle(secrets, passwords, regions, dryrun=False, concurrency=8):
                 instances.remove(i)
 
         all_instances.extend(instances)
+
+    random.shuffle(all_instances)
 
     q = Queue()
 
