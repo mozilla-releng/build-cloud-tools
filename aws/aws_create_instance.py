@@ -219,6 +219,8 @@ def create_instance(name, config, region, secrets, key_name, instance_data,
 
     instance.add_tag('Name', name)
     instance.add_tag('FQDN', instance_data['hostname'])
+    instance.add_tag('created', time.strftime("%Y-%m-%d %H:%M:%S %Z",
+                                              time.gmtime()))
     instance.add_tag('moz-type', config['type'])
 
     log.info("assimilating %s", instance)
