@@ -195,7 +195,7 @@ def aws_resume_instances(moz_instance_type, start_count, regions, secrets, regio
     for i, is_reserved in to_start:
         r = "reserved instance" if is_reserved else "instance"
         if not dryrun:
-            log.info("%s - %s - starting %s", i.placement, i.tags['Name'], r)
+            log.debug("%s - %s - starting %s", i.placement, i.tags['Name'], r)
             try:
                 i.start()
                 started += 1
@@ -211,7 +211,7 @@ def aws_resume_instances(moz_instance_type, start_count, regions, secrets, regio
     return started
 
 
-def aws_watch_pending(db, regions, secrets, key_name, builder_map, region_priorities, dryrun):
+def aws_watch_pending(db, regions, secrets, builder_map, region_priorities, dryrun):
     # First find pending jobs in the db
     pending = find_pending(db)
 
@@ -243,14 +243,12 @@ if __name__ == '__main__':
         regions=[],
         secrets=None,
         loglevel=logging.INFO,
-        key_name=None,
         config=None,
         dryrun=False,
     )
 
     parser.add_option("-r", "--region", action="append", dest="regions")
     parser.add_option("-k", "--secrets", dest="secrets")
-    parser.add_option("-s", "--key-name", dest="key_name")
     parser.add_option("-v", "--verbose", action="store_const", dest="loglevel", const=logging.DEBUG)
     parser.add_option("-c", "--config", dest="config")
     parser.add_option("-n", "--dryrun", dest="dryrun", action="store_true", help="don't actually do anything")
@@ -276,7 +274,6 @@ if __name__ == '__main__':
         config['db'],
         options.regions,
         secrets,
-        options.key_name,
         config['buildermap'],
         config['region_priorities'],
         options.dryrun,
