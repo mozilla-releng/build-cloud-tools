@@ -162,59 +162,28 @@ configs = {
 }
 
 if __name__ == '__main__':
-    from optparse import OptionParser
-    parser = OptionParser()
-    parser.set_defaults(
-        config=None,
-        region="us-west-1",
-        secrets=None,
-        key_name=None,
-        action="create",
-        instance=None,
-    )
-    parser.add_option("-c", "--config", dest="config", help="instance configuration to use")
-    parser.add_option("-r", "--region", dest="region", help="region to use")
-    parser.add_option("-k", "--secrets", dest="secrets", help="file where secrets can be found")
-    parser.add_option("-s", "--key-name", dest="key_name", help="SSH key name")
-    parser.add_option("-l", "--list", dest="action", action="store_const", const="list", help="list available configs")
-    parser.add_option("-i", "--instance", dest="instance", help="puppetize existing instance")
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-c", "--config", required=True,
+                        help="instance configuration to use")
+    parser.add_argument("-r", "--region", help="region to use", required=True)
+    parser.add_argument("-k", "--secrets", type=argparse.FileType('r'),
+                        required=True, help="file where secrets can be found")
+    parser.add_argument("-s", "--key-name", help="SSH key name", required=True)
+    parser.add_argument("hostname", nargs=1, help="Hostname of puppet master")
 
-    options, args = parser.parse_args()
+    args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO)
 
-    if options.action == "list":
-        for config, regions in configs.items():
-            print config, regions.keys()
-        # All done!
-        raise SystemExit(0)
-
-    if not args:
-        parser.error("at least one instance name is required")
-
-    if not options.secrets:
-        parser.error("secrets are required")
-
-    if not options.key_name:
-        parser.error("ssh key name is required")
-
-    secrets = json.load(open(options.secrets))
-    conn = connect_to_region(options.region,
-            aws_access_key_id=secrets['aws_access_key_id'],
-            aws_secret_access_key=secrets['aws_secret_access_key'],
-            )
-
-    if options.instance:
-        instance = conn.get_all_instances([options.instance])[0].instances[0]
-        puppetize(instance, args[0], options)
-        raise SystemExit(0)
-
-    if not options.config:
-        parser.error("config name is required")
+    secrets = json.load(args.secrets)
+    conn = connect_to_region(
+        args.region, aws_access_key_id=secrets['aws_access_key_id'],
+        aws_secret_access_key=secrets['aws_secret_access_key'])
 
     try:
-        config = configs[options.config][options.region]
+        config = configs[args.config][args.region]
     except KeyError:
-        parser.error("unknown configuration; run with --list for list of supported configs")
+        parser.error("unknown configuration")
 
-    create_master(conn, args[0], options, config)
+    create_master(conn, args.hostname[0], args, config)
