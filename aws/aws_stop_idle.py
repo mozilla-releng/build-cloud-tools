@@ -254,7 +254,11 @@ def aws_stop_idle(secrets, passwords, regions, dryrun=False, concurrency=8):
                 i = q.get(timeout=0.1)
             except Empty:
                 return
-            aws_safe_stop_instance(i, impaired_ids, passwords, dryrun=dryrun)
+            try:
+                aws_safe_stop_instance(i, impaired_ids, passwords,
+                                       dryrun=dryrun)
+            except:
+                log.warning("%s - unable to stop", exc_info=True)
 
     for i in all_instances:
         q.put(i)
