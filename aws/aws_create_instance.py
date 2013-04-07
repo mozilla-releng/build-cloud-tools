@@ -352,10 +352,10 @@ if __name__ == '__main__':
             aws_secret_access_key=secrets['aws_secret_access_key'],
         )
         instance = conn.get_all_instances([args.instance_id])[0].instances[0]
-        instance_data['name'] = args[0]
+        instance_data['name'] = args.hosts[0]
         instance_data['hostname'] = '{name}.{domain}'.format(
-            name=args[0], domain=config['domain'])
+            name=args.hosts[0], domain=config['domain'])
         assimilate(instance.private_ip_address, config, instance_data)
     else:
-        make_instances(args, config, args.region, secrets, args.key_name,
+        make_instances(args.hosts, config, args.region, secrets, args.key_name,
                        instance_data)
