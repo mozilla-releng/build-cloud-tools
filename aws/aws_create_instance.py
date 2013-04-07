@@ -25,7 +25,7 @@ def get_ip(hostname):
         return None
 
 
-def assimilate(ip_addr, config, instance_data, create_ami):
+def assimilate(ip_addr, config, instance_data):
     """Assimilate hostname into our collective
 
     What this means is that hostname will be set up with some basic things like
@@ -111,10 +111,6 @@ def assimilate(ip_addr, config, instance_data, create_ami):
                      puppet=instance_data['default_puppet_server']))
         assert result.return_code in (0, 2)
 
-    if create_ami:
-        run('find /var/lib/puppet/ssl -type f -delete')
-        return
-
     if 'home_tarball' in instance_data:
         put(instance_data['home_tarball'], '/tmp/home.tar.gz')
         with cd('~cltbld'):
@@ -138,13 +134,12 @@ def assimilate(ip_addr, config, instance_data, create_ami):
             put(StringIO.StringIO(hgrc), '%s/.hg/hgrc' % target_dir)
             run("chown cltbld: %s/.hg/hgrc" % target_dir)
             sudo('{hg} -R {d} unbundle {b}'.format(hg=hg, d=target_dir, b=bundle),
-                user="cltbld")
+                 user="cltbld")
 
     run("reboot")
 
 
-def create_instance(name, config, region, secrets, key_name, instance_data,
-                    create_ami=False):
+def create_instance(name, config, region, secrets, key_name, instance_data):
     """Creates an AMI instance with the given name and config. The config must
     specify things like ami id."""
     conn = connect_to_region(
@@ -227,16 +222,12 @@ def create_instance(name, config, region, secrets, key_name, instance_data,
     instance.add_tag('moz-state', 'pending')
     while True:
         try:
-            assimilate(instance.private_ip_address, config, instance_data,
-                       create_ami)
+            assimilate(instance.private_ip_address, config, instance_data)
             break
         except:
             log.exception("problem assimilating %s", instance)
             time.sleep(10)
-    if not create_ami:
-        instance.add_tag('moz-state', 'ready')
-    else:
-        ami_from_instance(instance)
+    instance.add_tag('moz-state', 'ready')
 
 
 def ami_from_instance(instance):
@@ -308,15 +299,14 @@ class LoggingProcess(multiprocessing.Process):
         return super(LoggingProcess, self).run()
 
 
-def make_instances(names, config, region, secrets, key_name, instance_data,
-                   create_ami):
+def make_instances(names, config, region, secrets, key_name, instance_data):
     """Create instances for each name of names for the given configuration"""
     procs = []
     for name in names:
         p = LoggingProcess(log="{name}.log".format(name=name),
                            target=create_instance,
                            args=(name, config, region, secrets, key_name,
-                                 instance_data, create_ami),
+                                 instance_data),
                            )
         p.start()
         procs.append(p)
@@ -327,66 +317,45 @@ def make_instances(names, config, region, secrets, key_name, instance_data,
 
 
 if __name__ == '__main__':
-    from optparse import OptionParser
-    parser = OptionParser()
-    parser.set_defaults(
-        config=None,
-        region="us-east-1",
-        secrets=None,
-        key_name=None,
-        action="create",
-        create_ami=False,
-        instance_id=None,
-        instance_data=None,
-    )
-    parser.add_option("-c", "--config", dest="config", help="instance configuration to use")
-    parser.add_option("-r", "--region", dest="region", help="region to use")
-    parser.add_option("-k", "--secrets", dest="secrets", help="file where secrets can be found")
-    parser.add_option("-s", "--key-name", dest="key_name", help="SSH key name")
-    parser.add_option("-l", "--list", dest="action", action="store_const", const="list", help="list available configs")
-    parser.add_option("--instance_id", dest="instance_id", help="assimilate existing instance")
-    parser.add_option("-i", "--instance-data", dest="instance_data", help="instance specific data")
-    parser.add_option("--create-ami", dest="create_ami", action="store_true",
-                      help="create AMI from instance")
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-c", "--config", required=True,
+                        type=argparse.FileType('r'),
+                        help="instance configuration to use")
+    parser.add_argument("-r", "--region", help="region to use",
+                        default="us-east-1")
+    parser.add_argument("-k", "--secrets", type=argparse.FileType('r'),
+                        required=True, help="file where secrets can be found")
+    parser.add_argument("-s", "--key-name", help="SSH key name", required=True)
+    parser.add_argument("-i", "--instance-data", help="instance specific data",
+                        type=argparse.FileType('r'), required=True)
+    parser.add_argument("--instance_id", help="assimilate existing instance")
+    parser.add_argument("hosts", metavar="host", nargs="+",
+                        help="hosts to be processed")
 
-    options, args = parser.parse_args()
+    args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO)
 
-    if not args:
-        parser.error("at least one instance name is required")
-
-    if not options.config:
-        parser.error("config name is required")
-
-    if not options.secrets:
-        parser.error("secrets are required")
-
-    if not options.instance_data:
-        parser.error("instance data is required")
-
-    if not options.key_name:
-        parser.error("SSH key name name is required")
-
     try:
-        config = json.load(open(options.config))[options.region]
+        config = json.load(args.config)[args.region]
     except KeyError:
         parser.error("unknown configuration")
 
-    secrets = json.load(open(options.secrets))
+    secrets = json.load(args.secrets)
 
-    instance_data = json.load(open(options.instance_data))
-    if options.instance_id:
+    instance_data = json.load(args.instance_data)
+    if args.instance_id:
         conn = connect_to_region(
-            options.region,
+            args.region,
             aws_access_key_id=secrets['aws_access_key_id'],
             aws_secret_access_key=secrets['aws_secret_access_key'],
         )
-        instance = conn.get_all_instances([options.instance_id])[0].instances[0]
+        instance = conn.get_all_instances([args.instance_id])[0].instances[0]
         instance_data['name'] = args[0]
         instance_data['hostname'] = '{name}.{domain}'.format(
             name=args[0], domain=config['domain'])
-        assimilate(instance.private_ip_address, config, instance_data, False)
+        assimilate(instance.private_ip_address, config, instance_data)
     else:
-        make_instances(args, config, options.region, secrets, options.key_name,
-                       instance_data, options.create_ami)
+        make_instances(args, config, args.region, secrets, args.key_name,
+                       instance_data)
