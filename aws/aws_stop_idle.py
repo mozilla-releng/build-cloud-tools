@@ -293,7 +293,7 @@ if __name__ == '__main__':
                         default=logging.INFO)
     parser.add_argument("-p", "--passwords", type=argparse.FileType('r'),
                         required=True)
-    parser.add_argument("-j", "--concurrency", type="int", default=8)
+    parser.add_argument("-j", "--concurrency", type=int, default=8)
     parser.add_argument("--dry-run", action="store_true")
 
     args = parser.parse_args()
