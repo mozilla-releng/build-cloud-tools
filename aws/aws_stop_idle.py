@@ -268,14 +268,18 @@ def aws_stop_idle(secrets, passwords, regions, dryrun=False, concurrency=8):
     for i in range(concurrency):
         t = threading.Thread(target=worker)
         t.start()
+        threads.append(t)
 
     while threads:
         for t in threads[:]:
-            if t.is_alive():
-                t.join(timeout=0.5)
-            else:
-                t.join()
-                threads.remove(t)
+            try:
+               if t.is_alive():
+                   t.join(timeout=0.5)
+               else:
+                   t.join()
+                   threads.remove(t)
+            except KeyboardInterrupt:
+               raise SystemExit(1)
 
 if __name__ == '__main__':
     from optparse import OptionParser
