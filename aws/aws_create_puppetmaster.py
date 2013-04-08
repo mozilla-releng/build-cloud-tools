@@ -55,7 +55,7 @@ def create_master(conn, name, options, config):
             if instance.state == 'terminated':
                 log.error("%s got terminated", instance)
                 return
-        except:
+        except Exception:
             log.exception("hit error waiting for instance to come up")
         time.sleep(10)
         log.info("waiting...")
@@ -80,7 +80,7 @@ def puppetize(instance, name, options):
             run("test -d /data/lost+found || mount /dev/xvdl /data")
             run("echo '/dev/xvdl /data ext4 rw 0 0' >> /etc/fstab")
             break
-        except:
+        except Exception:
             log.exception("waiting...")
             time.sleep(10)
 

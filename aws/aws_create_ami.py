@@ -61,7 +61,7 @@ def create_instance(connection, instance_name, config, key_name, user='root'):
                 env.disable_known_hosts = True
                 if run('date').succeeded:
                     break
-        except:
+        except Exception:
             log.debug('hit error waiting for instance to come up')
         time.sleep(10)
     instance.add_tag('Name', instance_name)
@@ -95,7 +95,7 @@ def create_ami(host_instance, options, config):
             if v.status == 'in-use':
                 if run('ls %s' % int_dev_name).succeeded:
                     break
-        except:
+        except Exception:
             log.debug('hit error waiting for volume to be attached')
             time.sleep(10)
 
@@ -207,7 +207,7 @@ def create_ami(host_instance, options, config):
             v.update()
             if v.status == 'available':
                 break
-        except:
+        except Exception:
             log.exception('hit error waiting for volume to be detached')
             time.sleep(10)
 
@@ -219,7 +219,7 @@ def create_ami(host_instance, options, config):
             snapshot.update()
             if snapshot.status == 'completed':
                 break
-        except:
+        except Exception:
             log.exception('hit error waiting for snapshot to be taken')
             time.sleep(10)
     snapshot.add_tag('Name', dated_target_name)

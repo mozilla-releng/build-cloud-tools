@@ -208,7 +208,7 @@ def create_instance(name, config, region, secrets, key_name, instance_data):
             instance.update()
             if instance.state == 'running':
                 break
-        except:
+        except Exception:
             log.exception("hit error waiting for instance to come up")
         time.sleep(10)
 
@@ -224,7 +224,7 @@ def create_instance(name, config, region, secrets, key_name, instance_data):
         try:
             assimilate(instance.private_ip_address, config, instance_data)
             break
-        except:
+        except Exception:
             log.exception("problem assimilating %s", instance)
             time.sleep(10)
     instance.add_tag('moz-state', 'ready')
@@ -242,7 +242,7 @@ def ami_from_instance(instance):
             instance.update()
             if instance.state == 'stopped':
                 break
-        except:
+        except Exception:
             log.info('Waiting for instance stop')
             time.sleep(10)
     log.info('Creating snapshot')
@@ -252,7 +252,7 @@ def ami_from_instance(instance):
             snapshot.update()
             if snapshot.status == 'completed':
                 break
-        except:
+        except Exception:
             log.exception('hit error waiting for snapshot to be taken')
             time.sleep(10)
     snapshot.add_tag('Name', target_name)

@@ -52,7 +52,7 @@ def get_ssh_client(name, ip, passwords):
         try:
             client.connect(hostname=ip, username='cltbld', password=p)
             return client
-        except:
+        except Exception:
             pass
 
     log.warning("Couldn't log into {name} at {ip} with any known passwords".format(name=name, ip=ip))
@@ -257,7 +257,7 @@ def aws_stop_idle(secrets, passwords, regions, dryrun=False, concurrency=8):
             try:
                 aws_safe_stop_instance(i, impaired_ids, passwords,
                                        dryrun=dryrun)
-            except:
+            except Exception:
                 log.warning("%s - unable to stop" % i.tags.get('Name'),
                             exc_info=True)
 

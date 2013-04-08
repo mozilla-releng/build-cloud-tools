@@ -46,7 +46,11 @@ def aws_connect_to_region(region, secrets):
     """Connect to an EC2 region. Caches connection objects"""
     if region in _aws_cached_connections:
         return _aws_cached_connections[region]
-    conn = boto.ec2.connect_to_region(region, **secrets)
+    conn = boto.ec2.connect_to_region(
+        region,
+        aws_access_key_id=secrets['aws_access_key_id'],
+        aws_secret_access_key=secrets['aws_secret_access_key']
+    )
     _aws_cached_connections[region] = conn
     return conn
 
@@ -55,7 +59,7 @@ def aws_get_all_instances(regions, secrets):
     """
     Returns a list of all instances in the given regions
     """
-    log.debug("fetching all instances for %s", regions)
+    log.debug("fetching all instances for %s" % regions)
     retval = []
     for region in regions:
         conn = aws_connect_to_region(region, secrets)
@@ -86,7 +90,7 @@ def aws_get_reservations(regions, secrets):
     """
     Return a mapping of (availability zone, ec2 instance type) -> count
     """
-    log.debug("getting reservations for %s", regions)
+    log.debug("getting reservations for %s" % regions)
     retval = {}
     for region in regions:
         conn = aws_connect_to_region(region, secrets)
@@ -114,17 +118,19 @@ def aws_filter_reservations(reservations, running_instances):
     for i in running_instances:
         if (i.placement, i.instance_type) in reservations:
             reservations[i.placement, i.instance_type] -= 1
-    log.debug("available reservations: %s", reservations)
+    log.debug("available reservations: %s" % reservations)
 
     # Remove reservations that are used up
     for k, count in reservations.items():
         if count <= 0:
-            log.debug("all reservations for %s are used; removing", k)
+            log.debug("all reservations for %s are used; removing" % k)
             del reservations[k]
 
 
-def aws_resume_instances(moz_instance_type, start_count, regions, secrets, region_priorities, dryrun):
-    "Resume up to `start_count` stopped instances of the given type in the given regions"
+def aws_resume_instances(moz_instance_type, start_count, regions, secrets,
+                         region_priorities, dryrun):
+    """Resume up to `start_count` stopped instances of the given type in the
+    given regions"""
     # Fetch all our instance information
     all_instances = aws_get_all_instances(regions, secrets)
     # We'll filter by these tags in general
@@ -136,38 +142,42 @@ def aws_resume_instances(moz_instance_type, start_count, regions, secrets, regio
     instance_config = json.load(open("configs/%s" % moz_instance_type))
     max_running = instance_config.get('max_running')
     if max_running is not None:
-        running = len(aws_filter_instances(all_instances, state='running', tags=tags))
+        running = len(aws_filter_instances(all_instances, state='running',
+                                           tags=tags))
         if running + start_count > max_running:
             start_count = max_running - running
             if start_count <= 0:
-                log.info("max_running limit hit (%s - %i)", moz_instance_type, max_running)
+                log.info("max_running limit hit (%s - %i)" %
+                         (moz_instance_type, max_running))
                 return 0
 
-    # Get our list of stopped instances, sorted by region priority, then launch_time
-    # Higher region priorities mean we'll prefer to start those instances first
+    # Get our list of stopped instances, sorted by region priority, then
+    # launch_time. Higher region priorities mean we'll prefer to start those
+    # instances first
     def _instance_sort_key(i):
         # Region is (usually?) the placement with the last character dropped
         r = i.placement[:-1]
         if r not in region_priorities:
-            log.warning("No region priority for %s; az=%s; region_priorities=%s",
-                        r, i.placement, region_priorities)
+            log.warning("No region priority for %s; az=%s; "
+                        "region_priorities=%s" % (r, i.placement,
+                                                  region_priorities))
         p = region_priorities.get(r, 0)
         return (p, i.launch_time)
     stopped_instances = list(reversed(sorted(
         aws_filter_instances(all_instances, state='stopped', tags=tags),
         key=_instance_sort_key)))
-    log.debug("stopped_instances: %s", stopped_instances)
+    log.debug("stopped_instances: %s" % stopped_instances)
 
     # Get our current reservations
     reservations = aws_get_reservations(regions, secrets)
-    log.debug("current reservations: %s", reservations)
+    log.debug("current reservations: %s" % reservations)
 
     # Get our currently running instances
     running_instances = aws_filter_instances(all_instances, state='running')
 
     # Filter the reservations
     aws_filter_reservations(reservations, running_instances)
-    log.debug("filtered reservations: %s", reservations)
+    log.debug("filtered reservations: %s" % reservations)
 
     # List of (instance, is_reserved) tuples
     to_start = []
@@ -188,21 +198,24 @@ def aws_resume_instances(moz_instance_type, start_count, regions, secrets, regio
     to_start.extend((i, False) for i in stopped_instances)
 
     # Limit ourselves to start only start_count instances
-    log.debug("starting up to %i instances", start_count)
-    log.debug("to_start: %s", to_start)
+    log.debug("starting up to %i instances" % start_count)
+    log.debug("to_start: %s" % to_start)
 
     started = 0
     for i, is_reserved in to_start:
         r = "reserved instance" if is_reserved else "instance"
         if not dryrun:
-            log.debug("%s - %s - starting %s", i.placement, i.tags['Name'], r)
+            log.debug("%s - %s - starting %s" % (i.placement, i.tags['Name'],
+                                                 r))
             try:
                 i.start()
                 started += 1
             except BotoServerError:
-                log.warning("Cannot start %s" % i.tags['Name'], exc_info=True)
+                log.debug("Cannot start %s" % i.tags['Name'], exc_info=True)
+                log.warning("Cannot start %s" % i.tags['Name'])
         else:
-            log.info("%s - %s - would start %s", i.placement, i.tags['Name'], r)
+            log.info("%s - %s - would start %s" % (i.placement, i.tags['Name'],
+                                                   r))
             started += 1
         if started >= start_count:
             log.debug("Started %s instaces, breaking early" % started)
@@ -211,7 +224,8 @@ def aws_resume_instances(moz_instance_type, start_count, regions, secrets, regio
     return started
 
 
-def aws_watch_pending(db, regions, secrets, builder_map, region_priorities, dryrun):
+def aws_watch_pending(db, regions, secrets, builder_map, region_priorities,
+                      dryrun):
     # First find pending jobs in the db
     pending = find_pending(db)
 
@@ -221,60 +235,55 @@ def aws_watch_pending(db, regions, secrets, builder_map, region_priorities, dryr
     for pending_buildername, count in pending:
         for buildername_exp, instance_type in builder_map.items():
             if re.match(buildername_exp, pending_buildername):
-                log.debug("%s has %i pending jobs, checking instances of type %s", pending_buildername, count, instance_type)
+                log.debug("%s has %i pending jobs, checking instances of type "
+                          "%s" % (pending_buildername, count, instance_type))
                 to_create[instance_type] = to_create.get(instance_type, 0) + count
 
                 break
         else:
-            log.debug("%s has %i pending jobs, but no instance types defined", pending_buildername, count)
+            log.debug("%s has %i pending jobs, but no instance types defined" %
+                      (pending_buildername, count))
 
     for instance_type, count in to_create.items():
-        log.debug("need %i %s", count, instance_type)
+        log.debug("need %i %s" % (count, instance_type))
 
-        # Check for stopped instances in the given regions and start them if there are any
-        started = aws_resume_instances(instance_type, count, regions, secrets, region_priorities, dryrun)
+        # Check for stopped instances in the given regions and start them if
+        # there are any
+        started = aws_resume_instances(instance_type, count, regions, secrets,
+                                       region_priorities, dryrun)
         count -= started
-        log.info("%s - started %i instances; need %i", instance_type, started, count)
+        log.info("%s - started %i instances; need %i" %
+                 (instance_type, started, count))
 
 if __name__ == '__main__':
-    from optparse import OptionParser
-    parser = OptionParser()
-    parser.set_defaults(
-        regions=[],
-        secrets=None,
-        loglevel=logging.INFO,
-        config=None,
-        dryrun=False,
-    )
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-r", "--region", action="append", dest="regions",
+                        required=True)
+    parser.add_argument("-k", "--secrets", type=argparse.FileType('r'),
+                        required=True)
+    parser.add_argument("-c", "--config", type=argparse.FileType('r'),
+                        required=True)
+    parser.add_argument("-v", "--verbose", action="store_const",
+                        dest="loglevel", const=logging.DEBUG,
+                        default=logging.INFO)
+    parser.add_argument("-n", "--dryrun", dest="dryrun", action="store_true",
+                        help="don't actually do anything")
 
-    parser.add_option("-r", "--region", action="append", dest="regions")
-    parser.add_option("-k", "--secrets", dest="secrets")
-    parser.add_option("-v", "--verbose", action="store_const", dest="loglevel", const=logging.DEBUG)
-    parser.add_option("-c", "--config", dest="config")
-    parser.add_option("-n", "--dryrun", dest="dryrun", action="store_true", help="don't actually do anything")
+    args = parser.parse_args()
 
-    options, args = parser.parse_args()
-
-    logging.basicConfig(level=options.loglevel, format="%(asctime)s - %(message)s")
+    logging.basicConfig(level=args.loglevel,
+                        format="%(asctime)s - %(message)s")
     logging.getLogger("boto").setLevel(logging.INFO)
 
-    if not options.regions:
-        parser.error("at least one region is required")
-
-    if not options.secrets:
-        parser.error("secrets are required")
-
-    if not options.config:
-        parser.error("you must specify a config file to use")
-
-    config = json.load(open(options.config))
-    secrets = json.load(open(options.secrets))
+    config = json.load(args.config)
+    secrets = json.load(args.secrets)
 
     aws_watch_pending(
-        config['db'],
-        options.regions,
+        secrets['db'],
+        args.regions,
         secrets,
         config['buildermap'],
         config['region_priorities'],
-        options.dryrun,
+        args.dryrun,
     )
