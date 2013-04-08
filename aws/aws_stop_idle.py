@@ -282,42 +282,31 @@ def aws_stop_idle(secrets, passwords, regions, dryrun=False, concurrency=8):
                raise SystemExit(1)
 
 if __name__ == '__main__':
-    from optparse import OptionParser
-    parser = OptionParser()
-    parser.set_defaults(
-        regions=[],
-        secrets=None,
-        passwords=None,
-        loglevel=logging.INFO,
-        dryrun=False,
-        concurrency=8,
-    )
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-r", "--region", action="append", dest="regions",
+                        required=True)
+    parser.add_argument("-k", "--secrets", type=argparse.FileType('r'),
+                        required=True)
+    parser.add_argument("-v", "--verbose", action="store_const",
+                        dest="loglevel", const=logging.DEBUG,
+                        default=logging.INFO)
+    parser.add_argument("-p", "--passwords", type=argparse.FileType('r'),
+                        required=True)
+    parser.add_argument("-j", "--concurrency", type="int", default=8)
+    parser.add_argument("--dry-run", action="store_true")
 
-    parser.add_option("-r", "--region", action="append", dest="regions")
-    parser.add_option("-k", "--secrets", dest="secrets")
-    parser.add_option("-s", "--key-name", dest="key_name")
-    parser.add_option("-v", "--verbose", action="store_const", dest="loglevel", const=logging.DEBUG)
-    parser.add_option("-p", "--passwords", dest="passwords")
-    parser.add_option("-j", "--concurrency", dest="concurrency", type="int")
-    parser.add_option("--dry-run", action="store_true", dest="dryrun")
+    args = parser.parse_args()
 
-    options, args = parser.parse_args()
-
-    logging.basicConfig(level=options.loglevel, format="%(asctime)s - %(message)s")
+    logging.basicConfig(level=args.loglevel, format="%(asctime)s - %(message)s")
     logging.getLogger("boto").setLevel(logging.WARN)
     logging.getLogger("paramiko").setLevel(logging.WARN)
     logging.getLogger('requests').setLevel(logging.WARN)
 
-    if not options.regions:
-        parser.error("at least one region is required")
+    passwords = json.load(args.passwords)
+    secrets = json.load(args.secrets)
+    secrets = dict(aws_access_key_id=secrets['aws_access_key_id'],
+                   aws_secret_access_key=secrets['aws_secret_access_key'])
 
-    if not options.secrets:
-        parser.error("secrets are required")
-
-    if not options.passwords:
-        parser.error("passwords are required")
-
-    secrets = json.load(open(options.secrets))
-    passwords = json.load(open(options.passwords))
-
-    aws_stop_idle(secrets, passwords, options.regions, dryrun=options.dryrun, concurrency=options.concurrency)
+    aws_stop_idle(secrets, passwords, args.regions, dryrun=args.dry_run,
+                  concurrency=args.concurrency)
