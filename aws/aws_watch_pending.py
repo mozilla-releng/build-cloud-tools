@@ -123,7 +123,7 @@ def aws_filter_reservations(reservations, running_instances):
     # Remove reservations that are used up
     for k, count in reservations.items():
         if count <= 0:
-            log.debug("all reservations for %s are used; removing" % k)
+            log.debug("all reservations for %s are used; removing" % str(k))
             del reservations[k]
 
 
