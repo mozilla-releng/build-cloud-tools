@@ -188,17 +188,23 @@ def create_instance(name, config, region, secrets, key_name, instance_data):
     else:
         subnet_id = choice(config.get('subnet_ids'))
 
-    reservation = conn.run_instances(
-        image_id=config['ami'],
-        key_name=key_name,
-        instance_type=config['instance_type'],
-        block_device_map=bdm,
-        client_token=token,
-        subnet_id=subnet_id,
-        private_ip_address=ip_address,
-        disable_api_termination=bool(config.get('disable_api_termination')),
-        security_group_ids=config.get('security_group_ids', []),
-    )
+    while True:
+        try:
+            reservation = conn.run_instances(
+                image_id=config['ami'],
+                key_name=key_name,
+                instance_type=config['instance_type'],
+                block_device_map=bdm,
+                client_token=token,
+                subnet_id=subnet_id,
+                private_ip_address=ip_address,
+                disable_api_termination=bool(config.get('disable_api_termination')),
+                security_group_ids=config.get('security_group_ids', []),
+            )
+            break
+        except boto.exception.BotoServerError:
+            log.exception("Cannot start an instance", exc_info=True)
+        time.sleep(10)
 
     instance = reservation.instances[0]
     log.info("instance %s created, waiting to come up", instance)
