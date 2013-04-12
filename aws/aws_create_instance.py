@@ -203,7 +203,7 @@ def create_instance(name, config, region, secrets, key_name, instance_data):
             )
             break
         except boto.exception.BotoServerError:
-            log.exception("Cannot start an instance", exc_info=True)
+            log.exception("Cannot start an instance")
         time.sleep(10)
 
     instance = reservation.instances[0]
