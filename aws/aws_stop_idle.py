@@ -7,6 +7,7 @@ import time
 import calendar
 try:
     import simplejson as json
+    assert json
 except ImportError:
     import json
 
@@ -67,7 +68,7 @@ def get_last_activity(name, client):
     stdin, stdout, stderr = client.exec_command("cat /proc/uptime")
     uptime = float(stdout.read().split()[0])
 
-    if uptime < 3*60:
+    if uptime < 3 * 60:
         # Assume we're still booting
         log.debug("%s - uptime is %.2f; assuming we're still booting up", name, uptime)
         return "booting"
@@ -113,16 +114,16 @@ def get_last_activity(name, client):
             last_activity = slave_time - t
 
     # If this was over 10 minutes ago
-    if (slave_time - t) > 10*60 and (slave_time - t) > uptime:
-        log.warning("%s - shut down happened %ss ago, but we've been up for %ss - %s", name, slave_time-t, uptime, line.strip())
+    if (slave_time - t) > 10 * 60 and (slave_time - t) > uptime:
+        log.warning("%s - shut down happened %ss ago, but we've been up for %ss - %s", name, slave_time - t, uptime, line.strip())
         # If longer than 30 minutes, try rebooting
-        if (slave_time - t) > 30*60:
+        if (slave_time - t) > 30 * 60:
             log.warning("%s - rebooting", name)
             stdin, stdout, stderr = client.exec_command("sudo reboot")
             stdin.close()
 
     # If there's *no* activity (e.g. no twistd.log files), and we've been up a while, then reboot
-    if last_activity is None and uptime > 15*60:
+    if last_activity is None and uptime > 15 * 60:
         log.warning("%s - no activity; rebooting", name)
         # If longer than 30 minutes, try rebooting
         stdin, stdout, stderr = client.exec_command("sudo reboot")
@@ -256,7 +257,7 @@ def aws_stop_idle(secrets, passwords, regions, dryrun=False, concurrency=8):
     random.shuffle(all_instances)
 
     q = Queue()
-    done_q = Queue()
+    to_stop = Queue()
 
     def worker():
         while True:
@@ -266,8 +267,8 @@ def aws_stop_idle(secrets, passwords, regions, dryrun=False, concurrency=8):
                 return
             try:
                 if aws_safe_stop_instance(i, impaired_ids, passwords,
-                        dryrun=dryrun):
-                    done_q.put(i)
+                                          dryrun=dryrun):
+                    to_stop.put(i)
             except Exception:
                 log.warning("%s - unable to stop" % i.tags.get('Name'),
                             exc_info=True)
@@ -275,6 +276,8 @@ def aws_stop_idle(secrets, passwords, regions, dryrun=False, concurrency=8):
     for i in all_instances:
         q.put(i)
 
+    # Workaround for http://bugs.python.org/issue11108
+    time.strptime("19000102030405", "%Y%m%d%H%M%S")
     threads = []
     for i in range(concurrency):
         t = threading.Thread(target=worker)
@@ -284,18 +287,23 @@ def aws_stop_idle(secrets, passwords, regions, dryrun=False, concurrency=8):
     while threads:
         for t in threads[:]:
             try:
-               if t.is_alive():
-                   t.join(timeout=0.5)
-               else:
-                   t.join()
-                   threads.remove(t)
+                if t.is_alive():
+                    t.join(timeout=0.5)
+                else:
+                    t.join()
+                    threads.remove(t)
             except KeyboardInterrupt:
-               raise SystemExit(1)
+                raise SystemExit(1)
 
     total_stopped = {}
-    while not done_q.empty():
-        i = done_q.get()
-        t = i.tags['moz-type']
+    while not to_stop.empty():
+        i = to_stop.get()
+        if not dryrun:
+            i.update()
+        if 'moz-type' not in i.tags:
+            log.info("%s - has no moz-type! (%s)" % (i.tags.get('Name'), i.id))
+
+        t = i.tags.get('moz-type', 'notype')
         if t not in total_stopped:
             total_stopped[t] = 0
         total_stopped[t] += 1
