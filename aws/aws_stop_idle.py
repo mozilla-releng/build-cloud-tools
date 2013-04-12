@@ -162,32 +162,38 @@ def graceful_shutdown(name, ip, client):
 
 
 def aws_safe_stop_instance(i, impaired_ids, passwords, dryrun=False):
+    "Returns True if stopped"
     name = i.tags['Name']
     # TODO: Check with slavealloc
 
     ip = i.private_ip_address
     ssh_client = get_ssh_client(name, ip, passwords)
+    stopped = False
     if not ssh_client:
         if i.id in impaired_ids:
             launch_time = calendar.timegm(time.strptime(
                 i.launch_time[:19], '%Y-%m-%dT%H:%M:%S'))
             if time.time() - launch_time > 60 * 10:
-                log.warning("%s - shut down an instance with impaired status" % name)
-                i.stop()
-        return
+                stopped = True
+                if not dryrun:
+                    log.warning("%s - shut down an instance with impaired status" % name)
+                    i.stop()
+                else:
+                    log.info("%s - would have stopped", name)
+        return stopped
     last_activity = get_last_activity(name, ssh_client)
     if last_activity == "stopped":
-        # TODO: could be that the machine is just starting up....
+        stopped = True
         if not dryrun:
             log.info("%s - stopping instance (launched %s)", name, i.launch_time)
             i.stop()
         else:
             log.info("%s - would have stopped", name)
-        return
+        return stopped
 
     if last_activity == "booting":
         # Wait harder
-        return
+        return stopped
 
     log.debug("%s - last activity %is ago", name, last_activity)
     # Determine if the machine is idle for more than 10 minutes
@@ -201,12 +207,15 @@ def aws_safe_stop_instance(i, impaired_ids, passwords, dryrun=False):
             if get_last_activity(name, ssh_client) == "stopped":
                 log.debug("%s - stopping instance", name)
                 i.stop()
+                stopped = True
             else:
                 log.info("%s - not stopping, waiting for graceful shutdown", name)
         else:
             log.info("%s - would have started graceful shutdown", name)
+            stopped = True
     else:
         log.debug("%s - not stopping", name)
+    return stopped
 
 
 def aws_stop_idle(secrets, passwords, regions, dryrun=False, concurrency=8):
@@ -247,6 +256,7 @@ def aws_stop_idle(secrets, passwords, regions, dryrun=False, concurrency=8):
     random.shuffle(all_instances)
 
     q = Queue()
+    done_q = Queue()
 
     def worker():
         while True:
@@ -255,8 +265,9 @@ def aws_stop_idle(secrets, passwords, regions, dryrun=False, concurrency=8):
             except Empty:
                 return
             try:
-                aws_safe_stop_instance(i, impaired_ids, passwords,
-                                       dryrun=dryrun)
+                if aws_safe_stop_instance(i, impaired_ids, passwords,
+                        dryrun=dryrun):
+                    done_q.put(i)
             except Exception:
                 log.warning("%s - unable to stop" % i.tags.get('Name'),
                             exc_info=True)
@@ -280,6 +291,17 @@ def aws_stop_idle(secrets, passwords, regions, dryrun=False, concurrency=8):
                    threads.remove(t)
             except KeyboardInterrupt:
                raise SystemExit(1)
+
+    total_stopped = {}
+    while not done_q.empty():
+        i = done_q.get()
+        t = i.tags['moz-type']
+        if t not in total_stopped:
+            total_stopped[t] = 0
+        total_stopped[t] += 1
+
+    for t, c in sorted(total_stopped.items()):
+        log.info("%s - stopped %i" % (t, c))
 
 if __name__ == '__main__':
     import argparse
