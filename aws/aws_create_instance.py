@@ -230,7 +230,7 @@ def create_instance(name, config, region, secrets, key_name, instance_data):
         try:
             assimilate(instance.private_ip_address, config, instance_data)
             break
-        except Exception:
+        except:
             log.exception("problem assimilating %s", instance)
             time.sleep(10)
     instance.add_tag('moz-state', 'ready')
