@@ -1,6 +1,6 @@
 {
   "buildslave_password": "pass",
-  "buildbot_master": "10.12.48.14:9033",
+  "buildbot_master": "10.12.48.14:1313",
   "default_puppet_server": "puppetmaster-02.srv.releng.aws-us-east-1.mozilla.com",
   "home_tarball": "secrets/try.tar.gz",
   "hosts": {

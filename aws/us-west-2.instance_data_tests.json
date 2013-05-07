@@ -1,6 +1,6 @@
 {
   "buildslave_password": "pass",
-  "buildbot_master": "10.12.48.14:9033",
+  "buildbot_master": "10.12.48.14:1313",
   "default_puppet_server": "puppetmaster-02.srv.releng.aws-us-west-2.mozilla.com",
   "hosts": {
     "puppet": "10.132.49.10",
