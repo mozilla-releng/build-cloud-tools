@@ -12,7 +12,7 @@ import logging
 log = logging.getLogger()
 
 
-def create_master(conn, name, options, config):
+def create_master(conn, fqdn, options, config):
     """Creates an AMI instance with the given name and config. The config must
     specify things like ami id."""
 
@@ -60,14 +60,15 @@ def create_master(conn, name, options, config):
         time.sleep(10)
         log.info("waiting...")
 
-    instance.add_tag('Name', name)
+    instance.add_tag('Name', fqdn.split('.')[0])
+    instance.add_tag('FQDN', fqdn)
     instance.add_tag('moz-type', 'puppetmaster')
 
     instance.add_tag('moz-state', 'pending')
-    puppetize(instance, name, options)
+    puppetize(instance, fqdn, options)
 
 
-def puppetize(instance, name, options):
+def puppetize(instance, fqdn, options):
     env.host_string = instance.private_ip_address
     env.user = 'root'
     env.abort_on_prompts = True
@@ -84,9 +85,7 @@ def puppetize(instance, name, options):
             log.exception("waiting...")
             time.sleep(10)
 
-    hostname = "{name}.srv.releng.aws-{region}.mozilla.com".format(
-        name=name, region=options.region)
-    run("hostname %s" % hostname)
+    run("hostname %s" % fqdn)
 
     # Set up yum repos
     run('rm -f /etc/yum.repos.d/*')
@@ -109,21 +108,21 @@ def puppetize(instance, name, options):
 
     # generate certs
     local("test -d certs.{h} || (mkdir certs.{h} && "
-          "./ca-scripts/generate-cert.sh {h} certs.{h})".format(h=hostname))
+          "./ca-scripts/generate-cert.sh {h} certs.{h})".format(h=fqdn))
 
     # put files to puppet dirs
-    put("certs.%s/ca_crt.pem" % hostname, "/var/lib/puppet/ssl/ca/ca_pub.pem",
+    put("certs.%s/ca_crt.pem" % fqdn, "/var/lib/puppet/ssl/ca/ca_pub.pem",
         mode=0644)
-    put("certs.%s/ca_crt.pem" % hostname, "/var/lib/puppet/ssl/certs/ca.pem",
+    put("certs.%s/ca_crt.pem" % fqdn, "/var/lib/puppet/ssl/certs/ca.pem",
         mode=0644)
-    put("certs.%s/ca_crl.pem" % hostname, "/var/lib/puppet/ssl/ca_crl.pem",
+    put("certs.%s/ca_crl.pem" % fqdn, "/var/lib/puppet/ssl/ca_crl.pem",
         mode=0644)
-    put("certs.{h}/{h}.crt".format(h=hostname),
-        "/var/lib/puppet/ssl/certs/%s.pem" % hostname, mode=0644)
-    put("certs.{h}/{h}.key".format(h=hostname),
-        "/var/lib/puppet/ssl/private_keys/%s.pem" % hostname, mode=0600)
-    put("certs.{h}/{h}.pub".format(h=hostname),
-        "/var/lib/puppet/ssl/public_keys/%s.pem" % hostname, mode=0644)
+    put("certs.{h}/{h}.crt".format(h=fqdn),
+        "/var/lib/puppet/ssl/certs/%s.pem" % fqdn, mode=0644)
+    put("certs.{h}/{h}.key".format(h=fqdn),
+        "/var/lib/puppet/ssl/private_keys/%s.pem" % fqdn, mode=0600)
+    put("certs.{h}/{h}.pub".format(h=fqdn),
+        "/var/lib/puppet/ssl/public_keys/%s.pem" % fqdn, mode=0644)
 
     run("if [ -e /etc/puppet/production ]; then "
         "cd /etc/puppet/production && "
@@ -179,7 +178,7 @@ if __name__ == '__main__':
     parser.add_argument("-k", "--secrets", type=argparse.FileType('r'),
                         required=True, help="file where secrets can be found")
     parser.add_argument("-s", "--key-name", help="SSH key name", required=True)
-    parser.add_argument("hostname", nargs=1, help="Hostname of puppet master")
+    parser.add_argument("fqdn", nargs=1, help="FQDN of puppet master")
 
     args = parser.parse_args()
 
@@ -195,4 +194,4 @@ if __name__ == '__main__':
     except KeyError:
         parser.error("unknown configuration")
 
-    create_master(conn, args.hostname[0], args, config)
+    create_master(conn, args.fqdn[0], args, config)
