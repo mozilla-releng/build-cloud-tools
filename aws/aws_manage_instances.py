@@ -61,6 +61,23 @@ def disable(i, dry_run, comments=None):
         i.add_tag("moz-state", moz_state)
 
 
+def terminate(i, dry_run):
+    name = i.tags.get('Name', '')
+    log.info("Terminating %s..." % name)
+
+    if dry_run:
+        log.info("Dry run mode, skipping...")
+        return
+
+    yesno = raw_input("WARNING: you are about to terminate %s! "
+                      "Are you sure? [y/N] " % name)
+    if yesno == "y":
+        i.terminate()
+        log.info("%s terminated" % name)
+    else:
+        log.info("%s NOT terminated" % name)
+
+
 def status(i):
     instance_id = i.id
     name = i.tags.get('Name', '')
@@ -87,7 +104,8 @@ if __name__ == '__main__':
     parser.add_argument("-r", "--region", dest="regions", action="append",
                         help="optional list of regions")
     parser.add_argument("action", choices=["stop", "start", "restart",
-                                           "enable", "disable", "status"],
+                                           "enable", "disable", "terminate",
+                                           "status"],
                         help="action to be performed")
     parser.add_argument("-m", "--comments", help="reason to disable")
     parser.add_argument("-n", "--dry-run", action="store_true",
@@ -144,5 +162,7 @@ if __name__ == '__main__':
                     enable(i, args.dry_run)
                 elif args.action == "disable":
                     disable(i, args.dry_run, args.comments)
+                elif args.action == "terminate":
+                    terminate(i, args.dry_run)
                 elif args.action == "status":
                     status(i)
