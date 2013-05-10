@@ -143,6 +143,15 @@ def puppetize(instance, name, options):
 
 # TODO: Move this into separate file(s)
 configs = {
+    "centos-6-x64-base-servo": {
+        "us-east-1": {
+            "ami": "ami-049b1e6d",
+            "subnet_id": ["subnet-e8f5fe84", "subnet-acf5fec0"],
+            "security_group_ids": ["sg-b36a84dc"],
+            "instance_type": "m1.medium",
+            "repo_snapshot_id": "snap-e9399cb3",  # This will be mounted at /data
+        },
+    },
     "centos-6-x64-base": {
         "us-east-1": {
             "ami": "ami-049b1e6d",
