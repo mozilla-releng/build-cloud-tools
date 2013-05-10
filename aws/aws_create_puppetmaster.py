@@ -95,7 +95,7 @@ def puppetize(instance, name, options):
     run('yum clean all')
 
     # Get puppet installed
-    run('yum install -q -y puppet mercurial')
+    run('yum install -q -y puppet-2.7.17-1.el6 mercurial')
 
     # /var/lib/puppet skel
     run("test -d /var/lib/puppet/ssl || mkdir -m 771 /var/lib/puppet/ssl")
