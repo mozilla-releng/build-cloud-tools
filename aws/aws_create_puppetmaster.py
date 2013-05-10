@@ -129,7 +129,10 @@ def puppetize(instance, fqdn, options):
         "hg pull -u; else "
         "hg clone http://hg.mozilla.org/build/puppet /etc/puppet/production; "
         "fi")
-    put("secrets/*.csv", "/etc/puppet/production/manifests/extlookup/")
+    put(options.puppet_secrets_file,
+        "/etc/puppet/production/manifests/extlookup/secrets.csv")
+    run("ln -s %s /etc/puppet/production/manifests/nodes.pp" % options.puppet_nodes_file)
+    run("ln -s %s /etc/puppet/production/manifests/config.pp" % options.puppet_config_file)
 
     with settings(warn_only=True):
         result = run("bash /etc/puppet/production/setup/masterize.sh")
@@ -178,6 +181,9 @@ if __name__ == '__main__':
     parser.add_argument("-k", "--secrets", type=argparse.FileType('r'),
                         required=True, help="file where secrets can be found")
     parser.add_argument("-s", "--key-name", help="SSH key name", required=True)
+    parser.add_argument("--puppet-secrets-file", required=True)
+    parser.add_argument("--puppet-nodes-file", required=True)
+    parser.add_argument("--puppet-config-file", required=True)
     parser.add_argument("fqdn", nargs=1, help="FQDN of puppet master")
 
     args = parser.parse_args()
