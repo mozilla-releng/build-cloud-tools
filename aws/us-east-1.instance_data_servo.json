@@ -1,0 +1,6 @@
+{
+  "buildslave_password": "pass",
+  "buildbot_master": "buildbot-master-servo-01.srv.servo.releng.use1.mozilla.com:9989",
+  "default_puppet_server": "servo-puppet1.srv.servo.releng.use1.mozilla.com",
+  "home_tarball": "secrets/servo.tar.gz"
+}
