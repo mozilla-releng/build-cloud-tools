@@ -10,7 +10,8 @@ from boto.ec2 import connect_to_region
 log = logging.getLogger(__name__)
 REGIONS = ('us-east-1', 'us-west-2')
 KNOWN_TYPES = ('puppetmaster', 'buildbot-master', 'dev-linux64', 'bld-linux64',
-               'try-linux64', 'tst-linux32', 'tst-linux64', 'dev')
+               'try-linux64', 'tst-linux32', 'tst-linux64', 'dev',
+               'servo-linux64')
 
 EXPECTED_MAX_UPTIME = {
     "puppetmaster": "meh",
@@ -21,6 +22,7 @@ EXPECTED_MAX_UPTIME = {
     "try-linux64": 12,
     "tst-linux32": 12,
     "tst-linux64": 12,
+    "servo-linux64": 8,
     "default": 4
 }
 
