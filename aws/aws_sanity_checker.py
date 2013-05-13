@@ -93,7 +93,7 @@ def format_instance_list(instances):
             msg=msg)
 
 
-def sanity_check(instances):
+def instance_sanity_check(instances):
     bad_type = get_bad_type(instances=instances)
     bad_state = get_bad_state(instances=instances)
     long_running = get_long_running(instances=instances,
@@ -110,6 +110,25 @@ def sanity_check(instances):
         print "==== Long running instances ===="
         format_instance_list(sorted(long_running, reverse=True,
                                     key=lambda x: get_uptime(x[0])))
+        print
+
+
+def get_not_attached(volumes):
+    bad_volumes = []
+    for v in volumes:
+        if v.status != "in-use":
+            bad_volumes.append((v, "Not attached"))
+    return bad_volumes
+
+
+def volume_sanity_check(volumes):
+    not_attached = get_not_attached(volumes)
+    if not_attached:
+        print "==== Not attached volumes ===="
+        for i, (v, msg) in enumerate(sorted(not_attached,
+                                     key=lambda x: x[0].region.name)):
+            print i, "%s %s: %s" % (v.id, v.region.name, msg)
+        print
 
 
 if __name__ == '__main__':
@@ -137,7 +156,10 @@ if __name__ == '__main__':
     if not args.regions:
         args.regions = REGIONS
     all_instances = []
+    all_volumes = []
     for region in args.regions:
         conn = get_connection(region, secrets)
         all_instances.extend(get_all_instances(conn))
-    sanity_check(all_instances)
+        all_volumes.extend(conn.get_all_volumes())
+    instance_sanity_check(all_instances)
+    volume_sanity_check(all_volumes)
