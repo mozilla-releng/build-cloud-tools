@@ -25,6 +25,24 @@ def get_ip(hostname):
         return None
 
 
+def get_subnet_id(vpc, ip):
+    subnets = vpc.get_all_subnets()
+    for s in subnets:
+        if IP(ip) in IP(s.cidr_block):
+            return s.id
+    return None
+
+
+def ip_available(conn, ip):
+    res = conn.get_all_instances()
+    instances = reduce(lambda a, b: a + b, [r.instances for r in res])
+    ips = [i.private_ip_address for i in instances]
+    if ip in ips:
+        return False
+    else:
+        return True
+
+
 def assimilate(ip_addr, config, instance_data):
     """Assimilate hostname into our collective
 
@@ -168,24 +186,18 @@ def create_instance(name, config, region, secrets, key_name, instance_data):
                                           delete_on_termination=True)
 
     ip_address = get_ip(instance_data['hostname'])
-    if ip_address:
-        # check if the address matches allowed subnets
-        subnets = vpc.get_all_subnets(config.get('subnet_ids'))
-        if any(IP(ip_address) in IP(s.cidr_block) for s in subnets):
-            # check if the address avalable
-            res = conn.get_all_instances()
-            instances = reduce(lambda a, b: a + b, [r.instances for r in res])
-            ips = [i.private_ip_address for i in instances]
-            if ip_address in ips:
-                log.warning("%s already assigned" % ip_address)
-                ip_address = None
-        else:
-            log.warning("%s doesn't belong to any of allowed subnets" % ip_address)
-            ip_address = None
+    subnet_id = None
 
     if ip_address:
-        subnet_id = None
-    else:
+        s_id = get_subnet_id(vpc, ip_address)
+        if s_id in config['subnet_ids']:
+            if ip_available(conn, ip_address):
+                subnet_id = s_id
+            else:
+                log.warning("%s already assigned" % ip_address)
+
+    if not ip_address or not subnet_id:
+        ip_address = None
         subnet_id = choice(config.get('subnet_ids'))
 
     while True:
