@@ -18,7 +18,7 @@ EXPECTED_MAX_UPTIME = {
     "buildbot-master": "meh",
     "dev": "meh",
     "dev-linux64": 8,
-    "bld-linux64": 12,
+    "bld-linux64": 24,
     "try-linux64": 12,
     "tst-linux32": 12,
     "tst-linux64": 12,
