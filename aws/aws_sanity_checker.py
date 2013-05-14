@@ -56,7 +56,7 @@ def get_bad_type(instances):
     for i in instances:
         ins_type = i.tags.get('moz-type')
         if ins_type not in KNOWN_TYPES:
-            bad_types.append((i, 'Uknown type "%s"' % ins_type))
+            bad_types.append((i, 'Unknown type "%s"' % ins_type))
     return bad_types
 
 
@@ -65,7 +65,7 @@ def get_bad_state(instances):
     for i in instances:
         ins_state = i.tags.get('moz-state')
         if ins_state != "ready":
-            bad_state.append((i, 'Uknown state "%s"' % ins_state))
+            bad_state.append((i, 'Unknown state "%s"' % ins_state))
     return bad_state
 
 
