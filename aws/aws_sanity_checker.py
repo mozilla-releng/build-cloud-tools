@@ -101,11 +101,11 @@ def instance_sanity_check(instances):
     long_running = get_long_running(instances=instances,
                                     expected_max_uptime=EXPECTED_MAX_UPTIME)
     if bad_type:
-        print "==== Instances with uknown type ===="
+        print "==== Instances with unknown type ===="
         format_instance_list(sorted(bad_type, key=lambda x: x[0].region.name))
         print
     if bad_state:
-        print "==== Instances with uknown state ===="
+        print "==== Instances with unknown state ===="
         format_instance_list(sorted(bad_state, key=lambda x: x[0].region.name))
         print
     if long_running:
