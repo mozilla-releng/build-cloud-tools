@@ -125,7 +125,9 @@ def get_not_attached(volumes):
 
 
 def volume_sanity_check(volumes):
+    total = sum(v.size for v in volumes)
     not_attached = get_not_attached(volumes)
+    print "Volume usage: %sG" % total
     if not_attached:
         print "==== Not attached volumes ===="
         for i, (v, msg) in enumerate(sorted(not_attached,
@@ -136,12 +138,18 @@ def volume_sanity_check(volumes):
 
 def instance_stats(instances):
     states = collections.defaultdict(int)
+    types = collections.defaultdict(int)
     for i in instances:
         states[i.state] += 1
+        types[i.instance_type] += 1
 
     print "==== %s instances in total ====" % len(instances)
     for state, n in states.iteritems():
         print "%s: %s" % (state, n)
+    print
+    print "==== Type breakdown ===="
+    for t, n in types.iteritems():
+        print "%s: %s" % (t, n)
     print
 
 if __name__ == '__main__':
