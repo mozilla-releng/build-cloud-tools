@@ -5,6 +5,7 @@ import json
 import logging
 import time
 import calendar
+import collections
 from boto.ec2 import connect_to_region
 
 log = logging.getLogger(__name__)
@@ -133,6 +134,16 @@ def volume_sanity_check(volumes):
         print
 
 
+def instance_stats(instances):
+    states = collections.defaultdict(int)
+    for i in instances:
+        states[i.state] += 1
+
+    print "==== %s instances in total ====" % len(instances)
+    for state, n in states.iteritems():
+        print "%s: %s" % (state, n)
+    print
+
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
@@ -163,5 +174,6 @@ if __name__ == '__main__':
         conn = get_connection(region, secrets)
         all_instances.extend(get_all_instances(conn))
         all_volumes.extend(conn.get_all_volumes())
+    instance_stats(all_instances)
     instance_sanity_check(all_instances)
     volume_sanity_check(all_volumes)
