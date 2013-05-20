@@ -14,6 +14,7 @@ except ImportError:
 import boto.ec2
 from boto.exception import BotoServerError
 import sqlalchemy as sa
+from sqlalchemy.engine.reflection import Inspector
 
 import logging
 log = logging.getLogger()
@@ -21,8 +22,21 @@ log = logging.getLogger()
 
 def find_pending(db):
     engine = sa.create_engine(db)
-    result = engine.execute(
-        sa.text("""
+    inspector = Inspector(engine)
+    # Newer buildbot has a "buildrequest_claims" table
+    if "buildrequest_claims" in inspector.get_table_names():
+        query = sa.text("""
+        SELECT buildername, count(*) FROM
+               buildrequests WHERE
+               complete=0 AND
+               submitted_at > :yesterday AND
+               submitted_at < :toonew AND
+               (select count(*) from buildrequest_claims where brid=id) = 0
+
+               GROUP BY buildername""")
+    # Older buildbot doesn't
+    else:
+        query = sa.text("""
         SELECT buildername, count(*) FROM
                buildrequests WHERE
                complete=0 AND
@@ -30,9 +44,12 @@ def find_pending(db):
                submitted_at > :yesterday AND
                submitted_at < :toonew
 
-               GROUP BY buildername"""),
+               GROUP BY buildername""")
+
+    result = engine.execute(
+        query,
         yesterday=time.time() - 86400,
-        toonew=time.time() - 60,
+        toonew=time.time() - 60
     )
     retval = result.fetchall()
     return retval
