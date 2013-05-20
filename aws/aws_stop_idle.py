@@ -46,15 +46,16 @@ class IgnorePolicy:
         pass
 
 
-def get_ssh_client(name, ip, passwords):
+def get_ssh_client(name, ip, credentials):
     client = SSHClient()
     client.set_missing_host_key_policy(IgnorePolicy())
-    for p in passwords:
-        try:
-            client.connect(hostname=ip, username='cltbld', password=p)
-            return client
-        except Exception:
-            pass
+    for u, passwords in credentials.iteritems():
+        for p in passwords:
+            try:
+                client.connect(hostname=ip, username=u, password=p)
+                return client
+            except Exception:
+                pass
 
     log.warning("Couldn't log into {name} at {ip} with any known passwords".format(name=name, ip=ip))
     return None
@@ -162,13 +163,13 @@ def graceful_shutdown(name, ip, client):
     requests.post(url, allow_redirects=False)
 
 
-def aws_safe_stop_instance(i, impaired_ids, passwords, dryrun=False):
+def aws_safe_stop_instance(i, impaired_ids, credentials, dryrun=False):
     "Returns True if stopped"
     name = i.tags['Name']
     # TODO: Check with slavealloc
 
     ip = i.private_ip_address
-    ssh_client = get_ssh_client(name, ip, passwords)
+    ssh_client = get_ssh_client(name, ip, credentials)
     stopped = False
     if not ssh_client:
         if i.id in impaired_ids:
@@ -219,7 +220,7 @@ def aws_safe_stop_instance(i, impaired_ids, passwords, dryrun=False):
     return stopped
 
 
-def aws_stop_idle(secrets, passwords, regions, dryrun=False, concurrency=8):
+def aws_stop_idle(secrets, credentials, regions, dryrun=False, concurrency=8):
     if not regions:
         # Look at all regions
         log.debug("loading all regions")
@@ -266,7 +267,7 @@ def aws_stop_idle(secrets, passwords, regions, dryrun=False, concurrency=8):
             except Empty:
                 return
             try:
-                if aws_safe_stop_instance(i, impaired_ids, passwords,
+                if aws_safe_stop_instance(i, impaired_ids, credentials,
                                           dryrun=dryrun):
                     to_stop.put(i)
             except Exception:
@@ -321,7 +322,7 @@ if __name__ == '__main__':
     parser.add_argument("-v", "--verbose", action="store_const",
                         dest="loglevel", const=logging.DEBUG,
                         default=logging.INFO)
-    parser.add_argument("-p", "--passwords", type=argparse.FileType('r'),
+    parser.add_argument("-c", "--credentials", type=argparse.FileType('r'),
                         required=True)
     parser.add_argument("-j", "--concurrency", type=int, default=8)
     parser.add_argument("--dry-run", action="store_true")
@@ -333,10 +334,10 @@ if __name__ == '__main__':
     logging.getLogger("paramiko").setLevel(logging.WARN)
     logging.getLogger('requests').setLevel(logging.WARN)
 
-    passwords = json.load(args.passwords)
+    credentials = json.load(args.credentials)
     secrets = json.load(args.secrets)
     secrets = dict(aws_access_key_id=secrets['aws_access_key_id'],
                    aws_secret_access_key=secrets['aws_secret_access_key'])
 
-    aws_stop_idle(secrets, passwords, args.regions, dryrun=args.dry_run,
+    aws_stop_idle(secrets, credentials, args.regions, dryrun=args.dry_run,
                   concurrency=args.concurrency)
