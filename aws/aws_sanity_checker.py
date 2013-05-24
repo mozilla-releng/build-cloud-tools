@@ -42,7 +42,9 @@ def get_connection(region, secrets):
 
 def get_all_instances(conn):
     res = conn.get_all_instances()
-    instances = reduce(lambda a, b: a + b, [r.instances for r in res])
+    instances = []
+    if res:
+        instances = reduce(lambda a, b: a + b, [r.instances for r in res])
     return instances
 
 
