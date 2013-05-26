@@ -28,9 +28,10 @@ if __name__ == '__main__':
             aws_secret_access_key=secrets['aws_secret_access_key'])
 
     res = conn.get_all_instances()
-    instances = reduce(lambda a, b: a + b, [r.instances for r in res])
-    for i in instances:
-        for mask in hosts_re:
-            hostname = i.tags.get('FQDN', i.tags.get('Name', ''))
-            if mask.search(hostname) and i.private_ip_address:
-                print i.private_ip_address, hostname
+    if res:
+        instances = reduce(lambda a, b: a + b, [r.instances for r in res])
+        for i in instances:
+            for mask in hosts_re:
+                hostname = i.tags.get('FQDN', i.tags.get('Name', ''))
+                if mask.search(hostname) and i.private_ip_address:
+                    print i.private_ip_address, hostname
