@@ -141,29 +141,30 @@ def get_tacfile(client):
     return data
 
 
-def get_buildbot_master(client):
+def get_buildbot_master(client, masters_json):
     tacfile = get_tacfile(client)
     host = re.search("^buildmaster_host = '(.*?)'$", tacfile, re.M)
-    port = re.search("^port = (\d+)", tacfile, re.M)
-    assert host and port
     host = host.group(1)
-    port = int(port.group(1))
+    port = None
+    for master in masters_json:
+        if master["hostname"] == host:
+            port = master["http_port"]
+            break
+    assert host and port
     return host, port
 
 
-def graceful_shutdown(name, ip, client):
+def graceful_shutdown(name, ip, client, masters_json):
     # Find out which master we're attached to by looking at buildbot.tac
     log.debug("%s - looking up which master we're attached to", name)
-    host, port = get_buildbot_master(client)
-    # http port is pb port -1000
-    port -= 1000
+    host, port = get_buildbot_master(client, masters_json)
 
     url = "http://{host}:{port}/buildslaves/{name}/shutdown".format(host=host, port=port, name=name)
     log.debug("%s - POSTing to %s", name, url)
     requests.post(url, allow_redirects=False)
 
 
-def aws_safe_stop_instance(i, impaired_ids, credentials, dryrun=False):
+def aws_safe_stop_instance(i, impaired_ids, credentials, masters_json, dryrun=False):
     "Returns True if stopped"
     name = i.tags['Name']
     # TODO: Check with slavealloc
@@ -203,7 +204,7 @@ def aws_safe_stop_instance(i, impaired_ids, credentials, dryrun=False):
         if not dryrun:
             # Hit graceful shutdown on the master
             log.debug("%s - starting graceful shutdown", name)
-            graceful_shutdown(name, ip, ssh_client)
+            graceful_shutdown(name, ip, ssh_client, masters_json)
 
             # Check if we've exited right away
             if get_last_activity(name, ssh_client) == "stopped":
@@ -220,7 +221,7 @@ def aws_safe_stop_instance(i, impaired_ids, credentials, dryrun=False):
     return stopped
 
 
-def aws_stop_idle(secrets, credentials, regions, dryrun=False, concurrency=8):
+def aws_stop_idle(secrets, credentials, regions, masters_json, dryrun=False, concurrency=8):
     if not regions:
         # Look at all regions
         log.debug("loading all regions")
@@ -268,7 +269,7 @@ def aws_stop_idle(secrets, credentials, regions, dryrun=False, concurrency=8):
                 return
             try:
                 if aws_safe_stop_instance(i, impaired_ids, credentials,
-                                          dryrun=dryrun):
+                                          masters_json, dryrun=dryrun):
                     to_stop.put(i)
             except Exception:
                 log.warning("%s - unable to stop" % i.tags.get('Name'),
@@ -325,6 +326,7 @@ if __name__ == '__main__':
     parser.add_argument("-c", "--credentials", type=argparse.FileType('r'),
                         required=True)
     parser.add_argument("-j", "--concurrency", type=int, default=8)
+    parser.add_argument("--masters-json", default="http://hg.mozilla.org/build/tools/raw-file/default/buildfarm/maintenance/production-masters.json")
     parser.add_argument("--dry-run", action="store_true")
 
     args = parser.parse_args()
@@ -339,5 +341,10 @@ if __name__ == '__main__':
     secrets = dict(aws_access_key_id=secrets['aws_access_key_id'],
                    aws_secret_access_key=secrets['aws_secret_access_key'])
 
-    aws_stop_idle(secrets, credentials, args.regions, dryrun=args.dry_run,
-                  concurrency=args.concurrency)
+    try:
+        masters_json = json.load(open(args.masters_json))
+    except IOError:
+        masters_json = requests.get(args.masters_json).json
+
+    aws_stop_idle(secrets, credentials, args.regions, masters_json,
+                  dryrun=args.dry_run, concurrency=args.concurrency)
