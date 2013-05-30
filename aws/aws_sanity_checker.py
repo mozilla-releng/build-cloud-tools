@@ -6,6 +6,7 @@ import logging
 import time
 import calendar
 import collections
+import re
 from boto.ec2 import connect_to_region
 
 log = logging.getLogger(__name__)
@@ -140,18 +141,34 @@ def volume_sanity_check(volumes):
 
 def instance_stats(instances):
     states = collections.defaultdict(int)
-    types = collections.defaultdict(int)
+    types = collections.defaultdict(list)
+    type_regexp = re.compile(r"(.*?)-?\d+$")
     for i in instances:
         states[i.state] += 1
-        types[i.instance_type] += 1
+        name = i.tags.get("Name")
+        # Try to remove trailing digits or use the whole name
+        if name:
+            m = type_regexp.match(name)
+            if m:
+                type_name = m.group(1)
+            else:
+                type_name = name
+        else:
+            type_name = "unknown"
+        running = bool(i.state != "stopped")
+        # type: [True, True, False, ...]
+        types[type_name].append(running)
 
     print "==== %s instances in total ====" % len(instances)
     for state, n in states.iteritems():
         print "%s: %s" % (state, n)
     print
     print "==== Type breakdown ===="
-    for t, n in types.iteritems():
-        print "%s: %s" % (t, n)
+    # Sort by amount of running instances
+    for t, n in sorted(types.iteritems(), key=lambda x: x[1].count(True),
+                       reverse=True):
+        print "%s: running: %s, stopped: %s" % (t, n.count(True),
+                                                n.count(False))
     print
 
 if __name__ == '__main__':
