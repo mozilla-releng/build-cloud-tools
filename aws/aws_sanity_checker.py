@@ -13,7 +13,7 @@ log = logging.getLogger(__name__)
 REGIONS = ('us-east-1', 'us-west-2')
 KNOWN_TYPES = ('puppetmaster', 'buildbot-master', 'dev-linux64', 'bld-linux64',
                'try-linux64', 'tst-linux32', 'tst-linux64', 'dev',
-               'servo-linux64')
+               'servo-linux64', 'packager')
 
 EXPECTED_MAX_UPTIME = {
     "puppetmaster": "meh",
