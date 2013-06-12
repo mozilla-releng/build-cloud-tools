@@ -28,6 +28,20 @@ EXPECTED_MAX_UPTIME = {
     "default": 4
 }
 
+EXPECTED_MAX_DOWNTIME = {
+    "puppetmaster": 0,
+    "buildbot-master": 0,
+    "dev": 0,
+    "dev-linux64": 72,
+    "bld-linux64": 72,
+    "try-linux64": 72,
+    "tst-linux32": 72,
+    "tst-linux64": 72,
+    "servo-linux64": 72,
+    "packager": "meh",
+    "default": 24
+}
+
 
 def get_connection(region, secrets):
     if secrets:
@@ -77,18 +91,26 @@ def get_uptime(instance):
     return (time.time() - parse_launch_time(instance.launch_time)) / 3600
 
 
-def get_long_running(instances, expected_max_uptime):
+def get_stale(instances, expected_stale_time, running_only=True):
     long_running = []
     for i in instances:
-        if i.state == "stopped":
-            continue
+        if running_only:
+            if i.state == "stopped":
+                continue
+        else:
+            if i.state != "stopped":
+                continue
+
         uptime = get_uptime(i)
         moz_type = i.tags.get('moz-type', 'default')
-        expected_max = expected_max_uptime.get(moz_type)
+        expected_max = expected_stale_time.get(moz_type)
         if expected_max == "meh":
             continue
         if uptime > expected_max:
-            long_running.append((i, "up for %i hours" % uptime))
+            up_down = "up"
+            if not running_only:
+                up_down = "down"
+            long_running.append((i, "%s for %i hours" % (up_down, uptime)))
     return long_running
 
 
@@ -102,8 +124,11 @@ def format_instance_list(instances):
 def instance_sanity_check(instances):
     bad_type = get_bad_type(instances=instances)
     bad_state = get_bad_state(instances=instances)
-    long_running = get_long_running(instances=instances,
-                                    expected_max_uptime=EXPECTED_MAX_UPTIME)
+    long_running = get_stale(instances=instances,
+                             expected_stale_time=EXPECTED_MAX_UPTIME)
+    long_stopped = get_stale(instances=instances,
+                             expected_stale_time=EXPECTED_MAX_DOWNTIME,
+                             running_only=False)
     if bad_type:
         print "==== Instances with unknown type ===="
         format_instance_list(sorted(bad_type, key=lambda x: x[0].region.name))
@@ -115,6 +140,12 @@ def instance_sanity_check(instances):
     if long_running:
         print "==== Long running instances ===="
         format_instance_list(sorted(long_running, reverse=True,
+                                    key=lambda x: get_uptime(x[0])))
+        print
+
+    if long_stopped:
+        print "==== Instances stopped for a while ===="
+        format_instance_list(sorted(long_stopped, reverse=True,
                                     key=lambda x: get_uptime(x[0])))
         print
 
