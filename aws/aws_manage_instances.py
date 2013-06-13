@@ -149,7 +149,7 @@ if __name__ == '__main__':
                 log.debug("Skipping (terminated?) %s (%s)..." % (name,
                                                                  instance_id))
                 continue
-            if name in args.hosts:
+            if name in args.hosts or instance_id in args.hosts:
                 log.info("Found %s (%s)..." % (name, instance_id))
 
                 if args.action == "start":

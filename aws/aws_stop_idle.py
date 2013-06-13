@@ -315,6 +315,7 @@ def aws_stop_idle(secrets, credentials, regions, masters_json, dryrun=False, con
 
 if __name__ == '__main__':
     import argparse
+    import logging.handlers
     parser = argparse.ArgumentParser()
     parser.add_argument("-r", "--region", action="append", dest="regions",
                         required=True)
@@ -328,14 +329,28 @@ if __name__ == '__main__':
     parser.add_argument("-j", "--concurrency", type=int, default=8)
     parser.add_argument("--masters-json", default="http://hg.mozilla.org/build/tools/raw-file/default/buildfarm/maintenance/production-masters.json")
     parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument("-l", "--logfile", dest="logfile", help="log file for full debug log")
 
     args = parser.parse_args()
 
-    logging.basicConfig(level=args.loglevel, format="%(asctime)s - %(message)s")
+    logging.getLogger().setLevel(logging.DEBUG)
     logging.getLogger("boto").setLevel(logging.WARN)
     logging.getLogger("paramiko").setLevel(logging.WARN)
     logging.getLogger('requests').setLevel(logging.WARN)
 
+    formatter = logging.Formatter("%(asctime)s - %(message)s")
+    handler = logging.StreamHandler()
+    handler.setFormatter(formatter)
+    handler.setLevel(args.loglevel)
+    logging.getLogger().addHandler(handler)
+
+    if args.logfile:
+        handler = logging.handlers.RotatingFileHandler(args.logfile, maxBytes=10 * (1024 ** 2), backupCount=100)
+        handler.setLevel(logging.DEBUG)
+        handler.setFormatter(formatter)
+        logging.getLogger().addHandler(handler)
+
+    log.debug("starting")
     credentials = json.load(args.credentials)
     secrets = json.load(args.secrets)
     secrets = dict(aws_access_key_id=secrets['aws_access_key_id'],
@@ -348,3 +363,4 @@ if __name__ == '__main__':
 
     aws_stop_idle(secrets, credentials, args.regions, masters_json,
                   dryrun=args.dry_run, concurrency=args.concurrency)
+    log.debug("done")
