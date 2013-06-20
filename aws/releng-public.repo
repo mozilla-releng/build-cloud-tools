@@ -1,30 +1,37 @@
 [base]
 name=base
-baseurl=http://puppet/repos/yum/mirrors/centos/6/latest/os/$basearch
+baseurl=http://puppetagain.pub.build.mozilla.org/data/repos/yum/mirrors/centos/6/latest/os/$basearch
 enabled=1
 gpgcheck=0
 
 [puppet]
 name=puppet
-baseurl=http://puppet/repos/yum/mirrors/puppetlabs/el/6/products/$basearch
+baseurl=http://puppetagain.pub.build.mozilla.org/data/repos/yum/mirrors/puppetlabs/el/6/products/$basearch
 enabled=1
 gpgcheck=0
 
 [updates]
 name=updates
-baseurl=http://puppet/repos/yum/mirrors/centos/6/latest/updates/$basearch
+baseurl=http://puppetagain.pub.build.mozilla.org/data/repos/yum/mirrors/centos/6/latest/updates/$basearch
 enabled=1
 gpgcheck=0
 
 [epel]
 name=epel
-baseurl=http://puppet/repos/yum/mirrors/epel/6/latest/$basearch
+baseurl=http://puppetagain.pub.build.mozilla.org/data/repos/yum/mirrors/epel/6/latest/$basearch
 enabled=1
 gpgcheck=0
 
-[releng-public]
-name=releng-public
-descr=Static "releng-public" repo managed by puppet
-baseurl=http://puppet/repos/yum/releng/public/noarch
-enabled=0
+[puppetlabs-main]
+name=puppetlabs-main
+descr=Puppet
+baseurl=http://puppetagain.pub.build.mozilla.org/data/repos/yum/mirrors/puppetlabs/el/6/products/$basearch
+enabled=1
+gpgcheck=0
+
+[puppetlabs-deps]
+name=puppetlabs-deps
+descr=Puppet
+baseurl=http://puppetagain.pub.build.mozilla.org/data/repos/yum/mirrors/puppetlabs/el/6/dependencies/$basearch
+enabled=1
 gpgcheck=0

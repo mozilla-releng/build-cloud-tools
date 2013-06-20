@@ -1,2 +1,3 @@
-deb http://puppet/repos/apt/ubuntu precise main restricted universe
-deb http://puppet/repos/apt/releng precise main
+deb http://puppetagain.pub.build.mozilla.org/data/repos/apt/ubuntu precise main restricted universe
+deb http://puppetagain.pub.build.mozilla.org/data/repos/apt/releng precise main
+deb http://puppetagain.pub.build.mozilla.org/data/repos/apt/puppetlabs precise main dependencies

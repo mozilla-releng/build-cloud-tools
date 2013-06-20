@@ -5,9 +5,11 @@ import time
 import boto
 import StringIO
 from socket import gethostbyname, gaierror
+import getpass
+import random
 
 from random import choice
-from fabric.api import run, put, env, sudo, settings, local
+from fabric.api import run, put, env, sudo
 from fabric.context_managers import cd
 from boto.ec2 import connect_to_region
 from boto.ec2.blockdevicemapping import BlockDeviceMapping, BlockDeviceType
@@ -43,7 +45,7 @@ def ip_available(conn, ip):
         return True
 
 
-def assimilate(ip_addr, config, instance_data):
+def assimilate(ip_addr, config, instance_data, deploypass):
     """Assimilate hostname into our collective
 
     What this means is that hostname will be set up with some basic things like
@@ -73,10 +75,8 @@ def assimilate(ip_addr, config, instance_data):
             run('resize2fs {dev}'.format(dev=mapping['instance_dev']))
 
     # Set up /etc/hosts to talk to 'puppet'
-    hosts = ['127.0.0.1 localhost.localdomain localhost %s' % hostname,
-             '::1 localhost6.localdomain6 localhost6'] + \
-            ["%s %s" % (ip, host) for host, ip in
-             instance_data['hosts'].iteritems()]
+    hosts = ['127.0.0.1 %s localhost' % hostname,
+             '::1 localhost6.localdomain6 localhost6']
     hosts = StringIO.StringIO("\n".join(hosts) + "\n")
     put(hosts, '/etc/hosts')
 
@@ -90,44 +90,15 @@ def assimilate(ip_addr, config, instance_data):
         run('rm -f /etc/yum.repos.d/*')
         put('releng-public.repo', '/etc/yum.repos.d/releng-public.repo')
         run('yum clean all')
+        run('yum install -q -y puppet')
 
-        # Get puppet installed
-        run('yum install -q -y puppet-2.7.17-1.el6')
+    run("wget -O /root/puppetize.sh https://hg.mozilla.org/users/dmitchell_mozilla.com/puppet320/raw-file/default/modules/puppet/files/puppetize.sh")
+    run("chmod 755 /root/puppetize.sh")
+    put(StringIO.StringIO(deploypass), "/root/deploypass")
+    put(StringIO.StringIO("exit 0\n"), "/root/post-puppetize-hook.sh")
 
-    # /var/lib/puppet skel
-    run("test -d /var/lib/puppet/ssl || mkdir -m 771 /var/lib/puppet/ssl")
-    run("test -d /var/lib/puppet/ssl/ca || mkdir -m 755 /var/lib/puppet/ssl/ca")
-    run("test -d /var/lib/puppet/ssl/certs || mkdir -m 755 /var/lib/puppet/ssl/certs")
-    run("test -d /var/lib/puppet/ssl/public_keys || mkdir -m 755 /var/lib/puppet/ssl/public_keys")
-    run("test -d /var/lib/puppet/ssl/private_keys || mkdir -m 750 /var/lib/puppet/ssl/private_keys")
-    run("chown puppet:root /var/lib/puppet/ssl /var/lib/puppet/ssl/ca "
-        "/var/lib/puppet/ssl/certs /var/lib/puppet/ssl/public_keys "
-        "/var/lib/puppet/ssl/private_keys")
-
-    # generate certs
-    local("test -d certs.{h} || (mkdir certs.{h} && "
-          "./ca-scripts/generate-cert.sh {h} certs.{h})".format(h=hostname))
-
-    # cleanup
-    run('find /var/lib/puppet/ssl -type f -delete')
-
-    # put files to puppet dirs
-    put("certs.%s/ca_crt.pem" % hostname, "/var/lib/puppet/ssl/certs/ca.pem",
-        mode=0644)
-    put("certs.{h}/{h}.crt".format(h=hostname),
-        "/var/lib/puppet/ssl/certs/%s.pem" % hostname, mode=0644)
-    put("certs.{h}/{h}.key".format(h=hostname),
-        "/var/lib/puppet/ssl/private_keys/%s.pem" % hostname, mode=0600)
-
-    # Run puppet
-    # We need --detailed-exitcodes here otherwise puppet will return 0
-    # sometimes when it fails to install dependencies
-    with settings(warn_only=True):
-        result = run("puppet agent --onetime --no-daemonize --verbose "
-                     "--detailed-exitcodes --waitforcert 10 "
-                     "--server {puppet}".format(
-                     puppet=instance_data['default_puppet_server']))
-        assert result.return_code in (0, 2)
+    puppet_master = random.choice(instance_data["puppet_masters"])
+    run("PUPPET_SERVER=%s /root/puppetize.sh" % puppet_master)
 
     if 'home_tarball' in instance_data:
         put(instance_data['home_tarball'], '/tmp/home.tar.gz')
@@ -139,9 +110,10 @@ def assimilate(ip_addr, config, instance_data):
 
     if "buildslave_password" in instance_data:
         # Set up a stub buildbot.tac
-        sudo("/tools/buildbot/bin/buildslave create-slave /builds/slave {buildbot_master} {name} {buildslave_password}".format(**instance_data), user="cltbld")
-
-    if "hg_shares" in instance_data:
+        sudo("/tools/buildbot/bin/buildslave create-slave /builds/slave "
+             "{buildbot_master} {name} "
+             "{buildslave_password}".format(**instance_data), user="cltbld")
+    if instance_data.get("hg_shares"):
         hg = "/tools/python27-mercurial/bin/hg"
         for share, bundle in instance_data['hg_shares'].iteritems():
             target_dir = '/builds/hg-shared/%s' % share
@@ -151,13 +123,14 @@ def assimilate(ip_addr, config, instance_data):
             hgrc += "default = http://hg.mozilla.org/%s\n" % share
             put(StringIO.StringIO(hgrc), '%s/.hg/hgrc' % target_dir)
             run("chown cltbld: %s/.hg/hgrc" % target_dir)
-            sudo('{hg} -R {d} unbundle {b}'.format(hg=hg, d=target_dir, b=bundle),
-                 user="cltbld")
+            sudo('{hg} -R {d} unbundle {b}'.format(hg=hg, d=target_dir,
+                                                   b=bundle), user="cltbld")
 
     run("reboot")
 
 
-def create_instance(name, config, region, secrets, key_name, instance_data):
+def create_instance(name, config, region, secrets, key_name, instance_data,
+                    deploypass):
     """Creates an AMI instance with the given name and config. The config must
     specify things like ami id."""
     conn = connect_to_region(
@@ -196,6 +169,7 @@ def create_instance(name, config, region, secrets, key_name, instance_data):
             else:
                 log.warning("%s already assigned" % ip_address)
 
+    # TODO: fail if no IP assigned
     if not ip_address or not subnet_id:
         ip_address = None
         subnet_id = choice(config.get('subnet_ids'))
@@ -240,7 +214,7 @@ def create_instance(name, config, region, secrets, key_name, instance_data):
     instance.add_tag('moz-state', 'pending')
     while True:
         try:
-            assimilate(instance.private_ip_address, config, instance_data)
+            assimilate(instance.private_ip_address, config, instance_data, deploypass)
             break
         except:
             log.exception("problem assimilating %s", instance)
@@ -317,14 +291,15 @@ class LoggingProcess(multiprocessing.Process):
         return super(LoggingProcess, self).run()
 
 
-def make_instances(names, config, region, secrets, key_name, instance_data):
+def make_instances(names, config, region, secrets, key_name, instance_data,
+                   deploypass):
     """Create instances for each name of names for the given configuration"""
     procs = []
     for name in names:
         p = LoggingProcess(log="{name}.log".format(name=name),
                            target=create_instance,
                            args=(name, config, region, secrets, key_name,
-                                 instance_data),
+                                 instance_data, deploypass),
                            )
         p.start()
         procs.append(p)
@@ -361,19 +336,8 @@ if __name__ == '__main__':
         parser.error("unknown configuration")
 
     secrets = json.load(args.secrets)
+    deploypass = getpass.getpass("Enter deploy password:").strip()
 
     instance_data = json.load(args.instance_data)
-    if args.instance_id:
-        conn = connect_to_region(
-            args.region,
-            aws_access_key_id=secrets['aws_access_key_id'],
-            aws_secret_access_key=secrets['aws_secret_access_key'],
-        )
-        instance = conn.get_all_instances([args.instance_id])[0].instances[0]
-        instance_data['name'] = args.hosts[0]
-        instance_data['hostname'] = '{name}.{domain}'.format(
-            name=args.hosts[0], domain=config['domain'])
-        assimilate(instance.private_ip_address, config, instance_data)
-    else:
-        make_instances(args.hosts, config, args.region, secrets, args.key_name,
-                       instance_data)
+    make_instances(args.hosts, config, args.region, secrets, args.key_name,
+                   instance_data, deploypass)
