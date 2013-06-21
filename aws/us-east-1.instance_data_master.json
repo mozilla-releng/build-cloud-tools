@@ -1,4 +1,4 @@
 {
   "puppet_masters": ["releng-puppet1.srv.releng.use1.mozilla.com", "releng-puppet2.srv.releng.use1.mozilla.com"],
-  "home_tarball": "secrets/master.tar.gz",
+  "home_tarball": "secrets/master.tar.gz"
 }
