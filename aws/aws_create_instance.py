@@ -92,7 +92,7 @@ def assimilate(ip_addr, config, instance_data, deploypass):
         run('yum clean all')
         run('yum install -q -y puppet')
 
-    run("wget -O /root/puppetize.sh https://hg.mozilla.org/users/dmitchell_mozilla.com/puppet320/raw-file/default/modules/puppet/files/puppetize.sh")
+    run("wget -O /root/puppetize.sh https://hg.mozilla.org/build/puppet/raw-file/default/modules/puppet/files/puppetize.sh")
     run("chmod 755 /root/puppetize.sh")
     put(StringIO.StringIO(deploypass), "/root/deploypass")
     put(StringIO.StringIO("exit 0\n"), "/root/post-puppetize-hook.sh")
