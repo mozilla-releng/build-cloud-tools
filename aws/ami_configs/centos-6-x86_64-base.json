@@ -1,6 +1,6 @@
 {
     "us-east-1": {
-        "ami": "ami-41d00528",
+        "ami": "ami-7d0c6314",
         "instance_type": "c1.xlarge",
         "arch": "x86_64",
         "target": {
@@ -13,7 +13,7 @@
         }
     },
     "us-west-1": {
-        "ami": "ami-250e5060",
+        "ami": "ami-c7fad582",
         "instance_type": "c1.xlarge",
         "arch": "x86_64",
         "target": {
@@ -26,7 +26,7 @@
         }
     },
     "us-west-2": {
-        "ami": "ami-8a25a9ba",
+        "ami": "ami-5344d263",
         "instance_type": "c1.xlarge",
         "arch": "x86_64",
         "target": {

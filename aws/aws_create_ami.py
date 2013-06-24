@@ -61,7 +61,7 @@ def create_instance(connection, instance_name, config, key_name, user='root'):
                 env.disable_known_hosts = True
                 if run('date').succeeded:
                     break
-        except Exception:
+        except:
             log.debug('hit error waiting for instance to come up')
         time.sleep(10)
     instance.add_tag('Name', instance_name)
@@ -87,7 +87,13 @@ def create_ami(host_instance, options, config):
 
     v = connection.create_volume(config['target']['size'],
                                  host_instance.placement)
-    v.attach(host_instance.id, config['target']['aws_dev_name'])
+    while True:
+        try:
+            v.attach(host_instance.id, config['target']['aws_dev_name'])
+            break
+        except:
+            log.debug('hit error waiting for volume to be attached')
+            time.sleep(10)
 
     while True:
         try:
@@ -95,7 +101,7 @@ def create_ami(host_instance, options, config):
             if v.status == 'in-use':
                 if run('ls %s' % int_dev_name).succeeded:
                     break
-        except Exception:
+        except:
             log.debug('hit error waiting for volume to be attached')
             time.sleep(10)
 
@@ -207,7 +213,7 @@ def create_ami(host_instance, options, config):
             v.update()
             if v.status == 'available':
                 break
-        except Exception:
+        except:
             log.exception('hit error waiting for volume to be detached')
             time.sleep(10)
 
@@ -219,7 +225,7 @@ def create_ami(host_instance, options, config):
             snapshot.update()
             if snapshot.status == 'completed':
                 break
-        except Exception:
+        except:
             log.exception('hit error waiting for snapshot to be taken')
             time.sleep(10)
     snapshot.add_tag('Name', dated_target_name)
@@ -246,7 +252,7 @@ def create_ami(host_instance, options, config):
             log.info('AMI created')
             log.info('ID: {id}, name: {name}'.format(id=ami.id, name=ami.name))
             break
-        except boto.exception.EC2ResponseError:
+        except:
             log.info('Wating for AMI')
             time.sleep(10)
 
