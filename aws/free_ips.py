@@ -44,7 +44,9 @@ blocks = [s.cidr_block for s in subnets]
 
 available_ips = []
 for b in blocks:
-    for ip in IP(b):
+    # skip first 3 IPs (they are sometimes "reserved") and the last one
+    # (broadcast)
+    for ip in list(IP(b))[2:-1]:
         if str(ip) not in used_ips:
             available_ips.append(ip)
 sample = random.sample(available_ips, args.number)
