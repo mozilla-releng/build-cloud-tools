@@ -50,5 +50,10 @@ for b in blocks:
         if str(ip) not in used_ips:
             available_ips.append(ip)
 sample = random.sample(available_ips, args.number)
+
+i = 100
 for ip in sample:
-    print ip
+    host = "tst-linux32-ec2-%s.test.releng.usw2.mozilla.com" % i
+    print 'invtool A create --ip %s --fqdn %s --private --description "adding more slaves..."' % (ip, host)
+    print 'invtool PTR create --ip %s --target %s --private --description "adding more slaves..."' % (ip, host)
+    i += 1
