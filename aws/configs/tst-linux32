@@ -5,7 +5,7 @@
         "domain": "test.releng.use1.mozilla.com",
         "ami": "ami-ea8e1e83",
         "subnet_ids": ["subnet-8f32cbe5", "subnet-3835cc52", "subnet-ed35cc87", "subnet-ae35ccc4"],
-        "security_group_ids": [],
+        "security_group_ids": ["sg-f0f1239f"],
         "instance_type": "m1.medium",
         "distro": "ubuntu",
         "device_map": {
@@ -20,7 +20,7 @@
         "domain": "test.releng.usw2.mozilla.com",
         "ami": "ami-040c8634",
         "subnet_ids": ["subnet-d6cba8bf", "subnet-aecba8c7", "subnet-a4cba8cd"],
-        "security_group_ids": [],
+        "security_group_ids": ["sg-8b9f7ce4"],
         "instance_type": "m1.medium",
         "distro": "ubuntu",
         "device_map": {
