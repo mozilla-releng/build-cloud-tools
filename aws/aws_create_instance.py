@@ -336,7 +336,7 @@ if __name__ == '__main__':
         parser.error("unknown configuration")
 
     secrets = json.load(args.secrets)
-    deploypass = getpass.getpass("Enter deploy password:").strip()
+    deploypass = getpass.getpass("Enter puppetagain deploy password:").strip()
 
     instance_data = json.load(args.instance_data)
     make_instances(args.hosts, config, args.region, secrets, args.key_name,
