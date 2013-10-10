@@ -1,0 +1,41 @@
+{
+    "hostname": "vcssync%d",
+    "us-east-1": {
+        "type": "vcssync",
+        "domain": "srv.releng.use1.mozilla.com",
+        "ami": "ami-43c7b72a",
+        "subnet_ids": ["subnet-33a98358", "subnet-30a9835b", "subnet-35a9835e", "subnet-0aa98361"],
+        "security_group_ids": [],
+        "instance_type": "m3.xlarge",
+        "disable_api_termination": true,
+        "device_map": {
+            "/dev/sda1": {
+                "size": 10,
+                "instance_dev": "/dev/xvde1"
+            },
+            "/dev/sdf": {
+                "size": 100,
+                "instance_dev": "/dev/xvdj"
+            }
+        }
+    },
+    "us-west-2": {
+        "type": "vcssync",
+        "domain": "srv.releng.usw2.mozilla.com",
+        "ami": "ami-516cfc61",
+        "subnet_ids": ["subnet-b948dad0", "subnet-ba48dad3", "subnet-bf48dad6"],
+        "security_group_ids": [],
+        "instance_type": "m3.xlarge",
+        "disable_api_termination": true,
+        "device_map": {
+            "/dev/sda1": {
+                "size": 10,
+                "instance_dev": "/dev/xvde1"
+            },
+            "/dev/sdf": {
+                "size": 100,
+                "instance_dev": "/dev/xvdj"
+            }
+        }
+    }
+}
