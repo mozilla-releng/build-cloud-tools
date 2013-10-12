@@ -72,8 +72,7 @@ def assimilate(ip_addr, config, instance_data, deploypass):
     # the instance has.
     if 'device_map' in config:
         for mapping in config['device_map'].values():
-            if mapping['instance_dev'].endswith("1"):
-                # Only root partition can be resized, sda1/xvde1/xvda1/etc
+            if not mapping.get("skip_resize"):
                 run('resize2fs {dev}'.format(dev=mapping['instance_dev']))
 
     # Set up /etc/hosts to talk to 'puppet'
