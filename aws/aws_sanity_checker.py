@@ -13,12 +13,14 @@ log = logging.getLogger(__name__)
 REGIONS = ('us-east-1', 'us-west-2')
 KNOWN_TYPES = ('puppetmaster', 'buildbot-master', 'dev-linux64', 'bld-linux64',
                'try-linux64', 'tst-linux32', 'tst-linux64', 'tst-win64', 'dev',
-               'servo-linux64', 'packager')
+               'servo-linux64', 'packager', 'vcssync', 'infra')
 
 EXPECTED_MAX_UPTIME = {
     "puppetmaster": "meh",
     "buildbot-master": "meh",
     "dev": "meh",
+    "infra": "meh",
+    "vcssync": "meh",
     "dev-linux64": 8,
     "bld-linux64": 24,
     "try-linux64": 12,
@@ -32,6 +34,8 @@ EXPECTED_MAX_DOWNTIME = {
     "puppetmaster": 0,
     "buildbot-master": 0,
     "dev": 0,
+    "infra": 0,
+    "vcssync": 0,
     "dev-linux64": 72,
     "bld-linux64": 72,
     "try-linux64": 72,
@@ -41,6 +45,10 @@ EXPECTED_MAX_DOWNTIME = {
     "packager": "meh",
     "default": 24
 }
+
+
+def is_beanstalk_instance(i):
+    return i.tags.get("elasticbeanstalk:environment-name") is not None
 
 
 def get_connection(region, secrets):
@@ -60,7 +68,8 @@ def get_all_instances(conn):
     instances = []
     if res:
         instances = reduce(lambda a, b: a + b, [r.instances for r in res])
-    return instances
+    # Skip instances managed by Elastic Beanstalk
+    return [i for i in instances if not is_beanstalk_instance(i)]
 
 
 def parse_launch_time(launch_time):
