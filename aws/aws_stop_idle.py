@@ -22,6 +22,9 @@ import requests
 import logging
 log = logging.getLogger()
 
+# Instances runnnig less than STOP_THRESHOLD_MINS minutes within 1 hour
+# boundary won't be stopped.
+STOP_THRESHOLD_MINS = 45
 
 def get_buildbot_instances(conn):
     # Look for instances with moz-state=ready and hostname *-ec2-000
@@ -164,7 +167,8 @@ def graceful_shutdown(name, ip, client, masters_json):
     requests.post(url, allow_redirects=False)
 
 
-def aws_safe_stop_instance(i, impaired_ids, credentials, masters_json, dryrun=False):
+def aws_safe_stop_instance(i, impaired_ids, credentials, masters_json,
+                           dryrun=False):
     "Returns True if stopped"
     name = i.tags['Name']
     # TODO: Check with slavealloc
@@ -172,23 +176,31 @@ def aws_safe_stop_instance(i, impaired_ids, credentials, masters_json, dryrun=Fa
     ip = i.private_ip_address
     ssh_client = get_ssh_client(name, ip, credentials)
     stopped = False
+    launch_time = calendar.timegm(time.strptime(
+        i.launch_time[:19], '%Y-%m-%dT%H:%M:%S'))
     if not ssh_client:
         if i.id in impaired_ids:
-            launch_time = calendar.timegm(time.strptime(
-                i.launch_time[:19], '%Y-%m-%dT%H:%M:%S'))
             if time.time() - launch_time > 60 * 10:
                 stopped = True
                 if not dryrun:
-                    log.warning("%s - shut down an instance with impaired status" % name)
+                    log.warning("%s - shut down an instance with impaired status", name)
                     i.stop()
                 else:
                     log.info("%s - would have stopped", name)
         return stopped
+
+    # skip instances running not close to 1hr boundary
+    uptime_min = int((time.time() - launch_time) / 60)
+    if uptime_min % 60 < STOP_THRESHOLD_MINS:
+        log.info("Skipping %s, with uptime %s", name, uptime_min)
+        return False
+
     last_activity = get_last_activity(name, ssh_client)
     if last_activity == "stopped":
         stopped = True
         if not dryrun:
-            log.info("%s - stopping instance (launched %s)", name, i.launch_time)
+            log.info("%s - stopping instance (launched %s)", name,
+                     i.launch_time)
             i.stop()
         else:
             log.info("%s - would have stopped", name)
