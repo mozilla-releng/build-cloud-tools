@@ -192,7 +192,7 @@ def aws_safe_stop_instance(i, impaired_ids, credentials, masters_json,
     # skip instances running not close to 1hr boundary
     uptime_min = int((time.time() - launch_time) / 60)
     if uptime_min % 60 < STOP_THRESHOLD_MINS:
-        log.info("Skipping %s, with uptime %s", name, uptime_min)
+        log.debug("Skipping %s, with uptime %s", name, uptime_min)
         return False
 
     last_activity = get_last_activity(name, ssh_client)
