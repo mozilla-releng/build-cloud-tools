@@ -39,10 +39,8 @@ else:
     conn = connect_to_region(args.region)
     vpc = VPCConnection(region=conn.region)
 
-
-res = conn.get_all_instances()
-instances = reduce(lambda a, b: a + b, [r.instances for r in res])
-used_ips = [i.private_ip_address for i in instances]
+interfaces = vpc.get_all_network_interfaces()
+used_ips = [i.private_ip_address for i in interfaces]
 
 subnets = vpc.get_all_subnets(subnet_ids=config["subnet_ids"])
 blocks = [s.cidr_block for s in subnets]
