@@ -26,6 +26,7 @@ log = logging.getLogger()
 # boundary won't be stopped.
 STOP_THRESHOLD_MINS = 45
 
+
 def get_buildbot_instances(conn):
     # Look for instances with moz-state=ready and hostname *-ec2-000
     reservations = conn.get_all_instances(filters={
@@ -37,7 +38,7 @@ def get_buildbot_instances(conn):
     for r in reservations:
         for i in r.instances:
             name = i.tags['Name']
-            if not re.match(".*-ec2-\d+", name):
+            if not re.match(r".*-(ec2|spot)-\d+", name):
                 continue
             retval.append(i)
 
