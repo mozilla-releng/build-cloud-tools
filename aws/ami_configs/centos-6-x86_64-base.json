@@ -9,7 +9,10 @@
             "e2_label": "root_dev",
             "aws_dev_name": "/dev/sdh",
             "int_dev_name": "/dev/xvdl",
-            "mount_point": "/mnt"
+            "mount_point": "/mnt",
+            "tags": {
+                "moz-type": "bld-linux64"
+            }
         }
     },
     "us-west-1": {
@@ -22,7 +25,10 @@
             "e2_label": "root_dev",
             "aws_dev_name": "/dev/sdh",
             "int_dev_name": "/dev/xvdl",
-            "mount_point": "/mnt"
+            "mount_point": "/mnt",
+            "tags": {
+                "moz-type": "bld-linux64"
+            }
         }
     },
     "us-west-2": {
@@ -35,7 +41,10 @@
             "e2_label": "root_dev",
             "aws_dev_name": "/dev/sdh",
             "int_dev_name": "/dev/xvdl",
-            "mount_point": "/mnt"
+            "mount_point": "/mnt",
+            "tags": {
+                "moz-type": "bld-linux64"
+            }
         }
     }
 }
