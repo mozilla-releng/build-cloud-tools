@@ -34,7 +34,7 @@ def stop(i):
     # on-demand instances don't have instanceLifecycle attribute
     if hasattr(i, "instanceLifecycle") and i.instanceLifecycle == "spot":
         log.warning("Terminating %s", i)
-         i.terminate()
+        i.terminate()
     else:
         i.stop()
 
