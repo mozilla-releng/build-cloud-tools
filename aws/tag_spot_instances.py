@@ -4,15 +4,19 @@ import argparse
 import json
 import logging
 from boto.ec2 import connect_to_region
+from boto.vpc import VPCConnection
 
 log = logging.getLogger(__name__)
 REGIONS = ['us-east-1', 'us-west-2']
 
 
-def tag_it(i):
+def tag_it(i, vpc):
     netif = i.interfaces[0]
+    # network interface needs to be reloaded usin VPC to get the tags
+    interface = vpc.get_all_network_interfaces(
+        filters={"network-interface-id": netif.id})[0]
     # copy interface tags over
-    for tag_name, tag_value in netif.tags.iteritems():
+    for tag_name, tag_value in interface.tags.iteritems():
         log.info("Adding '%s' tag with '%s' value to %s", tag_name, tag_value,
                  i)
         i.add_tag(tag_name, tag_value)
@@ -48,8 +52,14 @@ if __name__ == '__main__':
                 aws_access_key_id=secrets['aws_access_key_id'],
                 aws_secret_access_key=secrets['aws_secret_access_key']
             )
+            vpc = VPCConnection(
+                aws_access_key_id=secrets['aws_access_key_id'],
+                aws_secret_access_key=secrets['aws_secret_access_key'],
+                region=conn.region
+            )
         else:
             conn = connect_to_region(region)
+            vpc = VPCConnection(region=conn.region)
 
         spot_requests = conn.get_all_spot_instance_requests() or []
         for req in spot_requests:
@@ -69,5 +79,5 @@ if __name__ == '__main__':
                     moz_type = i.tags.get('moz-type')
                     # If one of the tags is unset/empty
                     if not all([name, fqdn, moz_type]):
-                        tag_it(i)
+                        tag_it(i, vpc)
             req.add_tag("moz-tagged", "1")
