@@ -27,6 +27,19 @@ log = logging.getLogger()
 STOP_THRESHOLD_MINS = 45
 
 
+def stop(i):
+    """Stop or destroy an instances depending on its type. Spot instances do
+    not support stop() method."""
+
+    # on-demand instances don't have instanceLifecycle attribute
+    if hasattr(i, "instanceLifecycle") and i.instanceLifecycle == "spot":
+        log.warning("Terminating %s", i)
+        # TODO: enable instance termination when ready
+        # i.terminate()
+    else:
+        i.stop()
+
+
 def get_buildbot_instances(conn):
     # Look for instances with moz-state=ready and hostname *-ec2-000
     reservations = conn.get_all_instances(filters={
@@ -185,7 +198,7 @@ def aws_safe_stop_instance(i, impaired_ids, credentials, masters_json,
                 stopped = True
                 if not dryrun:
                     log.warning("%s - shut down an instance with impaired status", name)
-                    i.stop()
+                    stop(i)
                 else:
                     log.info("%s - would have stopped", name)
         return stopped
@@ -202,7 +215,7 @@ def aws_safe_stop_instance(i, impaired_ids, credentials, masters_json,
         if not dryrun:
             log.info("%s - stopping instance (launched %s)", name,
                      i.launch_time)
-            i.stop()
+            stop(i)
         else:
             log.info("%s - would have stopped", name)
         return stopped
@@ -222,7 +235,7 @@ def aws_safe_stop_instance(i, impaired_ids, credentials, masters_json,
             # Check if we've exited right away
             if get_last_activity(name, ssh_client) == "stopped":
                 log.debug("%s - stopping instance", name)
-                i.stop()
+                stop(i)
                 stopped = True
             else:
                 log.info("%s - not stopping, waiting for graceful shutdown", name)
