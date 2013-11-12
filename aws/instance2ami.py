@@ -50,7 +50,8 @@ def main():
         config = json.load(open("%s/%s.json" % (AMI_CONFIGS_DIR,
                                                 args.config)))[args.region]
         moz_type_config = json.load(open("configs/%s" %
-                                         config.tags["moz-type"]))[args.region]
+                                         config["target"]["tags"]["moz-type"])
+                                    )[args.region]
     except KeyError:
         parser.error("unknown configuration")
 
