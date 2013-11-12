@@ -16,6 +16,8 @@ from boto.ec2.blockdevicemapping import BlockDeviceMapping, BlockDeviceType
 from boto.vpc import VPCConnection
 from IPy import IP
 
+from aws_create_ami import AMI_CONFIGS_DIR
+
 import logging
 log = logging.getLogger()
 
@@ -82,14 +84,15 @@ def assimilate(ip_addr, config, instance_data, deploypass):
     put(hosts, '/etc/hosts')
 
     if distro in ('ubuntu', 'debian'):
-        put('releng.list', '/etc/apt/sources.list')
+        put('%s/releng-public.list' % AMI_CONFIGS_DIR, '/etc/apt/sources.list')
         run("apt-get update")
         run("apt-get install -y --allow-unauthenticated puppet")
         run("apt-get clean")
     else:
         # Set up yum repos
         run('rm -f /etc/yum.repos.d/*')
-        put('releng-public.repo', '/etc/yum.repos.d/releng-public.repo')
+        put('%s/releng-public.repo' % AMI_CONFIGS_DIR,
+            '/etc/yum.repos.d/releng-public.repo')
         run('yum clean all')
         run('yum install -q -y puppet')
 

@@ -10,7 +10,7 @@ import time
 import logging
 log = logging.getLogger()
 
-AM_CONFIGS_DIR = "ami_configs"
+AMI_CONFIGS_DIR = "ami_configs"
 
 
 def create_connection(options):
@@ -79,7 +79,7 @@ def create_ami(host_instance, options, config):
     env.disable_known_hosts = True
 
     target_name = options.config
-    config_dir = "%s/%s" % (AM_CONFIGS_DIR, target_name)
+    config_dir = "%s/%s" % (AMI_CONFIGS_DIR, target_name)
     dated_target_name = "%s-%s" % (
         options.config, time.strftime("%Y-%m-%d-%H-%M", time.gmtime()))
     int_dev_name = config['target']['int_dev_name']
@@ -130,7 +130,7 @@ def create_ami(host_instance, options, config):
         run('debootstrap precise %s http://puppetagain.pub.build.mozilla.org/data/repos/apt/ubuntu/' % mount_point)
         run('chroot %s mount -t proc none /proc' % mount_point)
         run('mount -o bind /dev %s/dev' % mount_point)
-        put('releng-public.list', '%s/etc/apt/sources.list' % mount_point)
+        put('%s/releng-public.list' % AMI_CONFIGS_DIR, '%s/etc/apt/sources.list' % mount_point)
         with lcd(config_dir):
             put('usr/sbin/policy-rc.d', '%s/usr/sbin/' % mount_point, mirror_local_mode=True)
         run('chroot %s apt-get update' % mount_point)
@@ -308,7 +308,7 @@ if __name__ == '__main__':
         parser.error("SSH key name name is required")
 
     try:
-        config = json.load(open("%s/%s.json" % (AM_CONFIGS_DIR,
+        config = json.load(open("%s/%s.json" % (AMI_CONFIGS_DIR,
                                                 options.config)))[options.region]
     except KeyError:
         parser.error("unknown configuration")
