@@ -3,6 +3,7 @@ import argparse
 import json
 import logging
 import time
+import random
 import StringIO
 from boto.ec2 import connect_to_region
 from boto.ec2.blockdevicemapping import BlockDeviceMapping, BlockDeviceType
@@ -48,6 +49,8 @@ def main():
     try:
         config = json.load(open("%s/%s.json" % (AMI_CONFIGS_DIR,
                                                 args.config)))[args.region]
+        moz_type_config = json.load(open("configs/%s" %
+                                         config.tags["moz-type"]))[args.region]
     except KeyError:
         parser.error("unknown configuration")
 
@@ -83,8 +86,10 @@ def main():
     snap1 = v.create_snapshot("temporary snapshot of %s" % v_id)
 
     wait_for_status(snap1, "status", "completed", "update")
-    host_instance = create_instance(conn, "tmp", config, args.ssh_key,
-                                    args.user)
+    host_instance = create_instance(
+        connection=conn, instance_name="tmp", config=config,
+        key_name=args.ssh_key, user=args.user,
+        subnet_id=random.choice(moz_type_config["subnet_ids"]))
 
     env.host_string = host_instance.public_dns_name
     env.user = 'root'

@@ -31,7 +31,8 @@ def manage_service(service, target, state, distro="centos"):
         run('chroot %s chkconfig --level 2345 %s %s' % (target, service, state))
 
 
-def create_instance(connection, instance_name, config, key_name, user='root'):
+def create_instance(connection, instance_name, config, key_name, user='root',
+                    subnet_id=None):
 
     bdm = None
     if 'device_map' in config:
@@ -46,6 +47,7 @@ def create_instance(connection, instance_name, config, key_name, user='root'):
         instance_type=config['instance_type'],
         block_device_map=bdm,
         client_token=str(uuid.uuid4())[:16],
+        subnet_id=subnet_id,
     )
 
     instance = reservation.instances[0]
