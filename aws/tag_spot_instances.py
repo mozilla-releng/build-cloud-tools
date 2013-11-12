@@ -20,6 +20,7 @@ def tag_it(i, vpc):
         log.info("Adding '%s' tag with '%s' value to %s", tag_name, tag_value,
                  i)
         i.add_tag(tag_name, tag_value)
+    i.add_tag("moz-state", "ready")
 
 
 if __name__ == '__main__':
