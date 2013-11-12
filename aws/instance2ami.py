@@ -92,7 +92,7 @@ def main():
         key_name=args.ssh_key, user=args.user,
         subnet_id=random.choice(moz_type_config["subnet_ids"]))
 
-    env.host_string = host_instance.public_dns_name
+    env.host_string = host_instance.private_ip_address
     env.user = 'root'
     env.abort_on_prompts = True
     env.disable_known_hosts = True
