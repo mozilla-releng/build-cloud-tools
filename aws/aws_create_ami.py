@@ -57,7 +57,10 @@ def create_instance(connection, instance_name, config, key_name, user='root',
         try:
             instance.update()
             if instance.state == 'running':
-                env.host_string = instance.public_dns_name
+                if subnet_id:
+                    env.host_string = instance.private_ip_address
+                else:
+                    env.host_string = instance.public_dns_name
                 env.user = user
                 env.abort_on_prompts = True
                 env.disable_known_hosts = True
