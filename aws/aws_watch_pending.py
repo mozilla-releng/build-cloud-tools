@@ -267,8 +267,8 @@ def request_spot_instances(moz_instance_type, start_count, regions, secrets,
         region_limit = spot_limits.get(region, {}).get(
             moz_instance_type, {}).get("instances")
         if not region_limit:
-            log.debug("No spot limits defined for region %s, skipping...",
-                      region)
+            log.debug("No spot limits defined for %s in %s, skipping...",
+                      moz_instance_type, region)
             continue
 
         # check the limits
