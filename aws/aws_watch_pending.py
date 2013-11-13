@@ -341,7 +341,6 @@ def do_request_spot_instances(region, secrets, moz_instance_type, price, ami,
         key_name=instance_config[region]["ssh_key"],
         user_data=user_data,
         block_device_map=bdm,
-        security_groups=instance_config[region]["security_group_ids"],
         network_interfaces=nc)
     sir[0].add_tag("moz-type", moz_instance_type)
 
