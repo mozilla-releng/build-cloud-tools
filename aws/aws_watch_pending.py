@@ -329,7 +329,7 @@ def do_request_spot_instances(region, secrets, moz_instance_type, price, ami,
     nc = NetworkInterfaceCollection(spec)
     user_data = 'FQDN="%s"' % fqdn
     bdm = BlockDeviceMapping()
-    for device, device_info in instance_config['device_map'].items():
+    for device, device_info in instance_config[region]['device_map'].items():
         bdm[device] = BlockDeviceType(size=device_info['size'],
                                       delete_on_termination=True)
 
