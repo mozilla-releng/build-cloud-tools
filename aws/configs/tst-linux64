@@ -8,6 +8,7 @@
         "security_group_ids": ["sg-f0f1239f"],
         "instance_type": "m1.medium",
         "distro": "ubuntu",
+        "ssh_key": "aws-releng",
         "device_map": {
             "/dev/sda1": {
                 "size": 30,
@@ -23,6 +24,7 @@
         "security_group_ids": ["sg-8b9f7ce4"],
         "instance_type": "m1.medium",
         "distro": "ubuntu",
+        "ssh_key": "aws-releng",
         "device_map": {
             "/dev/sda1": {
                 "size": 30,

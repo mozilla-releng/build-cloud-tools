@@ -8,6 +8,7 @@
         "security_group_ids": [],
         "instance_type": "m3.xlarge",
         "disable_api_termination": true,
+        "ssh_key": "aws-releng",
         "device_map": {
             "/dev/sda1": {
                 "size": 10,
@@ -28,6 +29,7 @@
         "security_group_ids": [],
         "instance_type": "m3.xlarge",
         "disable_api_termination": true,
+        "ssh_key": "aws-releng",
         "device_map": {
             "/dev/sda1": {
                 "size": 10,

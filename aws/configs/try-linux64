@@ -7,6 +7,7 @@
         "subnet_ids": ["subnet-27a9834c", "subnet-39a98352", "subnet-3ea98355"],
         "security_group_ids": [],
         "instance_type": "m3.xlarge",
+        "ssh_key": "aws-releng",
         "device_map": {
             "/dev/sda1": {
                 "size": 100,
@@ -21,6 +22,7 @@
         "subnet_ids": ["subnet-ae48dac7", "subnet-a348daca", "subnet-a448dacd"],
         "security_group_ids": [],
         "instance_type": "m3.xlarge",
+        "ssh_key": "aws-releng",
         "device_map": {
             "/dev/sda1": {
                 "size": 100,
