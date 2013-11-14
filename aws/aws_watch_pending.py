@@ -403,6 +403,8 @@ def aws_watch_pending(dburl, regions, secrets, builder_map, region_priorities,
 
     for instance_type, count in to_create_ondemand.items():
         log.debug("need %i ondemand %s", count, instance_type)
+        if count < 1:
+            continue
 
         # Check for stopped instances in the given regions and start them if
         # there are any
