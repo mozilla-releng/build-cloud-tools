@@ -128,6 +128,7 @@ def main():
         put("%s/setup_hostname.conf" % AMI_CONFIGS_DIR, "etc/init/puppet.conf",
             mirror_local_mode=True)
         run("rm -f root/*.sh")
+        run("rm -f etc/setup_hostname.done")
         run("rm -f var/lib/puppet/ssl/private_keys/*")
         run("rm -f var/lib/puppet/ssl/certs/*")
         run("rm -rf builds/slave")
