@@ -276,7 +276,7 @@ def aws_stop_idle(secrets, credentials, regions, masters_json, dryrun=False, con
         for t in instances_by_type:
             to_remove = instances_by_type[t][:min_running_by_type]
             for i in to_remove:
-                log.debug("%s - keep running (min %i instances of type %s)", i.tags['Name'], min_running_by_type, i.tags['moz-type'])
+                log.debug("%s - keep running (min %s instances of type %s)", i.tags['Name'], min_running_by_type, i.tags['moz-type'])
                 instances.remove(i)
 
         all_instances.extend(instances)
@@ -336,7 +336,7 @@ def aws_stop_idle(secrets, credentials, regions, masters_json, dryrun=False, con
         total_stopped[t] += 1
 
     for t, c in sorted(total_stopped.items()):
-        log.info("%s - stopped %i" % (t, c))
+        log.info("%s - stopped %s", t, c)
 
 if __name__ == '__main__':
     import argparse
