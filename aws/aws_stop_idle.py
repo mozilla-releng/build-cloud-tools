@@ -73,7 +73,7 @@ def get_ssh_client(name, ip, credentials):
             except Exception:
                 pass
 
-    log.warning("Couldn't log into {name} at {ip} with any known passwords".format(name=name, ip=ip))
+    log.warning("Couldn't log into %s at %s with any known passwords", name, ip)
     return None
 
 
@@ -87,7 +87,8 @@ def get_last_activity(name, client):
 
     if uptime < 3 * 60:
         # Assume we're still booting
-        log.debug("%s - uptime is %.2f; assuming we're still booting up", name, uptime)
+        log.debug("%s - uptime is %.2f; assuming we're still booting up", name,
+                  uptime)
         return "booting"
 
     stdin, stdout, stderr = client.exec_command("tail -n 100 /builds/slave/twistd.log.1 /builds/slave/twistd.log")
@@ -98,7 +99,7 @@ def get_last_activity(name, client):
     t = time.time()
     line = ""
     for line in stdout:
-        m = re.search("^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})", line)
+        m = re.search(r"^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})", line)
         if m:
             t = time.strptime(m.group(1), "%Y-%m-%d %H:%M:%S")
             t = time.mktime(t)
@@ -223,7 +224,7 @@ def aws_safe_stop_instance(i, impaired_ids, credentials, masters_json,
         # Wait harder
         return stopped
 
-    log.debug("%s - last activity %is ago", name, last_activity)
+    log.debug("%s - last activity %s", name, last_activity)
     # Determine if the machine is idle for more than 10 minutes
     if last_activity > 300:
         if not dryrun:
