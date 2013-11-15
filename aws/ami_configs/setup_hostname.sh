@@ -5,6 +5,8 @@ if [ -e "/etc/setup_hostname.done" ]; then
     exit 0
 fi
 
+ATTEMPTS=10
+FAILED=0
 while [ ! -f /root/userdata ]; do
     curl -f http://169.254.169.254/latest/user-data > /root/userdata.tmp 2>/dev/null
     if [ $? -eq 0 ]; then
@@ -36,4 +38,21 @@ rm -f /builds/slave/buildbot.tac
 
 touch /etc/setup_hostname.done
 
-/root/puppetize.sh
+
+ATTEMPTS=10
+FAILED=0
+SSLDIR=/var/lib/puppet/ssl
+while ! [ -e $SSLDIR/private_keys/$FQDN.pem -a -e $SSLDIR/certs/$FQDN.pem -a -e $SSLDIR/certs/ca.pem ]; do
+    /root/puppetize.sh
+    if ! [ -e $SSLDIR/private_keys/$FQDN.pem -a -e $SSLDIR/certs/$FQDN.pem -a -e $SSLDIR/certs/ca.pem ]; then
+        FAILED=$(($FAILED + 1))
+        if [ $FAILED -ge $ATTEMPTS ]; then
+            logger --stderr -t setup_hostname "Failed to properly puppetize."
+            exit 1
+        fi
+        logger --stderr -t setup_hostname "Could not retrieve puppet certs (attempt #$FAILED/$ATTEMPTS), retrying in 15 seconds..."
+        sleep 15
+    else
+        logger --stderr -t setup_hostname "puppetize completed"
+    fi
+done
