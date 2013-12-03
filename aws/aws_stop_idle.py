@@ -39,8 +39,8 @@ def stop(i):
         i.stop()
 
 
-def get_buildbot_instances(conn):
-    # Look for instances with moz-state=ready and hostname *-ec2-000
+def get_buildbot_instances(conn, moz_types):
+    # Look for running `moz_types` instances with moz-state=ready
     reservations = conn.get_all_instances(filters={
         'tag:moz-state': 'ready',
         'instance-state-name': 'running',
@@ -49,10 +49,8 @@ def get_buildbot_instances(conn):
     retval = []
     for r in reservations:
         for i in r.instances:
-            name = i.tags['Name']
-            if not re.match(r".*-(ec2|spot)-\d+", name):
-                continue
-            retval.append(i)
+            if i.tags.get("moz-type") in moz_types:
+                retval.append(i)
 
     return retval
 
@@ -247,7 +245,8 @@ def aws_safe_stop_instance(i, impaired_ids, credentials, masters_json,
     return stopped
 
 
-def aws_stop_idle(secrets, credentials, regions, masters_json, dryrun=False, concurrency=8):
+def aws_stop_idle(secrets, credentials, regions, masters_json, moz_types,
+                  dryrun=False, concurrency=8):
     if not regions:
         # Look at all regions
         log.debug("loading all regions")
@@ -262,7 +261,7 @@ def aws_stop_idle(secrets, credentials, regions, masters_json, dryrun=False, con
         log.debug("looking at region %s", r)
         conn = boto.ec2.connect_to_region(r, **secrets)
 
-        instances = get_buildbot_instances(conn)
+        instances = get_buildbot_instances(conn, moz_types)
         impaired = conn.get_all_instance_status(
             filters={'instance-status.status': 'impaired'})
         impaired_ids.extend(i.id for i in impaired)
@@ -352,6 +351,8 @@ if __name__ == '__main__':
                         default=logging.INFO)
     parser.add_argument("-c", "--credentials", type=argparse.FileType('r'),
                         required=True)
+    parser.add_argument("-t", "--moz-type", action="append", dest="moz_types",
+                        required=True, help="moz-type tag values to be checked")
     parser.add_argument("-j", "--concurrency", type=int, default=8)
     parser.add_argument("--masters-json", default="http://hg.mozilla.org/build/tools/raw-file/default/buildfarm/maintenance/production-masters.json")
     parser.add_argument("--dry-run", action="store_true")
@@ -388,5 +389,6 @@ if __name__ == '__main__':
         masters_json = requests.get(args.masters_json).json
 
     aws_stop_idle(secrets, credentials, args.regions, masters_json,
-                  dryrun=args.dry_run, concurrency=args.concurrency)
+                  args.moz_types, dryrun=args.dry_run,
+                  concurrency=args.concurrency)
     log.debug("done")
