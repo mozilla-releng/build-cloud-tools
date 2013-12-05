@@ -50,7 +50,7 @@ def find_pending(db):
     result = db.execute(
         query,
         yesterday=time.time() - 86400,
-        toonew=time.time() - 60
+        toonew=time.time() - 10
     )
     retval = result.fetchall()
     return retval
