@@ -122,7 +122,7 @@ def update_spot_stats(conn, session):
             if req.status.code not in [s.code for s in r.statuses]:
                 log.debug("New status: %s <%s> on %s", req.status.code,
                           req.status.message, req.status.update_time)
-                r.states.append(
+                r.statuses.append(
                     SpotStatus(req.status.code, req.status.message,
                                aws_time_to_gm(req.status.update_time)))
         else:
