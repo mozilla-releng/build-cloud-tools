@@ -106,10 +106,11 @@ def update_spot_stats(conn, session):
     for req in conn.get_all_spot_instance_requests():
         r = session.query(SpotRequest).filter(SpotRequest.id == req.id).first()
         if r:
-            if r.instance_id != req.instance_id:
+            if req.instance_id and r.instance_id != req.instance_id:
                 log.debug("Update instance id %s", req.instance_id)
                 r.instance_id = req.instance_id
-            if r.launched_availability_zone != req.launched_availability_zone:
+            if req.launched_availability_zone and \
+               r.launched_availability_zone != req.launched_availability_zone:
                 r.launched_availability_zone = req.launched_availability_zone
             if r.tags != stringify_dict(req.tags):
                 log.debug("Update tags: %s", req.tags)
