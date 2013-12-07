@@ -454,7 +454,7 @@ if __name__ == '__main__':
     parser.add_argument("-v", "--verbose", action="store_const",
                         dest="loglevel", const=logging.DEBUG,
                         default=logging.INFO)
-    parser.add_argument("--cached-cert-dir", required=True,
+    parser.add_argument("--cached-cert-dir", default="certs",
                         help="Directory for cached puppet certificates")
     parser.add_argument("-n", "--dryrun", dest="dryrun", action="store_true",
                         help="don't actually do anything")
