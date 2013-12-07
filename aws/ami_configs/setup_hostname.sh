@@ -24,6 +24,7 @@ while [ ! -f /root/userdata ]; do
 done
 
 source /root/userdata
+shred -u -n 7 -z /root/userdata || :
 
 if [ -z "$FQDN" ]; then
     logger --stderr -t setup_hostname "Cannot set hostname, rebooting"
@@ -38,21 +39,4 @@ rm -f /builds/slave/buildbot.tac
 
 touch /etc/setup_hostname.done
 
-
-ATTEMPTS=10
-FAILED=0
-SSLDIR=/var/lib/puppet/ssl
-while ! [ -e $SSLDIR/private_keys/$FQDN.pem -a -e $SSLDIR/certs/$FQDN.pem -a -e $SSLDIR/certs/ca.pem ]; do
-    /root/puppetize.sh
-    if ! [ -e $SSLDIR/private_keys/$FQDN.pem -a -e $SSLDIR/certs/$FQDN.pem -a -e $SSLDIR/certs/ca.pem ]; then
-        FAILED=$(($FAILED + 1))
-        if [ $FAILED -ge $ATTEMPTS ]; then
-            logger --stderr -t setup_hostname "Failed to properly puppetize."
-            exit 1
-        fi
-        logger --stderr -t setup_hostname "Could not retrieve puppet certs (attempt #$FAILED/$ATTEMPTS), retrying in 15 seconds..."
-        sleep 15
-    else
-        logger --stderr -t setup_hostname "puppetize completed"
-    fi
-done
+puppet agent --test 2>&1 > /root/puppetize.log

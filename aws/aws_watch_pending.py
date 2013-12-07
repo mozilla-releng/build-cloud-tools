@@ -21,6 +21,8 @@ from boto.ec2.blockdevicemapping import BlockDeviceMapping, BlockDeviceType
 import sqlalchemy as sa
 from sqlalchemy.engine.reflection import Inspector
 
+import requests
+import os
 import logging
 log = logging.getLogger()
 
@@ -256,7 +258,8 @@ def aws_resume_instances(moz_instance_type, start_count, regions, secrets,
 
 
 def request_spot_instances(moz_instance_type, start_count, regions, secrets,
-                           region_priorities, spot_limits, dryrun):
+                           region_priorities, spot_limits, dryrun,
+                           cached_cert_dir):
     started = 0
     instance_config = json.load(open("configs/%s" % moz_instance_type))
 
@@ -294,7 +297,8 @@ def request_spot_instances(moz_instance_type, start_count, regions, secrets,
                 do_request_spot_instances(
                     region=region, secrets=secrets,
                     moz_instance_type=moz_instance_type, price=price,
-                    ami=ami, instance_config=instance_config, dryrun=dryrun)
+                    ami=ami, instance_config=instance_config, dryrun=dryrun,
+                    cached_cert_dir=cached_cert_dir)
                 started += 1
             except (RuntimeError, KeyError):
                 log.warning("Spot request failed", exc_info=True)
@@ -305,8 +309,25 @@ def request_spot_instances(moz_instance_type, start_count, regions, secrets,
     return started
 
 
+def get_puppet_certs(ip, secrets, cached_cert_dir):
+    """ reuse or generate certificates"""
+    cert_file = os.path.join(cached_cert_dir, ip)
+    if os.path.exists(cert_file):
+        return open(cert_file).read()
+
+    puppet_server = secrets["getcert_server"]
+    url = "https://%s/deploy/getcert.cgi?%s" % (puppet_server, ip)
+    auth = (secrets["deploy_username"], secrets["deploy_password"])
+    req = requests.get(url, auth=auth, verify=False)
+    req.raise_for_status()
+    cert_data = req.content
+    with open(cert_file, "wb") as f:
+        f.write(cert_data)
+    return cert_data
+
+
 def do_request_spot_instances(region, secrets, moz_instance_type, price, ami,
-                              instance_config, dryrun):
+                              instance_config, cached_cert_dir, dryrun):
     conn = aws_connect_to_region(region, secrets)
     interface = get_avalable_interface(
         conn=conn, moz_instance_type=moz_instance_type)
@@ -327,7 +348,14 @@ def do_request_spot_instances(region, secrets, moz_instance_type, price, ami,
     spec = NetworkInterfaceSpecification(
         network_interface_id=interface.id)
     nc = NetworkInterfaceCollection(spec)
-    user_data = 'FQDN="%s"' % fqdn
+    ip = interface.private_ip_address
+    certs = get_puppet_certs(ip, secrets, cached_cert_dir)
+    user_data = """
+FQDN="%(fqdn)s"
+cd /var/lib/puppet/ssl || exit 1
+%(certs)s
+cd -
+""" % dict(fqdn=fqdn, certs=certs)
     bdm = BlockDeviceMapping()
     for device, device_info in instance_config[region]['device_map'].items():
         bdm[device] = BlockDeviceType(size=device_info['size'],
@@ -366,7 +394,7 @@ def get_ami(region, secrets, moz_instance_type):
 
 
 def aws_watch_pending(dburl, regions, secrets, builder_map, region_priorities,
-                      spot_limits, dryrun):
+                      spot_limits, dryrun, cached_cert_dir):
     # First find pending jobs in the db
     db = sa.create_engine(dburl)
     pending = find_pending(db)
@@ -393,7 +421,7 @@ def aws_watch_pending(dburl, regions, secrets, builder_map, region_priorities,
             moz_instance_type=instance_type, start_count=count,
             regions=regions, secrets=secrets,
             region_priorities=region_priorities, spot_limits=spot_limits,
-            dryrun=dryrun)
+            dryrun=dryrun, cached_cert_dir=cached_cert_dir)
         count -= started
         log.info("%s - started %i spot instances; need %i",
                  instance_type, started, count)
@@ -426,6 +454,8 @@ if __name__ == '__main__':
     parser.add_argument("-v", "--verbose", action="store_const",
                         dest="loglevel", const=logging.DEBUG,
                         default=logging.INFO)
+    parser.add_argument("--cached-cert-dir", required=True,
+                        help="Directory for cached puppet certificates")
     parser.add_argument("-n", "--dryrun", dest="dryrun", action="store_true",
                         help="don't actually do anything")
 
@@ -434,6 +464,7 @@ if __name__ == '__main__':
     logging.basicConfig(level=args.loglevel,
                         format="%(asctime)s - %(message)s")
     logging.getLogger("boto").setLevel(logging.INFO)
+    logging.getLogger("requests").setLevel(logging.WARN)
 
     config = json.load(args.config)
     secrets = json.load(args.secrets)
@@ -446,4 +477,5 @@ if __name__ == '__main__':
         region_priorities=config['region_priorities'],
         dryrun=args.dryrun,
         spot_limits=config.get("spot_limits"),
+        cached_cert_dir=args.cached_cert_dir
     )

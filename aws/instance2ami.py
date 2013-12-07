@@ -128,16 +128,14 @@ def main():
         put("%s/setup_hostname.conf" % AMI_CONFIGS_DIR, "etc/init/puppet.conf",
             mirror_local_mode=True)
         run("rm -f root/*.sh")
+        run("rm -f root/*.log")
+        run("rm -f root/userdata")
         run("rm -f etc/setup_hostname.done")
         run("rm -f var/lib/puppet/ssl/private_keys/*")
         run("rm -f var/lib/puppet/ssl/certs/*")
         run("rm -rf builds/slave")
-        run("wget -O root/puppetize.sh https://hg.mozilla.org/build/puppet/raw-file/production/modules/puppet/files/puppetize.sh")
-        run("chmod 755 root/puppetize.sh")
         run("echo localhost > etc/hostname")
         run("sed -i -e 's/127.0.0.1.*/127.0.0.1 localhost/g' etc/hosts")
-        put(StringIO.StringIO(args.deploypass.read().strip()),
-            "root/deploypass", mode=0600)
     # create snapshot2
     log.info('Terminating %s', host_instance)
     host_instance.terminate()
