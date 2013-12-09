@@ -72,13 +72,19 @@ if __name__ == '__main__':
                 log.debug("Skipping spot request %s without instance_id", req)
                 continue
             res = conn.get_all_instances(instance_ids=[i_id])
-            for r in res:
-                for i in r.instances:
-                    log.info("Processing %s", i)
-                    name = i.tags.get('Name')
-                    fqdn = i.tags.get('FQDN')
-                    moz_type = i.tags.get('moz-type')
-                    # If one of the tags is unset/empty
-                    if not all([name, fqdn, moz_type]):
-                        tag_it(i, vpc)
-            req.add_tag("moz-tagged", "1")
+            try:
+                for r in res:
+                    for i in r.instances:
+                        log.info("Processing %s", i)
+                        name = i.tags.get('Name')
+                        fqdn = i.tags.get('FQDN')
+                        moz_type = i.tags.get('moz-type')
+                        # If one of the tags is unset/empty
+                        if not all([name, fqdn, moz_type]):
+                            tag_it(i, vpc)
+            except IndexError:
+                # tag it next time
+                log.debug("Failed to tag %s", req)
+                pass
+            else:
+                req.add_tag("moz-tagged", "1")
