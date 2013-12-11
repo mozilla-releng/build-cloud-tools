@@ -11,6 +11,7 @@ import logging
 log = logging.getLogger()
 
 AMI_CONFIGS_DIR = "ami_configs"
+INSTANCE_CONFIGS_DIR = "configs"
 
 
 def create_connection(options):

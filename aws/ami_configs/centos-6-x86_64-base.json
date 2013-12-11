@@ -3,6 +3,7 @@
         "ami": "ami-7d0c6314",
         "instance_type": "c1.xlarge",
         "arch": "x86_64",
+        "distro": "centos",
         "target": {
             "size": 4,
             "fs_type": "ext4",
@@ -19,6 +20,7 @@
         "ami": "ami-c7fad582",
         "instance_type": "c1.xlarge",
         "arch": "x86_64",
+        "distro": "centos",
         "target": {
             "size": 4,
             "fs_type": "ext4",
@@ -35,6 +37,7 @@
         "ami": "ami-5344d263",
         "instance_type": "c1.xlarge",
         "arch": "x86_64",
+        "distro": "centos",
         "target": {
             "size": 4,
             "fs_type": "ext4",

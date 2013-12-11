@@ -28,11 +28,22 @@ shred -u -n 7 -z /root/userdata || :
 
 if [ -z "$FQDN" ]; then
     logger --stderr -t setup_hostname "Cannot set hostname, rebooting"
-    sleep 60
+    sleep 300
     reboot
+    exit 1
 fi
 
-echo "$FQDN" > /etc/hostname
+if [ -e /etc/hostname ]; then
+    # Ubuntu
+    echo "$FQDN" > /etc/hostname
+fi
+
+if [ -e /etc/sysconfig/network ]; then
+    # Centos
+    echo "NETWORKING=yes" > /etc/sysconfig/network
+    echo "HOSTNAME=$FQDN" >> /etc/sysconfig/network
+fi
+
 hostname "$FQDN"
 sed -i -e "s/127.0.0.1.*/127.0.0.1 $FQDN localhost/g" /etc/hosts
 rm -f /builds/slave/buildbot.tac

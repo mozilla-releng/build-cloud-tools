@@ -4,7 +4,7 @@
         "type": "try-linux64",
         "domain": "try.releng.use1.mozilla.com",
         "ami": "ami-cefe66a7",
-        "subnet_ids": ["subnet-27a9834c", "subnet-39a98352", "subnet-3ea98355"],
+        "subnet_ids": ["subnet-27a9834c", "subnet-39a98352", "subnet-3ea98355", "subnet-93b285e7", "subnet-e5bacacd", "subnet-ef373f8d", "subnet-cd83d28b"],
         "security_group_ids": [],
         "instance_type": "m3.xlarge",
         "ssh_key": "aws-releng",
@@ -13,13 +13,16 @@
                 "size": 100,
                 "instance_dev": "/dev/xvde1"
             }
+        },
+        "tags": {
+            "moz-type": "try-linux64"
         }
     },
     "us-west-2": {
         "type": "try-linux64",
         "domain": "try.releng.usw2.mozilla.com",
         "ami": "ami-15cb5f25",
-        "subnet_ids": ["subnet-ae48dac7", "subnet-a348daca", "subnet-a448dacd"],
+        "subnet_ids": ["subnet-ae48dac7", "subnet-a348daca", "subnet-a448dacd", "subnet-72b68206"],
         "security_group_ids": [],
         "instance_type": "m3.xlarge",
         "ssh_key": "aws-releng",
@@ -28,6 +31,9 @@
                 "size": 100,
                 "instance_dev": "/dev/xvde1"
             }
+        },
+        "tags": {
+            "moz-type": "try-linux64"
         }
     }
 }

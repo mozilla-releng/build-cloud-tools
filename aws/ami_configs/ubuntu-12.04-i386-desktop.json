@@ -12,10 +12,7 @@
             "e2_label": "cloudimg-rootfs",
             "aws_dev_name": "/dev/sdh",
             "int_dev_name": "/dev/xvdh",
-            "mount_point": "/mnt1",
-            "tags": {
-                "moz-type": "tst-linux32"
-            }
+            "mount_point": "/mnt1"
         }
     },
     "us-west-2": {
@@ -31,10 +28,7 @@
             "e2_label": "cloudimg-rootfs",
             "aws_dev_name": "/dev/sdh",
             "int_dev_name": "/dev/xvdh",
-            "mount_point": "/mnt1",
-            "tags": {
-                "moz-type": "tst-linux32"
-            }
+            "mount_point": "/mnt1"
         }
     }
 }

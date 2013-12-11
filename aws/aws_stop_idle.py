@@ -56,6 +56,7 @@ def get_buildbot_instances(conn, moz_types):
 
 
 class IgnorePolicy:
+
     def missing_host_key(self, client, hostname, key):
         pass
 
@@ -71,7 +72,8 @@ def get_ssh_client(name, ip, credentials):
             except Exception:
                 pass
 
-    log.warning("Couldn't log into %s at %s with any known passwords", name, ip)
+    log.warning("Couldn't log into %s at %s with any known passwords",
+                name, ip)
     return None
 
 
@@ -89,7 +91,8 @@ def get_last_activity(name, client):
                   uptime)
         return "booting"
 
-    stdin, stdout, stderr = client.exec_command("tail -n 100 /builds/slave/twistd.log.1 /builds/slave/twistd.log")
+    stdin, stdout, stderr = client.exec_command(
+        "tail -n 100 /builds/slave/twistd.log.1 /builds/slave/twistd.log")
     stdin.close()
 
     last_activity = None
@@ -116,9 +119,11 @@ def get_last_activity(name, client):
             running_command = False
 
         if "Shut Down" in line:
-            # Check if this happened before we booted, i.e. we're still booting up
+            # Check if this happened before we booted, i.e. we're still booting
+            # up
             if (slave_time - t) > uptime:
-                log.debug("%s - shutdown line is older than uptime; assuming we're still booting %s", name, line.strip())
+                log.debug(
+                    "%s - shutdown line is older than uptime; assuming we're still booting %s", name, line.strip())
                 last_activity = "booting"
             else:
                 last_activity = "stopped"
@@ -131,14 +136,17 @@ def get_last_activity(name, client):
 
     # If this was over 10 minutes ago
     if (slave_time - t) > 10 * 60 and (slave_time - t) > uptime:
-        log.warning("%s - shut down happened %ss ago, but we've been up for %ss - %s", name, slave_time - t, uptime, line.strip())
+        log.warning(
+            "%s - shut down happened %ss ago, but we've been up for %ss - %s",
+            name, slave_time - t, uptime, line.strip())
         # If longer than 30 minutes, try rebooting
         if (slave_time - t) > 30 * 60:
             log.warning("%s - rebooting", name)
             stdin, stdout, stderr = client.exec_command("sudo reboot")
             stdin.close()
 
-    # If there's *no* activity (e.g. no twistd.log files), and we've been up a while, then reboot
+    # If there's *no* activity (e.g. no twistd.log files), and we've been up a
+    # while, then reboot
     if last_activity is None and uptime > 15 * 60:
         log.warning("%s - no activity; rebooting", name)
         # If longer than 30 minutes, try rebooting
@@ -150,7 +158,8 @@ def get_last_activity(name, client):
 
 
 def get_tacfile(client):
-    stdin, stdout, stderr = client.exec_command("cat /builds/slave/buildbot.tac")
+    stdin, stdout, stderr = client.exec_command(
+        "cat /builds/slave/buildbot.tac")
     stdin.close()
     data = stdout.read()
     return data
@@ -174,7 +183,8 @@ def graceful_shutdown(name, ip, client, masters_json):
     log.debug("%s - looking up which master we're attached to", name)
     host, port = get_buildbot_master(client, masters_json)
 
-    url = "http://{host}:{port}/buildslaves/{name}/shutdown".format(host=host, port=port, name=name)
+    url = "http://{host}:{port}/buildslaves/{name}/shutdown".format(host=host,
+                                                                    port=port, name=name)
     log.debug("%s - POSTing to %s", name, url)
     requests.post(url, allow_redirects=False)
 
@@ -195,7 +205,8 @@ def aws_safe_stop_instance(i, impaired_ids, credentials, masters_json,
             if time.time() - launch_time > 60 * 10:
                 stopped = True
                 if not dryrun:
-                    log.warning("%s - shut down an instance with impaired status", name)
+                    log.warning(
+                        "%s - shut down an instance with impaired status", name)
                     stop(i)
                 else:
                     log.info("%s - would have stopped", name)
@@ -236,7 +247,8 @@ def aws_safe_stop_instance(i, impaired_ids, credentials, masters_json,
                 stop(i)
                 stopped = True
             else:
-                log.info("%s - not stopping, waiting for graceful shutdown", name)
+                log.info(
+                    "%s - not stopping, waiting for graceful shutdown", name)
         else:
             log.info("%s - would have started graceful shutdown", name)
             stopped = True
@@ -269,14 +281,16 @@ def aws_stop_idle(secrets, credentials, regions, masters_json, moz_types,
         for i in instances:
             # TODO: Check if launch_time is too old, and terminate the instance
             # if it is
-            # NB can't turn this on until aws_create_instance is working properly (with ssh keys)
+            # NB can't turn this on until aws_create_instance is working
+            # properly (with ssh keys)
             instances_by_type.setdefault(i.tags['moz-type'], []).append(i)
 
         # Make sure min_running_by_type are kept running
         for t in instances_by_type:
             to_remove = instances_by_type[t][:min_running_by_type]
             for i in to_remove:
-                log.debug("%s - keep running (min %s instances of type %s)", i.tags['Name'], min_running_by_type, i.tags['moz-type'])
+                log.debug("%s - keep running (min %s instances of type %s)",
+                          i.tags['Name'], min_running_by_type, i.tags['moz-type'])
                 instances.remove(i)
 
         all_instances.extend(instances)
@@ -354,9 +368,11 @@ if __name__ == '__main__':
     parser.add_argument("-t", "--moz-type", action="append", dest="moz_types",
                         required=True, help="moz-type tag values to be checked")
     parser.add_argument("-j", "--concurrency", type=int, default=8)
-    parser.add_argument("--masters-json", default="http://hg.mozilla.org/build/tools/raw-file/default/buildfarm/maintenance/production-masters.json")
+    parser.add_argument("--masters-json",
+                        default="http://hg.mozilla.org/build/tools/raw-file/default/buildfarm/maintenance/production-masters.json")
     parser.add_argument("--dry-run", action="store_true")
-    parser.add_argument("-l", "--logfile", dest="logfile", help="log file for full debug log")
+    parser.add_argument("-l", "--logfile", dest="logfile",
+                        help="log file for full debug log")
 
     args = parser.parse_args()
 
@@ -372,7 +388,8 @@ if __name__ == '__main__':
     logging.getLogger().addHandler(handler)
 
     if args.logfile:
-        handler = logging.handlers.RotatingFileHandler(args.logfile, maxBytes=10 * (1024 ** 2), backupCount=100)
+        handler = logging.handlers.RotatingFileHandler(
+            args.logfile, maxBytes=10 * (1024 ** 2), backupCount=100)
         handler.setLevel(logging.DEBUG)
         handler.setFormatter(formatter)
         logging.getLogger().addHandler(handler)
