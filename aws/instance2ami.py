@@ -143,6 +143,8 @@ def main():
                 "etc/rc.local", mirror_local_mode=True)
             run("rm -rf home/cltbld/.ssh")
             run("rm -rf root/.ssh/*")
+            run("rm -rf builds/gapi.data")
+            run("rm -rf builds/mock_mozilla/*/root/home/mock_mozilla")
         else:
             put("%s/setup_hostname.sh" % AMI_CONFIGS_DIR,
                 "etc/setup_hostname.sh", mirror_local_mode=True)
