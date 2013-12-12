@@ -153,7 +153,7 @@ def main():
                 put("%s/setup_hostname.conf" % AMI_CONFIGS_DIR,
                     "etc/init/puppet.conf", mirror_local_mode=True)
             else:
-                run("echo '/etc/setup_hostname.sh' > /etc/init.d/puppet")
+                run("echo '/etc/setup_hostname.sh' > etc/init.d/puppet")
     # create snapshot2
     log.info('Terminating %s', host_instance)
     host_instance.terminate()
