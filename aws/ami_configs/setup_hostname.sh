@@ -48,16 +48,22 @@ hostname "$FQDN"
 sed -i -e "s/127.0.0.1.*/127.0.0.1 $FQDN localhost/g" /etc/hosts
 rm -f /builds/slave/buildbot.tac
 
-touch /etc/setup_hostname.done
-
 ATTEMPTS=10
 FAILED=0
-while ! puppet agent --test 2>&1 >> /root/puppetize.log; do
-    FAILED=$(($FAILED + 1))
-    if [ $FAILED -ge $ATTEMPTS ]; then
-        logger --stderr -t setup_hostname "Failed to puppetize after $FAILED attempts, quitting"
-        poweroff
+while [ ! -f /root/puppetize.done ]; do
+    puppet agent --test --detailed-exitcodes
+    RET=$?
+    if [ $RET -eq 0 -o $RET -eq 2 ]; then
+        touch /root/puppetize.done
+    else
+        FAILED=$(($FAILED + 1))
+        if [ $FAILED -ge $ATTEMPTS ]; then
+            logger --stderr -t setup_hostname "Failed to puppetize after $FAILED attempts, quitting"
+            poweroff
+        fi
+        logger --stderr -t setup_hostname "Failed to puppetize (attempt #$FAILED/$ATTEMPTS), retrying in 5 seconds..."
+        sleep 60
     fi
-    logger --stderr -t setup_hostname "Failed to puppetize (attempt #$FAILED/$ATTEMPTS), retrying in 5 seconds..."
-    sleep 60
 done
+
+touch /etc/setup_hostname.done
