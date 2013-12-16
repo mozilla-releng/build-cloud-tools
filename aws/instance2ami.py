@@ -131,6 +131,7 @@ def main():
         run("rm -f root/*.sh")
         run("rm -f root/*.log")
         run("rm -f root/userdata")
+        run("rm -f root/*.done")
         run("rm -f etc/setup_hostname.done")
         run("rm -f var/lib/puppet/ssl/private_keys/*")
         run("rm -f var/lib/puppet/ssl/certs/*")
