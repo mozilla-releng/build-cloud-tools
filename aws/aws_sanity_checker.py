@@ -138,6 +138,11 @@ def instance_sanity_check(instances):
     long_stopped = get_stale(instances=instances,
                              expected_stale_time=EXPECTED_MAX_DOWNTIME,
                              running_only=False)
+    if long_running:
+        print "==== Long running instances ===="
+        format_instance_list(sorted(long_running, reverse=True,
+                                    key=lambda x: get_uptime(x[0])))
+        print
     if bad_type:
         print "==== Instances with unknown type ===="
         format_instance_list(sorted(bad_type, key=lambda x: x[0].region.name))
@@ -146,12 +151,6 @@ def instance_sanity_check(instances):
         print "==== Instances with unknown state ===="
         format_instance_list(sorted(bad_state, key=lambda x: x[0].region.name))
         print
-    if long_running:
-        print "==== Long running instances ===="
-        format_instance_list(sorted(long_running, reverse=True,
-                                    key=lambda x: get_uptime(x[0])))
-        print
-
     if long_stopped:
         print "==== Instances stopped for a while ===="
         format_instance_list(sorted(long_stopped, reverse=True,
