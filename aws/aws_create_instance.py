@@ -123,7 +123,7 @@ def assimilate(ip_addr, config, instance_data, deploypass):
             target_dir = '/builds/hg-shared/%s' % share
             sudo('rm -rf {d} && mkdir -p {d}'.format(d=target_dir), user="cltbld")
             sudo('{hg} init {d}'.format(hg=hg, d=target_dir), user="cltbld")
-            hgrc = "[path]\n"
+            hgrc = "[paths]\n"
             hgrc += "default = http://hg.mozilla.org/%s\n" % share
             put(StringIO.StringIO(hgrc), '%s/.hg/hgrc' % target_dir)
             run("chown cltbld: %s/.hg/hgrc" % target_dir)
