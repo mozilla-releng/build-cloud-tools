@@ -27,16 +27,20 @@ log = logging.getLogger()
 STOP_THRESHOLD_MINS = 45
 
 
-def stop(i):
+def stop(i, ssh_client=None):
     """Stop or destroy an instances depending on its type. Spot instances do
     not support stop() method."""
 
+    name = i.tags.get("Name")
+    if ssh_client:
+        df = get_df(ssh_client, "/builds")
+        log.info("DISK USAGE (M) for %s (%s): %s", name, i, df.strip())
     # on-demand instances don't have instanceLifecycle attribute
     if hasattr(i, "instanceLifecycle") and i.instanceLifecycle == "spot":
-        log.info("Terminating %s (%s)", i.tags.get("Name"), i)
+        log.info("Terminating %s (%s)", name, i)
         i.terminate()
     else:
-        log.info("Stopping %s (%s)", i.tags.get("Name"), i)
+        log.info("Stopping %s (%s)", name, i)
         i.stop()
 
 
@@ -166,6 +170,13 @@ def get_tacfile(client):
     return data
 
 
+def get_df(client, d):
+    stdin, stdout, stderr = client.exec_command("df -m %s | tail -n 1" % d)
+    stdin.close()
+    data = stdout.read()
+    return data
+
+
 def get_buildbot_master(client, masters_json):
     tacfile = get_tacfile(client)
     host = re.search("^buildmaster_host = '(.*?)'$", tacfile, re.M)
@@ -225,7 +236,7 @@ def aws_safe_stop_instance(i, impaired_ids, credentials, masters_json,
         if not dryrun:
             log.info("%s - stopping instance (launched %s)", name,
                      i.launch_time)
-            stop(i)
+            stop(i, ssh_client)
         else:
             log.info("%s - would have stopped", name)
         return stopped
@@ -245,7 +256,7 @@ def aws_safe_stop_instance(i, impaired_ids, credentials, masters_json,
             # Check if we've exited right away
             if get_last_activity(name, ssh_client) == "stopped":
                 log.debug("%s - stopping instance", name)
-                stop(i)
+                stop(i, ssh_client)
                 stopped = True
             else:
                 log.info(
