@@ -33,7 +33,7 @@ def stop(i, ssh_client=None):
 
     name = i.tags.get("Name")
     if ssh_client:
-        df = get_df(ssh_client, "/builds")
+        df = get_df(ssh_client, "/builds/slave")
         log.info("DISK USAGE (M) for %s (%s): %s", name, i, df.strip())
     # on-demand instances don't have instanceLifecycle attribute
     if hasattr(i, "instanceLifecycle") and i.instanceLifecycle == "spot":
