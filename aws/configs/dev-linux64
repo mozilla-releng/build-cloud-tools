@@ -3,30 +3,88 @@
     "us-east-1": {
         "type": "dev-linux64",
         "domain": "dev.releng.use1.mozilla.com",
-        "ami": "ami-cefe66a7",
+        "ami": "ami-41013328",
         "subnet_ids": ["subnet-2ba98340", "subnet-2da98346", "subnet-22a98349"],
         "security_group_ids": [],
-        "instance_type": "m3.xlarge",
+        "instance_type": "c3.xlarge",
         "ssh_key": "aws-releng",
+        "use_public_ip": true,
         "device_map": {
-            "/dev/sda1": {
-                "size": 150,
-                "instance_dev": "/dev/xvde1"
+            "/dev/xvda": {
+                "size": 250,
+                "delete_on_termination": true,
+                "skip_resize": true,
+                "instance_dev": "/dev/xvda1"
+            },
+            "/dev/sdb": {
+                "ephemeral_name": "ephemeral0",
+                "instance_dev": "/dev/xvdb",
+                "skip_resize": true,
+                "delete_on_termination": false
+            },
+            "/dev/sdc": {
+                "ephemeral_name": "ephemeral1",
+                "instance_dev": "/dev/xvdc",
+                "skip_resize": true,
+                "delete_on_termination": false
+            }
+        },
+        "lvm": {
+            "pvcreate": "/dev/xvdb /dev/xvdc",
+            "vgcreate": {
+                "instances_storage": "/dev/xvdb /dev/xvdc"
+            },
+            "lvcreate": {
+                "builds": {
+                    "vg": "instances_storage",
+                    "params": "-l 100%FREE",
+                    "format_as": "ext4",
+                    "mount_point": "/builds"
+                }
             }
         }
     },
     "us-west-2": {
         "type": "dev-linux64",
         "domain": "dev.releng.usw2.mozilla.com",
-        "ami": "ami-15cb5f25",
+        "ami": "ami-6eea8b5e",
         "subnet_ids": ["subnet-d748dabe", "subnet-a848dac1", "subnet-ad48dac4"],
         "security_group_ids": [],
-        "instance_type": "m3.xlarge",
+        "instance_type": "c3.xlarge",
         "ssh_key": "aws-releng",
+        "use_public_ip": true,
         "device_map": {
-            "/dev/sda1": {
-                "size": 150,
-                "instance_dev": "/dev/xvde1"
+            "/dev/xvda": {
+                "size": 250,
+                "delete_on_termination": true,
+                "skip_resize": true,
+                "instance_dev": "/dev/xvda1"
+            },
+            "/dev/sdb": {
+                "ephemeral_name": "ephemeral0",
+                "instance_dev": "/dev/xvdb",
+                "skip_resize": true,
+                "delete_on_termination": false
+            },
+            "/dev/sdc": {
+                "ephemeral_name": "ephemeral1",
+                "instance_dev": "/dev/xvdc",
+                "skip_resize": true,
+                "delete_on_termination": false
+            }
+        },
+        "lvm": {
+            "pvcreate": "/dev/xvdb /dev/xvdc",
+            "vgcreate": {
+                "instances_storage": "/dev/xvdb /dev/xvdc"
+            },
+            "lvcreate": {
+                "builds": {
+                    "vg": "instances_storage",
+                    "params": "-l 100%FREE",
+                    "format_as": "ext4",
+                    "mount_point": "/builds"
+                }
             }
         }
     }

@@ -1,0 +1,4 @@
+dhclient
+openssh-server
+kernel
+grub

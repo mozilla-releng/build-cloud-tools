@@ -35,3 +35,17 @@ descr=Puppet
 baseurl=http://puppetagain.pub.build.mozilla.org/data/repos/yum/mirrors/puppetlabs/el/6/dependencies/$basearch
 enabled=1
 gpgcheck=0
+
+[releng]
+name=releng
+descr=Releng
+baseurl=http://puppetagain.pub.build.mozilla.org/data/repos/yum/releng/public/CentOS/6/$basearch
+enabled=1
+gpgcheck=0
+
+[releng-noarch]
+name=releng-noarch
+descr=Releng-noarch
+baseurl=http://puppetagain.pub.build.mozilla.org/data/repos/yum/releng/public/CentOS/6/noarch
+enabled=1
+gpgcheck=0

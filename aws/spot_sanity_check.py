@@ -15,6 +15,9 @@ log = logging.getLogger(__name__)
 REGIONS = ['us-east-1', 'us-west-2']
 Base = declarative_base()
 
+CANCEL_STATUS_CODES = ["capacity-oversubscribed", "price-too-low",
+                       "capacity-not-available"]
+
 
 def aws_time_to_gm(aws_time):
     t = datetime.datetime.strptime(aws_time[:-1] + "UTC",
@@ -97,8 +100,8 @@ class SpotStatus(Base):
 def cancel_low_price(conn):
     spot_requests = conn.get_all_spot_instance_requests() or []
     for req in spot_requests:
-        if req.state == "open" and req.status.code == "price-too-low":
-            log.warning("Cancelling price-too-low request %s", req)
+        if req.state == "open" and req.status.code in CANCEL_STATUS_CODES:
+            log.warning("Cancelling request %s", req)
             req.cancel()
 
 

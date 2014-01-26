@@ -1,6 +1,5 @@
 {
   "buildslave_password": "pass",
   "buildbot_master": "10.12.48.14:1313",
-  "puppet_masters": ["releng-puppet1.srv.releng.use1.mozilla.com", "releng-puppet2.srv.releng.use1.mozilla.com"],
-  "home_tarball": "secrets/dev.tar.gz"
+  "puppet_masters": ["releng-puppet1.srv.releng.use1.mozilla.com", "releng-puppet2.srv.releng.use1.mozilla.com"]
 }

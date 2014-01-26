@@ -1,4 +1,3 @@
 {
-  "puppet_masters": ["servo-puppet1.srv.servo.releng.use1.mozilla.com"],
-  "home_tarball": "secrets/servo.tar.gz"
+  "puppet_masters": ["servo-puppet1.srv.servo.releng.use1.mozilla.com"]
 }

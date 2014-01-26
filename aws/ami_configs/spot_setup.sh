@@ -1,7 +1,7 @@
 #! /bin/bash
 
-if [ -e "/etc/setup_hostname.done" ]; then
-    logger --stderr -t setup_hostname "Skipping $0"
+if [ -e "/etc/spot_setup.done" ]; then
+    logger --stderr -t spot_setup "Skipping $0"
     exit 0
 fi
 
@@ -11,14 +11,14 @@ while [ ! -f /root/userdata ]; do
     curl -f http://169.254.169.254/latest/user-data > /root/userdata.tmp 2>/dev/null
     if [ $? -eq 0 ]; then
         mv -f /root/userdata.tmp /root/userdata
-        logger --stderr -t setup_hostname "Successfully retrieved user data"
+        logger --stderr -t spot_setup "Successfully retrieved user data"
     else
         FAILED=$(($FAILED + 1))
         if [ $FAILED -ge $ATTEMPTS ]; then
-            logger --stderr -t setup_hostname "Failed to retrieve user data after $FAILED attempts, quitting"
+            logger --stderr -t spot_setup "Failed to retrieve user data after $FAILED attempts, quitting"
             break
         fi
-        logger --stderr -t setup_hostname "Could not retrieve user data (attempt #$FAILED/$ATTEMPTS), retrying in 5 seconds..."
+        logger --stderr -t spot_setup "Could not retrieve user data (attempt #$FAILED/$ATTEMPTS), retrying in 5 seconds..."
         sleep 5
     fi
 done
@@ -27,7 +27,7 @@ source /root/userdata
 shred -u -n 7 -z /root/userdata || :
 
 if [ -z "$FQDN" ]; then
-    logger --stderr -t setup_hostname "Cannot set hostname, rebooting"
+    logger --stderr -t spot_setup "Cannot set hostname, rebooting"
     sleep 300
     reboot
     exit 1
@@ -58,12 +58,12 @@ while [ ! -f /root/puppetize.done ]; do
     else
         FAILED=$(($FAILED + 1))
         if [ $FAILED -ge $ATTEMPTS ]; then
-            logger --stderr -t setup_hostname "Failed to puppetize after $FAILED attempts, quitting"
+            logger --stderr -t spot_setup "Failed to puppetize after $FAILED attempts, quitting"
             poweroff
         fi
-        logger --stderr -t setup_hostname "Failed to puppetize (attempt #$FAILED/$ATTEMPTS), retrying in 5 seconds..."
+        logger --stderr -t spot_setup "Failed to puppetize (attempt #$FAILED/$ATTEMPTS), retrying in 5 seconds..."
         sleep 60
     fi
 done
 
-touch /etc/setup_hostname.done
+touch /etc/spot_setup.done

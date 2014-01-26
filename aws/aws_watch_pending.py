@@ -294,11 +294,13 @@ def request_spot_instances(moz_instance_type, start_count, regions, secrets,
             try:
                 # FIXME:use dynamic pricing
                 price = spot_limits[region][moz_instance_type]["price"]
+                instance_type = spot_limits[region][moz_instance_type]["instance_type"]
                 do_request_spot_instances(
                     region=region, secrets=secrets,
                     moz_instance_type=moz_instance_type, price=price,
                     ami=ami, instance_config=instance_config, dryrun=dryrun,
-                    cached_cert_dir=cached_cert_dir)
+                    cached_cert_dir=cached_cert_dir,
+                    instance_type=instance_type)
                 started += 1
             except (RuntimeError, KeyError):
                 log.warning("Spot request failed", exc_info=True)
@@ -327,7 +329,8 @@ def get_puppet_certs(ip, secrets, cached_cert_dir):
 
 
 def do_request_spot_instances(region, secrets, moz_instance_type, price, ami,
-                              instance_config, cached_cert_dir, dryrun):
+                              instance_config, cached_cert_dir, instance_type,
+                              dryrun):
     conn = aws_connect_to_region(region, secrets)
     interface = get_avalable_interface(
         conn=conn, moz_instance_type=moz_instance_type)
@@ -356,16 +359,32 @@ cd /var/lib/puppet/ssl || exit 1
 %(certs)s
 cd -
 """ % dict(fqdn=fqdn, certs=certs)
+    if instance_config[region].get("lvm"):
+        user_data += """
+mkdir -p /etc/lvm-init/
+cat <<EOF > /etc/lvm-init/lvm-init.json
+%s
+EOF
+/sbin/lvm-init
+""" % json.dumps(instance_config[region])
+
     bdm = BlockDeviceMapping()
     for device, device_info in instance_config[region]['device_map'].items():
-        bdm[device] = BlockDeviceType(size=device_info['size'],
-                                      delete_on_termination=True)
+        bd = BlockDeviceType()
+        if device_info.get('size'):
+            bd.size = device_info['size']
+        if device_info.get("delete_on_termination") is not False:
+            bd.delete_on_termination = True
+        if device_info.get("ephemeral_name"):
+            bd.ephemeral_name = device_info["ephemeral_name"]
+
+        bdm[device] = bd
 
     sir = conn.request_spot_instances(
         price=price,
         image_id=ami.id,
         count=1,
-        instance_type=instance_config[region]["instance_type"],
+        instance_type=instance_type,
         key_name=instance_config[region]["ssh_key"],
         user_data=user_data,
         block_device_map=bdm,

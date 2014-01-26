@@ -42,8 +42,6 @@ def main():
     parser.add_argument("--user", help="Login name")
     parser.add_argument("--public", action="store_true", default=False,
                         help="Generate a public AMI (no secrets)")
-    parser.add_argument("--deploypass", required=True,
-                        type=argparse.FileType('r'))
 
     args = parser.parse_args()
     if args.secrets:
@@ -84,10 +82,13 @@ def main():
     for tag, value in moz_type_config["tags"].iteritems():
         filters["tag:%s" % tag] = value
     res = conn.get_all_instances(filters=filters)
+    if not res:
+        filters["instance-state-name"] = "running"
+        res = conn.get_all_instances(filters=filters)
     instances = reduce(lambda a, b: a + b, [r.instances for r in res])
     i = sorted(instances, key=lambda i: i.launch_time)[-1]
     log.debug("Selected instance to clone: %s", i)
-    v_id = i.block_device_mapping['/dev/sda1'].volume_id
+    v_id = i.block_device_mapping[i.root_device_name].volume_id
     v = conn.get_all_volumes(volume_ids=[v_id])[0]
     snap1 = v.create_snapshot("temporary snapshot of %s" % v_id)
 
@@ -102,7 +103,11 @@ def main():
     env.abort_on_prompts = True
     env.disable_known_hosts = True
     int_dev_name = ami_config['target']['int_dev_name']
+    mount_dev = int_dev_name
     mount_point = ami_config['target']['mount_point']
+    virtualization_type = ami_config.get("virtualization_type")
+    if virtualization_type == "hvm":
+        mount_dev = "%s1" % mount_dev
     tmp_v = conn.create_volume(size=snap1.volume_size,
                                zone=host_instance.placement,
                                snapshot=snap1)
@@ -125,14 +130,14 @@ def main():
             log.debug('hit error waiting for volume to be attached')
             time.sleep(10)
     run('mkdir -p %s' % mount_point)
-    run('mount {dev} {mount_point}'.format(dev=int_dev_name,
+    run('mount {dev} {mount_point}'.format(dev=mount_dev,
                                            mount_point=mount_point))
     with cd(mount_point):
         run("rm -f root/*.sh")
         run("rm -f root/*.log")
         run("rm -f root/userdata")
         run("rm -f root/*.done")
-        run("rm -f etc/setup_hostname.done")
+        run("rm -f etc/spot_setup.done")
         run("rm -f var/lib/puppet/ssl/private_keys/*")
         run("rm -f var/lib/puppet/ssl/certs/*")
         run("rm -rf builds/slave")
@@ -147,14 +152,14 @@ def main():
             run("rm -rf builds/gapi.data")
             run("rm -rf builds/mock_mozilla/*/root/home/mock_mozilla")
         else:
-            put("%s/setup_hostname.sh" % AMI_CONFIGS_DIR,
-                "etc/setup_hostname.sh", mirror_local_mode=True)
+            put("%s/spot_setup.sh" % AMI_CONFIGS_DIR,
+                "etc/spot_setup.sh", mirror_local_mode=True)
             # replace puppet init with our script
             if ami_config["distro"] == "ubuntu":
-                put("%s/setup_hostname.conf" % AMI_CONFIGS_DIR,
+                put("%s/spot_setup.conf" % AMI_CONFIGS_DIR,
                     "etc/init/puppet.conf", mirror_local_mode=True)
             else:
-                run("echo '/etc/setup_hostname.sh' > etc/init.d/puppet")
+                run("echo '/etc/spot_setup.sh' > etc/init.d/puppet")
     # create snapshot2
     log.info('Terminating %s', host_instance)
     host_instance.terminate()
@@ -168,13 +173,20 @@ def main():
     bdm[i.root_device_name] = BlockDeviceType(snapshot_id=snap2.id)
 
     log.info('Creating AMI')
+
+    if virtualization_type == "hvm":
+        kernel_id = None
+    else:
+        kernel_id = i.kernel
+
     ami_id = conn.register_image(
         dated_target_name,
         dated_target_name,
-        architecture=i.architecture,
-        kernel_id=i.kernel,
+        architecture=ami_config["arch"],
+        kernel_id=kernel_id,
         root_device_name=i.root_device_name,
         block_device_map=bdm,
+        virtualization_type=virtualization_type,
     )
     log.info('Waiting...')
     while True:
