@@ -349,8 +349,7 @@ def do_request_spot_instances(region, secrets, moz_instance_type, price, ami,
         return
 
     spec = NetworkInterfaceSpecification(
-        network_interface_id=interface.id,
-        associate_public_ip_address=instance_config[region].get("use_public_ip"))
+        network_interface_id=interface.id)
     nc = NetworkInterfaceCollection(spec)
     ip = interface.private_ip_address
     certs = get_puppet_certs(ip, secrets, cached_cert_dir)
