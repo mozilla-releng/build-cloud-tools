@@ -6,12 +6,13 @@
         "ami": "ami-e48e1e8d",
         "subnet_ids": ["subnet-8f32cbe5", "subnet-3835cc52", "subnet-ed35cc87", "subnet-ae35ccc4", "subnet-fb97bc8f", "subnet-ff3542d7", "subnet-e40e0786", "subnet-7ca5f03a"],
         "security_group_ids": ["sg-f0f1239f"],
-        "instance_type": "m1.medium",
+        "instance_type": "m3.medium",
         "distro": "ubuntu",
         "ssh_key": "aws-releng",
+        "use_public_ip": true,
         "device_map": {
             "/dev/sda1": {
-                "size": 30,
+                "size": 15,
                 "instance_dev": "/dev/xvda1"
             }
         },
@@ -25,12 +26,13 @@
         "ami": "ami-e00a80d0",
         "subnet_ids": ["subnet-d6cba8bf", "subnet-aecba8c7", "subnet-a4cba8cd", "subnet-be89a2ca"],
         "security_group_ids": ["sg-8b9f7ce4"],
-        "instance_type": "m1.medium",
+        "instance_type": "m3.medium",
         "distro": "ubuntu",
         "ssh_key": "aws-releng",
+        "use_public_ip": true,
         "device_map": {
             "/dev/sda1": {
-                "size": 30,
+                "size": 15,
                 "instance_dev": "/dev/xvda1"
             }
         },
