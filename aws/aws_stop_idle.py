@@ -415,7 +415,7 @@ if __name__ == '__main__':
     try:
         masters_json = json.load(open(args.masters_json))
     except IOError:
-        masters_json = requests.get(args.masters_json).json
+        masters_json = requests.get(args.masters_json).json()
 
     aws_stop_idle(secrets, credentials, args.regions, masters_json,
                   args.moz_types, dryrun=args.dry_run,
