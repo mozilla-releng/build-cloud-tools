@@ -17,6 +17,11 @@ Base = declarative_base()
 
 CANCEL_STATUS_CODES = ["capacity-oversubscribed", "price-too-low",
                        "capacity-not-available"]
+IGNORABLE_STATUS_CODES = CANCEL_STATUS_CODES + [
+    "bad-parameters", "canceled-before-fulfillment", "fulfilled",
+    "instance-terminated-by-price", "instance-terminated-by-user",
+    "instance-terminated-capacity-oversubscribed", "pending-evaluation",
+    "pending-fulfillment"]
 
 
 def aws_time_to_gm(aws_time):
@@ -100,9 +105,13 @@ class SpotStatus(Base):
 def cancel_low_price(conn):
     spot_requests = conn.get_all_spot_instance_requests() or []
     for req in spot_requests:
-        if req.state == "open" and req.status.code in CANCEL_STATUS_CODES:
-            log.warning("Cancelling request %s", req)
-            req.cancel()
+        if req.state == "open":
+            if req.status.code in CANCEL_STATUS_CODES:
+                log.info("Cancelling request %s", req)
+                req.cancel()
+            elif req.status.code not in IGNORABLE_STATUS_CODES:
+                log.error("Uknown status for request %s: %s", req,
+                          req.status.code)
 
 
 def update_spot_stats(conn, session):
@@ -167,7 +176,7 @@ if __name__ == '__main__':
     if not args.quiet:
         log.setLevel(logging.DEBUG)
     else:
-        log.setLevel(logging.ERROR)
+        log.setLevel(logging.WARNING)
 
     engine = create_engine('sqlite:///%s' % args.db)
     Base.metadata.create_all(bind=engine)
