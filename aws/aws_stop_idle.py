@@ -381,7 +381,7 @@ if __name__ == '__main__':
                         required=True, help="moz-type tag values to be checked")
     parser.add_argument("-j", "--concurrency", type=int, default=8)
     parser.add_argument("--masters-json",
-                        default="http://hg.mozilla.org/build/tools/raw-file/default/buildfarm/maintenance/production-masters.json")
+                        default="https://hg.mozilla.org/build/tools/raw-file/default/buildfarm/maintenance/production-masters.json")
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("-l", "--logfile", dest="logfile",
                         help="log file for full debug log")

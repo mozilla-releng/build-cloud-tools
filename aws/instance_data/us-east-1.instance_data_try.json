@@ -1,6 +1,6 @@
 {
   "puppet_masters": ["releng-puppet1.srv.releng.use1.mozilla.com", "releng-puppet2.srv.releng.use1.mozilla.com"],
   "hg_shares": {
-    "try": "http://ftp.mozilla.org/pub/mozilla.org/firefox/bundles/try.hg"
+    "try": "https://ftp-ssl.mozilla.org/pub/mozilla.org/firefox/bundles/try.hg"
   }
 }

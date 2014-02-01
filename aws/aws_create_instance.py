@@ -129,7 +129,7 @@ def assimilate(ip_addr, config, instance_data, deploypass):
             sudo('rm -rf {d} && mkdir -p {d}'.format(d=target_dir), user="cltbld")
             sudo('{hg} init {d}'.format(hg=hg, d=target_dir), user="cltbld")
             hgrc = "[paths]\n"
-            hgrc += "default = http://hg.mozilla.org/%s\n" % share
+            hgrc += "default = https://hg.mozilla.org/%s\n" % share
             put(StringIO.StringIO(hgrc), '%s/.hg/hgrc' % target_dir)
             run("chown cltbld: %s/.hg/hgrc" % target_dir)
             sudo('{hg} -R {d} unbundle {b}'.format(hg=hg, d=target_dir,

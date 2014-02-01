@@ -1,7 +1,7 @@
 {
   "puppet_masters": ["releng-puppet1.srv.releng.use1.mozilla.com", "releng-puppet2.srv.releng.use1.mozilla.com"],
   "hg_shares": {
-    "mozilla-central": "http://ftp.mozilla.org/pub/mozilla.org/firefox/bundles/mozilla-central.hg",
-    "integration/mozilla-inbound": "http://ftp.mozilla.org/pub/mozilla.org/firefox/bundles/mozilla-inbound.hg"
+    "mozilla-central": "https://ftp-ssl.mozilla.org/pub/mozilla.org/firefox/bundles/mozilla-central.hg",
+    "integration/mozilla-inbound": "https://ftp-ssl.mozilla.org/pub/mozilla.org/firefox/bundles/mozilla-inbound.hg"
   }
 }
