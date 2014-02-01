@@ -4,7 +4,7 @@ import uuid
 import time
 import boto
 import StringIO
-from socket import gethostbyname, gaierror
+from socket import gethostbyname, gaierror, gethostbyaddr, herror
 import getpass
 import random
 
@@ -21,13 +21,22 @@ from IPy import IP
 from aws_create_ami import AMI_CONFIGS_DIR
 
 import logging
-log = logging.getLogger()
+log = logging.getLogger(__name__)
+_connections = {}
+_vpcs = {}
 
 
 def get_ip(hostname):
     try:
         return gethostbyname(hostname)
     except gaierror:
+        return None
+
+
+def get_ptr(ip):
+    try:
+        return gethostbyaddr(ip)[0]
+    except herror:
         return None
 
 
@@ -47,6 +56,44 @@ def ip_available(conn, ip):
         return False
     else:
         return True
+
+
+def verify(hosts, config, region, secrets):
+    """ Check DNS entries and IP availability for hosts"""
+    passed = True
+    for host in hosts:
+        fqdn = "%s.%s" % (host, config["domain"])
+        log.debug("Getting IP for %s", fqdn)
+        ip = get_ip(fqdn)
+        if not ip:
+            log.error("%s has no DNS entry", fqdn)
+            passed = False
+        else:
+            log.debug("Getting PTR for %s", fqdn)
+            ptr = get_ptr(ip)
+            if ptr != fqdn:
+                log.error("Bad PTR for %s", host)
+                passed = False
+            conn = get_connection(
+                region,
+                aws_access_key_id=secrets['aws_access_key_id'],
+                aws_secret_access_key=secrets['aws_secret_access_key']
+            )
+            log.debug("Checking %s availablility", ip)
+            if not ip_available(conn, ip):
+                log.error("IP %s reserved for %s, but not available", ip, host)
+                passed = False
+            vpc = get_vpc(
+                connection=conn,
+                aws_access_key_id=secrets['aws_access_key_id'],
+                aws_secret_access_key=secrets['aws_secret_access_key'])
+
+            s_id = get_subnet_id(vpc, ip)
+            if s_id not in config['subnet_ids']:
+                log.error("IP %s does not belong to assigned subnets", ip)
+                passed = False
+    if not passed:
+        raise RuntimeError("Sanity check failed")
 
 
 def assimilate(ip_addr, config, instance_data, deploypass):
@@ -126,7 +173,8 @@ def assimilate(ip_addr, config, instance_data, deploypass):
         hg = "/tools/python27-mercurial/bin/hg"
         for share, bundle in instance_data['hg_shares'].iteritems():
             target_dir = '/builds/hg-shared/%s' % share
-            sudo('rm -rf {d} && mkdir -p {d}'.format(d=target_dir), user="cltbld")
+            sudo('rm -rf {d} && mkdir -p {d}'.format(d=target_dir),
+                 user="cltbld")
             sudo('{hg} init {d}'.format(hg=hg, d=target_dir), user="cltbld")
             hgrc = "[paths]\n"
             hgrc += "default = https://hg.mozilla.org/%s\n" % share
@@ -138,17 +186,41 @@ def assimilate(ip_addr, config, instance_data, deploypass):
     run("reboot")
 
 
+def get_connection(region, aws_access_key_id, aws_secret_access_key):
+    global _connections
+    if _connections.get(region):
+        return _connections[region]
+    _connections[region] = connect_to_region(
+        region,
+        aws_access_key_id=aws_access_key_id,
+        aws_secret_access_key=aws_secret_access_key
+    )
+    return _connections[region]
+
+
+def get_vpc(connection, aws_access_key_id, aws_secret_access_key):
+    global _vpcs
+    if _vpcs.get(connection.region.name):
+        return _vpcs[connection.region.name]
+    _vpcs[connection.region.name] = VPCConnection(
+        region=connection.region,
+        aws_access_key_id=aws_access_key_id,
+        aws_secret_access_key=aws_secret_access_key
+    )
+    return _vpcs[connection.region.name]
+
+
 def create_instance(name, config, region, secrets, key_name, instance_data,
                     deploypass):
     """Creates an AMI instance with the given name and config. The config must
     specify things like ami id."""
-    conn = connect_to_region(
+    conn = get_connection(
         region,
         aws_access_key_id=secrets['aws_access_key_id'],
         aws_secret_access_key=secrets['aws_secret_access_key']
     )
-    vpc = VPCConnection(
-        region=conn.region,
+    vpc = get_vpc(
+        connection=conn,
         aws_access_key_id=secrets['aws_access_key_id'],
         aws_secret_access_key=secrets['aws_secret_access_key'])
 
@@ -344,12 +416,20 @@ if __name__ == '__main__':
     parser.add_argument("-i", "--instance-data", help="instance specific data",
                         type=argparse.FileType('r'), required=True)
     parser.add_argument("--instance_id", help="assimilate existing instance")
+    parser.add_argument("--no-verify", action="store_true",
+                        help="Skip DNS related checks")
+    parser.add_argument("-v", "--verbose", action="store_true",
+                        help="Increase logging verbosity")
     parser.add_argument("hosts", metavar="host", nargs="+",
                         help="hosts to be processed")
 
     args = parser.parse_args()
 
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(format="%(asctime)s - %(levelname)s - %(message)s")
+    if args.verbose:
+        log.setLevel(logging.DEBUG)
+    else:
+        log.setLevel(logging.INFO)
 
     try:
         config = json.load(args.config)[args.region]
@@ -360,5 +440,8 @@ if __name__ == '__main__':
     deploypass = getpass.getpass("Enter puppetagain deploy password:").strip()
 
     instance_data = json.load(args.instance_data)
+    if not args.no_verify:
+        log.info("Sanity checking DNS entries...")
+        verify(args.hosts, config, args.region, secrets)
     make_instances(args.hosts, config, args.region, secrets, args.key_name,
                    instance_data, deploypass)
