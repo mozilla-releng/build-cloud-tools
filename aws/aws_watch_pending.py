@@ -373,6 +373,17 @@ EOF
         bd = BlockDeviceType()
         if device_info.get('size'):
             bd.size = device_info['size']
+        if ami.root_device_name == device:
+            ami_size = ami.block_device_mapping[device].size
+            if ami.virtualization_type == "hvm":
+                # Overwrite root device size for HVM instances, since they
+                # cannot be resized online
+                bd.size = ami_size
+            elif device_info.get('size'):
+                # make sure that size is enough for this AMI
+                assert ami_size <= device_info['size'], \
+                    "Instance root device size cannot be smaller than AMI " \
+                    "root device"
         if device_info.get("delete_on_termination") is not False:
             bd.delete_on_termination = True
         if device_info.get("ephemeral_name"):
@@ -406,6 +417,7 @@ def get_avalable_interface(conn, moz_instance_type):
 def get_ami(region, secrets, moz_instance_type):
     conn = aws_connect_to_region(region, secrets)
     avail_amis = conn.get_all_images(
+        owners=["self"],
         filters={"tag:moz-type": moz_instance_type})
     last_ami = sorted(avail_amis,
                       key=lambda ami: ami.tags.get("moz-created"))[-1]

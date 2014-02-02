@@ -232,6 +232,7 @@ def create_instance(name, config, region, secrets, key_name, instance_data,
     instance_data['hostname'] = '{name}.{domain}'.format(
         name=name, domain=config['domain'])
 
+    ami = conn.get_all_images(image_ids=[config["ami"]])[0]
     bdm = None
     if 'device_map' in config:
         bdm = BlockDeviceMapping()
@@ -239,6 +240,11 @@ def create_instance(name, config, region, secrets, key_name, instance_data,
             bd = BlockDeviceType()
             if device_info.get('size'):
                 bd.size = device_info['size']
+            # Overwrite root device size for HVM instances, since they cannot
+            # be resized online
+            if ami.virtualization_type == "hvm" and \
+                    ami.root_device_name == device:
+                bd.size = ami.block_device_mapping[ami.root_device_name].size
             if device_info.get("delete_on_termination") is not False:
                 bd.delete_on_termination = True
             if device_info.get("ephemeral_name"):
@@ -257,7 +263,6 @@ def create_instance(name, config, region, secrets, key_name, instance_data,
             else:
                 log.warning("%s already assigned" % ip_address)
 
-    # TODO: fail if no IP assigned
     if not ip_address or not subnet_id:
         ip_address = None
         subnet_id = choice(config.get('subnet_ids'))
