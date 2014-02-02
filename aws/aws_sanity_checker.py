@@ -96,6 +96,20 @@ def get_bad_state(instances):
     return bad_state
 
 
+def get_loaned(instances):
+    ret = []
+    loaned = [i for i in instances if i.tags.get("moz-loaned-to")]
+    for i in loaned:
+        if i.state == "running":
+            uptime = get_uptime(i)
+            ret.append((i, "Loaned to %s, up for %i hours" % (
+                i.tags["moz-loaned-to"], uptime)))
+        else:
+            ret.append((i, "Loaned to %s, %s" % (i.tags["moz-loaned-to"],
+                                                 i.state)))
+    return ret
+
+
 def get_uptime(instance):
     return (time.time() - parse_launch_time(instance.launch_time)) / 3600
 
@@ -138,10 +152,15 @@ def instance_sanity_check(instances):
     long_stopped = get_stale(instances=instances,
                              expected_stale_time=EXPECTED_MAX_DOWNTIME,
                              running_only=False)
+    loaned = get_loaned(instances)
     if long_running:
         print "==== Long running instances ===="
         format_instance_list(sorted(long_running, reverse=True,
                                     key=lambda x: get_uptime(x[0])))
+        print
+    if loaned:
+        print "==== Loaned ===="
+        format_instance_list(loaned)
         print
     if bad_type:
         print "==== Instances with unknown type ===="

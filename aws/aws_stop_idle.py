@@ -54,7 +54,8 @@ def get_buildbot_instances(conn, moz_types):
     retval = []
     for r in reservations:
         for i in r.instances:
-            if i.tags.get("moz-type") in moz_types:
+            if i.tags.get("moz-type") in moz_types and \
+                    not i.tags.get("moz-loaned-to"):
                 retval.append(i)
 
     return retval

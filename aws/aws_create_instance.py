@@ -211,7 +211,7 @@ def get_vpc(connection, aws_access_key_id, aws_secret_access_key):
 
 
 def create_instance(name, config, region, secrets, key_name, instance_data,
-                    deploypass):
+                    deploypass, loaned_to):
     """Creates an AMI instance with the given name and config. The config must
     specify things like ami id."""
     conn = get_connection(
@@ -307,12 +307,15 @@ def create_instance(name, config, region, secrets, key_name, instance_data,
     instance.add_tag('created', time.strftime("%Y-%m-%d %H:%M:%S %Z",
                                               time.gmtime()))
     instance.add_tag('moz-type', config['type'])
+    if loaned_to:
+        instance.add_tag("moz-loaned-to", loaned_to)
 
     log.info("assimilating %s", instance)
     instance.add_tag('moz-state', 'pending')
     while True:
         try:
-            assimilate(instance.private_ip_address, config, instance_data, deploypass)
+            assimilate(instance.private_ip_address, config, instance_data,
+                       deploypass)
             break
         except:
             log.exception("problem assimilating %s", instance)
@@ -390,14 +393,14 @@ class LoggingProcess(multiprocessing.Process):
 
 
 def make_instances(names, config, region, secrets, key_name, instance_data,
-                   deploypass):
+                   deploypass, loaned_to):
     """Create instances for each name of names for the given configuration"""
     procs = []
     for name in names:
         p = LoggingProcess(log="{name}.log".format(name=name),
                            target=create_instance,
                            args=(name, config, region, secrets, key_name,
-                                 instance_data, deploypass),
+                                 instance_data, deploypass, loaned_to),
                            )
         p.start()
         procs.append(p)
@@ -425,6 +428,7 @@ if __name__ == '__main__':
                         help="Skip DNS related checks")
     parser.add_argument("-v", "--verbose", action="store_true",
                         help="Increase logging verbosity")
+    parser.add_argument("-l", "--loaned-to", help="Loaner contact e-mail")
     parser.add_argument("hosts", metavar="host", nargs="+",
                         help="hosts to be processed")
 
@@ -449,4 +453,4 @@ if __name__ == '__main__':
         log.info("Sanity checking DNS entries...")
         verify(args.hosts, config, args.region, secrets)
     make_instances(args.hosts, config, args.region, secrets, args.key_name,
-                   instance_data, deploypass)
+                   instance_data, deploypass, args.loaned_to)

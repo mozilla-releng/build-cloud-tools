@@ -115,6 +115,10 @@ def aws_filter_instances(all_instances, state=None, tags=None):
                 if i.tags.get(k) != v:
                     matched = False
                     continue
+        if i.tags.get("moz-loaned-to"):
+            # Skip loaned instances
+            matched = False
+            continue
         if matched:
             retval.append(i)
     return retval

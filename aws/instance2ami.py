@@ -86,6 +86,8 @@ def main():
         filters["instance-state-name"] = "running"
         res = conn.get_all_instances(filters=filters)
     instances = reduce(lambda a, b: a + b, [r.instances for r in res])
+    # skip loaned instances
+    instances = [i for i in instances if not i.tags.get("moz-loaned-to")]
     i = sorted(instances, key=lambda i: i.launch_time)[-1]
     log.debug("Selected instance to clone: %s", i)
     v_id = i.block_device_mapping[i.root_device_name].volume_id
