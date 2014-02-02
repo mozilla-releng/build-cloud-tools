@@ -78,7 +78,7 @@ def create_instance(connection, instance_name, config, key_name, user='root',
              "/root/.ssh/authorized_keys" % user)
         sudo("sed -i -e '/PermitRootLogin/d' "
              "-e '$ a PermitRootLogin without-password' /etc/ssh/sshd_config")
-        sudo("service sshd restart")
+        sudo("service sshd restart || service ssh restart")
         sudo("sleep 20")
     return instance
 
