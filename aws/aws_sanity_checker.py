@@ -102,11 +102,14 @@ def get_loaned(instances):
     for i in loaned:
         if i.state == "running":
             uptime = get_uptime(i)
-            ret.append((i, "Loaned to %s, up for %i hours" % (
+            ret.append((uptime, i, "Loaned to %s, up for %i hours" % (
                 i.tags["moz-loaned-to"], uptime)))
         else:
-            ret.append((i, "Loaned to %s, %s" % (i.tags["moz-loaned-to"],
-                                                 i.state)))
+            ret.append((None, i, "Loaned to %s, %s" % (i.tags["moz-loaned-to"],
+                                                       i.state)))
+    if ret:
+        # sort by uptime, reconstruct ret
+        ret = [(e[1], e[2]) for e in reversed(sorted(ret, key=lambda x: x[0]))]
     return ret
 
 
