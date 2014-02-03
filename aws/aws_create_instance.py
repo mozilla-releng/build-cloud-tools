@@ -284,6 +284,7 @@ def create_instance(name, config, region, secrets, key_name, instance_data,
                 client_token=token,
                 disable_api_termination=bool(config.get('disable_api_termination')),
                 network_interfaces=interfaces,
+                instance_profile_name=config.get("instance_profile_name"),
             )
             break
         except boto.exception.BotoServerError:

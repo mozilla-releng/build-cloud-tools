@@ -9,6 +9,7 @@
         "instance_type": "c3.xlarge",
         "ssh_key": "aws-releng",
         "use_public_ip": true,
+        "instance_profile_name": "bld-linux64",
         "device_map": {
             "/dev/xvda": {
                 "delete_on_termination": true,
@@ -52,6 +53,7 @@
         "instance_type": "c3.xlarge",
         "ssh_key": "aws-releng",
         "use_public_ip": true,
+        "instance_profile_name": "bld-linux64",
         "device_map": {
             "/dev/xvda": {
                 "delete_on_termination": true,

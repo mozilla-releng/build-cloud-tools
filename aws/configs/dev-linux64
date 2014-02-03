@@ -9,6 +9,7 @@
         "instance_type": "c3.xlarge",
         "ssh_key": "aws-releng",
         "use_public_ip": true,
+        "instance_profile_name": "try-linux64",
         "device_map": {
             "/dev/xvda": {
                 "size": 250,
@@ -53,6 +54,7 @@
         "instance_type": "c3.xlarge",
         "ssh_key": "aws-releng",
         "use_public_ip": true,
+        "instance_profile_name": "try-linux64",
         "device_map": {
             "/dev/xvda": {
                 "size": 250,

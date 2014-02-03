@@ -413,7 +413,9 @@ EOF
         key_name=instance_config[region]["ssh_key"],
         user_data=user_data,
         block_device_map=bdm,
-        network_interfaces=nc)
+        network_interfaces=nc,
+        instance_profile_name=instance_config[region].get("instance_profile_name"),
+    )
     sir[0].add_tag("moz-type", moz_instance_type)
 
 
