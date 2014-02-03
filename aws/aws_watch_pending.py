@@ -166,7 +166,7 @@ def aws_filter_reservations(reservations, running_instances):
 
 
 def aws_resume_instances(moz_instance_type, start_count, regions, secrets,
-                         region_priorities, dryrun):
+                         region_priorities, instance_type_changes, dryrun):
     """Resume up to `start_count` stopped instances of the given type in the
     given regions"""
     # Fetch all our instance information
@@ -245,6 +245,16 @@ def aws_resume_instances(moz_instance_type, start_count, regions, secrets,
         if not dryrun:
             log.debug("%s - %s - starting %s", i.placement, i.tags['Name'], r)
             try:
+                # Check if the instance type needs to be changed. See
+                # watch_pending.cfg.example's instance_type_changes entry.
+                new_instance_type = instance_type_changes.get(
+                    i.region.name, {}).get(moz_instance_type)
+                if new_instance_type and new_instance_type != i.instance_type:
+                    log.warn("Changing %s (%s) instance type from %s to %s",
+                             i.tags['Name'], i.id, i.instance_type,
+                             new_instance_type)
+                    i.connection.modify_instance_attribute(
+                        i.id, "instanceType", new_instance_type)
                 i.start()
                 started += 1
             except BotoServerError:
@@ -429,7 +439,8 @@ def get_ami(region, secrets, moz_instance_type):
 
 
 def aws_watch_pending(dburl, regions, secrets, builder_map, region_priorities,
-                      spot_limits, dryrun, cached_cert_dir):
+                      spot_limits, dryrun, cached_cert_dir,
+                      instance_type_changes):
     # First find pending jobs in the db
     db = sa.create_engine(dburl)
     pending = find_pending(db)
@@ -472,7 +483,8 @@ def aws_watch_pending(dburl, regions, secrets, builder_map, region_priorities,
         # Check for stopped instances in the given regions and start them if
         # there are any
         started = aws_resume_instances(instance_type, count, regions, secrets,
-                                       region_priorities, dryrun)
+                                       region_priorities,
+                                       instance_type_changes, dryrun)
         count -= started
         log.info("%s - started %i instances; need %i",
                  instance_type, started, count)
@@ -512,5 +524,6 @@ if __name__ == '__main__':
         region_priorities=config['region_priorities'],
         dryrun=args.dryrun,
         spot_limits=config.get("spot_limits"),
-        cached_cert_dir=args.cached_cert_dir
+        cached_cert_dir=args.cached_cert_dir,
+        instance_type_changes=config.get("instance_type_changes", {})
     )
