@@ -131,6 +131,10 @@ def get_stale(instances, expected_stale_time, running_only=True):
             if i.state != "stopped":
                 continue
 
+        # Ignore Loaned (we have a separate section in report for that)
+        if i.tags.get("moz-loaned-to"):
+            continue
+
         uptime = get_uptime(i)
         moz_type = i.tags.get('moz-type', 'default')
         expected_max = expected_stale_time.get(moz_type)
