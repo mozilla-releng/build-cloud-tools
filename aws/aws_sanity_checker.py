@@ -100,13 +100,17 @@ def get_loaned(instances):
     ret = []
     loaned = [i for i in instances if i.tags.get("moz-loaned-to")]
     for i in loaned:
+        bug_string = "an unknown bug"
+        if i.tags.get("moz-bug"):
+            bug_string = "bug %s" % i.tags.get("moz-bug")
         if i.state == "running":
             uptime = get_uptime(i)
-            ret.append((uptime, i, "Loaned to %s, up for %i hours" % (
-                i.tags["moz-loaned-to"], uptime)))
+            ret.append((uptime, i, "Loaned to %s in %s, up for %i hours" % (
+                i.tags["moz-loaned-to"], bug_string, uptime)))
         else:
-            ret.append((None, i, "Loaned to %s, %s" % (i.tags["moz-loaned-to"],
-                                                       i.state)))
+            ret.append((None, i, "Loaned to %s in %s, %s" % (i.tags["moz-loaned-to"],
+                                                             bug_string,
+                                                             i.state)))
     if ret:
         # sort by uptime, reconstruct ret
         ret = [(e[1], e[2]) for e in reversed(sorted(ret, key=lambda x: x[0]))]
