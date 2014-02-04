@@ -32,9 +32,6 @@ def stop(i, ssh_client=None):
     not support stop() method."""
 
     name = i.tags.get("Name")
-    if ssh_client:
-        df = get_df(ssh_client, "/builds/slave")
-        log.info("DISK USAGE (M) for %s (%s): %s", name, i, df.strip())
     # on-demand instances don't have instanceLifecycle attribute
     if hasattr(i, "instanceLifecycle") and i.instanceLifecycle == "spot":
         log.info("Terminating %s (%s)", name, i)
@@ -171,13 +168,6 @@ def get_tacfile(client):
     return data
 
 
-def get_df(client, d):
-    stdin, stdout, stderr = client.exec_command("df -m %s | tail -n 1" % d)
-    stdin.close()
-    data = stdout.read()
-    return data
-
-
 def get_buildbot_master(client, masters_json):
     tacfile = get_tacfile(client)
     host = re.search("^buildmaster_host = '(.*?)'$", tacfile, re.M)
@@ -196,8 +186,8 @@ def graceful_shutdown(name, ip, client, masters_json):
     log.debug("%s - looking up which master we're attached to", name)
     host, port = get_buildbot_master(client, masters_json)
 
-    url = "http://{host}:{port}/buildslaves/{name}/shutdown".format(host=host,
-                                                                    port=port, name=name)
+    url = "http://{host}:{port}/buildslaves/{name}/shutdown".format(
+        host=host, port=port, name=name)
     log.debug("%s - POSTing to %s", name, url)
     requests.post(url, allow_redirects=False)
 
@@ -303,7 +293,8 @@ def aws_stop_idle(secrets, credentials, regions, masters_json, moz_types,
             to_remove = instances_by_type[t][:min_running_by_type]
             for i in to_remove:
                 log.debug("%s - keep running (min %s instances of type %s)",
-                          i.tags['Name'], min_running_by_type, i.tags['moz-type'])
+                          i.tags['Name'], min_running_by_type,
+                          i.tags['moz-type'])
                 instances.remove(i)
 
         all_instances.extend(instances)
@@ -379,7 +370,8 @@ if __name__ == '__main__':
     parser.add_argument("-c", "--credentials", type=argparse.FileType('r'),
                         required=True)
     parser.add_argument("-t", "--moz-type", action="append", dest="moz_types",
-                        required=True, help="moz-type tag values to be checked")
+                        required=True,
+                        help="moz-type tag values to be checked")
     parser.add_argument("-j", "--concurrency", type=int, default=8)
     parser.add_argument("--masters-json",
                         default="https://hg.mozilla.org/build/tools/raw-file/default/buildfarm/maintenance/production-masters.json")
