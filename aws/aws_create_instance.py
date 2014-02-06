@@ -154,6 +154,7 @@ def assimilate(ip_addr, config, instance_data, deploypass):
     put(StringIO.StringIO("exit 0\n"), "/root/post-puppetize-hook.sh")
 
     puppet_master = random.choice(instance_data["puppet_masters"])
+    log.info("Puppetizing, it may take a while...")
     run("PUPPET_SERVER=%s /root/puppetize.sh" % puppet_master)
 
     if 'home_tarball' in instance_data:
@@ -183,6 +184,7 @@ def assimilate(ip_addr, config, instance_data, deploypass):
             sudo('{hg} -R {d} unbundle {b}'.format(hg=hg, d=target_dir,
                                                    b=bundle), user="cltbld")
 
+    log.info("Rebooting %s...", hostname)
     run("reboot")
 
 
@@ -300,7 +302,7 @@ def create_instance(name, config, region, secrets, key_name, instance_data,
             if instance.state == 'running':
                 break
         except Exception:
-            log.exception("hit error waiting for instance to come up")
+            log.warn("waiting for instance to come up, retrying in 10 sec...")
         time.sleep(10)
 
     instance.add_tag('Name', name)
@@ -321,7 +323,7 @@ def create_instance(name, config, region, secrets, key_name, instance_data,
                        deploypass)
             break
         except:
-            log.exception("problem assimilating %s", instance)
+            log.warn("problem assimilating %s, retrying in 10 sec ...", instance)
             time.sleep(10)
     instance.add_tag('moz-state', 'ready')
 
