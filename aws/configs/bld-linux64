@@ -42,6 +42,9 @@
                     "mount_point": "/mnt/instance_storage"
                 }
             }
+        },
+        "tags": {
+            "moz-type": "bld-linux64"
         }
     },
     "us-west-2": {
@@ -86,6 +89,9 @@
                     "mount_point": "/mnt/instance_storage"
                 }
             }
+        },
+        "tags": {
+            "moz-type": "bld-linux64"
         }
     }
 }
