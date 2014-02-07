@@ -208,12 +208,15 @@ def volume_sanity_check(volumes):
         print
 
 
-def instance_stats(instances):
+def instance_stats(instances, regions):
     states = collections.defaultdict(int)
     types = collections.defaultdict(list)
     type_regexp = re.compile(r"(.*?)-?\d+$")
+    state = {}
+    for r in regions:
+        states[r] = collections.defaultdict(int)
     for i in instances:
-        states[i.state] += 1
+        states[i.region.name][i.state] += 1
         name = i.tags.get("Name")
         # Try to remove trailing digits or use the whole name
         if name:
@@ -229,8 +232,10 @@ def instance_stats(instances):
         types[type_name].append(running)
 
     print "==== %s instances in total ====" % len(instances)
-    for state, n in states.iteritems():
-        print "%s: %s" % (state, n)
+    for r in regions:
+        print r
+        for state, n in states[r].iteritems():
+            print "  %s: %s" % (state, n)
     print
     print "==== Type breakdown ===="
     # Sort by amount of running instances
@@ -270,6 +275,6 @@ if __name__ == '__main__':
         conn = get_connection(region, secrets)
         all_instances.extend(get_all_instances(conn))
         all_volumes.extend(conn.get_all_volumes())
-    instance_stats(all_instances)
+    instance_stats(all_instances, args.regions)
     instance_sanity_check(all_instances)
     volume_sanity_check(all_volumes)
