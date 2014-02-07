@@ -232,7 +232,7 @@ def instance_stats(instances, regions):
         types[type_name].append(running)
 
     print "==== %s instances in total ====" % len(instances)
-    for r in regions:
+    for r in sorted(regions):
         print r
         for state, n in states[r].iteritems():
             print "  %s: %s" % (state, n)
