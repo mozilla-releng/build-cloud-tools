@@ -10,6 +10,7 @@
         "distro": "ubuntu",
         "ssh_key": "aws-releng",
         "use_public_ip": true,
+        "instance_profile_name": "tst-linux32",
         "device_map": {
             "/dev/sda1": {
                 "size": 15,
@@ -30,6 +31,7 @@
         "distro": "ubuntu",
         "ssh_key": "aws-releng",
         "use_public_ip": true,
+        "instance_profile_name": "tst-linux32",
         "device_map": {
             "/dev/sda1": {
                 "size": 15,
