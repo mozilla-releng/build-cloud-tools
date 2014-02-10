@@ -58,11 +58,31 @@ def ip_available(conn, ip):
         return True
 
 
+def name_available(conn, name):
+    res = conn.get_all_instances()
+    instances = reduce(lambda a, b: a + b, [r.instances for r in res])
+    names = [i.tags.get("Name") for i in instances if i.state != "terminated"]
+    if name in names:
+        return False
+    else:
+        return True
+
+
 def verify(hosts, config, region, secrets):
     """ Check DNS entries and IP availability for hosts"""
     passed = True
+    conn = get_connection(
+        region,
+        aws_access_key_id=secrets['aws_access_key_id'],
+        aws_secret_access_key=secrets['aws_secret_access_key']
+    )
     for host in hosts:
         fqdn = "%s.%s" % (host, config["domain"])
+        log.info("Checking name conflicts for %s", host)
+        if not name_available(conn, host):
+            log.error("%s has been already taken", host)
+            passed = False
+            continue
         log.debug("Getting IP for %s", fqdn)
         ip = get_ip(fqdn)
         if not ip:
@@ -74,11 +94,6 @@ def verify(hosts, config, region, secrets):
             if ptr != fqdn:
                 log.error("Bad PTR for %s", host)
                 passed = False
-            conn = get_connection(
-                region,
-                aws_access_key_id=secrets['aws_access_key_id'],
-                aws_secret_access_key=secrets['aws_secret_access_key']
-            )
             log.debug("Checking %s availablility", ip)
             if not ip_available(conn, ip):
                 log.error("IP %s reserved for %s, but not available", ip, host)
@@ -114,6 +129,7 @@ def assimilate(ip_addr, config, instance_data, deploypass):
     distro = config.get('distro')
     # Set our hostname
     hostname = "{hostname}".format(**instance_data)
+    log.info("Bootstrapping %s...", hostname)
     run("hostname %s" % hostname)
     if distro in ('ubuntu', 'debian'):
         run("echo %s > /etc/hostname" % hostname)
@@ -154,7 +170,7 @@ def assimilate(ip_addr, config, instance_data, deploypass):
     put(StringIO.StringIO("exit 0\n"), "/root/post-puppetize-hook.sh")
 
     puppet_master = random.choice(instance_data["puppet_masters"])
-    log.info("Puppetizing, it may take a while...")
+    log.info("Puppetizing %s, it may take a while...", hostname)
     run("PUPPET_SERVER=%s /root/puppetize.sh" % puppet_master)
 
     if 'home_tarball' in instance_data:
@@ -171,6 +187,7 @@ def assimilate(ip_addr, config, instance_data, deploypass):
              "{buildbot_master} {name} "
              "{buildslave_password}".format(**instance_data), user="cltbld")
     if instance_data.get("hg_shares"):
+        log.info("Cloning HG repos for %s...", hostname)
         hg = "/tools/python27-mercurial/bin/hg"
         for share, bundle in instance_data['hg_shares'].iteritems():
             target_dir = '/builds/hg-shared/%s' % share
@@ -323,7 +340,8 @@ def create_instance(name, config, region, secrets, key_name, instance_data,
                        deploypass)
             break
         except:
-            log.warn("problem assimilating %s, retrying in 10 sec ...", instance)
+            log.warn("problem assimilating %s (%s), retrying in 10 sec ...",
+                     instance_data['hostname'], instance.id)
             time.sleep(10)
     instance.add_tag('moz-state', 'ready')
 
