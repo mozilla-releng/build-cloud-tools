@@ -194,5 +194,5 @@ if __name__ == '__main__':
             )
         else:
             conn = connect_to_region(region)
-        cancel_low_price(conn)
         update_spot_stats(conn, session)
+        cancel_low_price(conn)
