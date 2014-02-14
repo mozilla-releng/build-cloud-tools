@@ -81,10 +81,12 @@ def main():
     }
     for tag, value in moz_type_config["tags"].iteritems():
         filters["tag:%s" % tag] = value
+    using_stopped_instance = True
     res = conn.get_all_instances(filters=filters)
     if not res:
         filters["instance-state-name"] = "running"
         res = conn.get_all_instances(filters=filters)
+        using_stopped_instance = False
     instances = reduce(lambda a, b: a + b, [r.instances for r in res])
     # skip loaned instances
     instances = [i for i in instances if not i.tags.get("moz-loaned-to")]
@@ -142,7 +144,8 @@ def main():
         run("rm -f etc/spot_setup.done")
         run("rm -f var/lib/puppet/ssl/private_keys/*")
         run("rm -f var/lib/puppet/ssl/certs/*")
-        run("rm -rf builds/slave")
+        if not using_stopped_instance or args.public:
+            run("rm -rf builds/slave")
         run("echo localhost > etc/hostname")
         run("sed -i -e 's/127.0.0.1.*/127.0.0.1 localhost/g' etc/hosts")
         if args.public:
