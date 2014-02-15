@@ -4,7 +4,7 @@
         "type": "try-linux64",
         "domain": "try.releng.use1.mozilla.com",
         "ami": "ami-47675d2e",
-        "subnet_ids": ["subnet-27a9834c", "subnet-39a98352", "subnet-3ea98355", "subnet-93b285e7", "subnet-e5bacacd", "subnet-ef373f8d", "subnet-cd83d28b"],
+        "subnet_ids": ["subnet-27a9834c", "subnet-39a98352", "subnet-3ea98355", "subnet-93b285e7", "subnet-e5bacacd", "subnet-cd83d28b"],
         "security_group_ids": [],
         "instance_type": "c3.xlarge",
         "ssh_key": "aws-releng",
