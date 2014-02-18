@@ -146,6 +146,8 @@ def main():
         run("rm -f var/lib/puppet/ssl/certs/*")
         if not using_stopped_instance or args.public:
             run("rm -rf builds/slave")
+        else:
+            run("rm -f builds/slave/buildbot.tac")
         run("echo localhost > etc/hostname")
         run("sed -i -e 's/127.0.0.1.*/127.0.0.1 localhost/g' etc/hosts")
         if args.public:
