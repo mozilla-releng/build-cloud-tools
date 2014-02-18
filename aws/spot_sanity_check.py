@@ -105,7 +105,7 @@ class SpotStatus(Base):
 def cancel_low_price(conn):
     spot_requests = conn.get_all_spot_instance_requests() or []
     for req in spot_requests:
-        if req.state == "open":
+        if req.state in ["open", "failed"]:
             if req.status.code in CANCEL_STATUS_CODES:
                 log.info("Cancelling request %s", req)
                 req.cancel()
