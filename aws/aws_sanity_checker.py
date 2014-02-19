@@ -8,6 +8,8 @@ import calendar
 import collections
 import re
 from boto.ec2 import connect_to_region
+from aws_instances import Slave, AWSInstance
+
 
 log = logging.getLogger(__name__)
 REGIONS = ('us-east-1', 'us-west-2')
@@ -155,32 +157,92 @@ def format_instance_list(instances):
             msg=msg)
 
 
-def instance_sanity_check(instances):
-    bad_type = get_bad_type(instances=instances)
-    bad_state = get_bad_state(instances=instances)
-    long_running = get_stale(instances=instances,
-                             expected_stale_time=EXPECTED_MAX_UPTIME)
-    long_stopped = get_stale(instances=instances,
-                             expected_stale_time=EXPECTED_MAX_DOWNTIME,
-                             running_only=False)
-    loaned = get_loaned(instances)
-    if long_running:
-        print "==== Long running instances ===="
-        format_instance_list(sorted(long_running, reverse=True,
+def _report_lazy_running_instances(long_running):
+    # do some extra checks on long running
+    lazy_running_instances = []
+    for report in long_running:
+        instance = report[0]
+        message = report[1]
+        slave = Slave(instance)
+        if slave.is_long_running():
+            last_job_ended = slave.when_last_job_ended()
+            message = "{0} ({1} since last build)".format(message,
+                                                          last_job_ended)
+            lazy_running_instances.append((instance, message))
+
+    if lazy_running_instances:
+        print "==== Lazy long running instances ===="
+        format_instance_list(sorted(lazy_running_instances, reverse=True,
                                     key=lambda x: get_uptime(x[0])))
         print
+
+
+def _report_long_running_instances(long_running):
+    if long_running:
+        long_running_ = []
+        print "==== Long running instances ===="
+        for report in long_running:
+            instance = report[0]
+            message = report[1]
+            slave = Slave(instance)
+            last_job_ended = slave.when_last_job_ended()
+            if last_job_ended != '0h:0m':
+                message = "{0} ({1} since last build)".format(message,
+                                                              last_job_ended)
+            else:
+                message = "{0} (no info from buildapi)".format(message)
+            long_running_.append((instance, message))
+        format_instance_list(sorted(long_running_, reverse=True,
+                                    key=lambda x: get_uptime(x[0])))
+        print
+
+
+def _report_loaned(loaned):
     if loaned:
         print "==== Loaned ===="
         format_instance_list(loaned)
         print
+
+
+def _report_bad_type(bad_type):
     if bad_type:
         print "==== Instances with unknown type ===="
         format_instance_list(sorted(bad_type, key=lambda x: x[0].region.name))
         print
+
+
+def _report_bad_state(bad_state):
     if bad_state:
         print "==== Instances with unknown state ===="
         format_instance_list(sorted(bad_state, key=lambda x: x[0].region.name))
         print
+
+
+def _report_impaired(impaired):
+    if impaired:
+        print "=== Impaired instances ===="
+        #format_instance_list(sorted(impaired, key=lambda x: x[0].region.name))
+        for num, instance in enumerate(impaired):
+            print "{0} {1}".format(num, instance)
+        print
+
+
+def get_all_instance_status(connection, filters=None):
+    return conn.get_all_instance_status(filters=filters)
+
+
+def get_impaired(connection, instances):
+    impaired = []
+    filters = {'instance-status.status': 'impaired'}
+    impaired_ids = [i.id for i in get_all_instance_status(connection, filters)]
+    for instance in instances:
+        if instance.id in impaired_ids:
+            impaired_instance = AWSInstance(instance)
+            impaired.append(impaired_instance)
+    return impaired
+
+
+def _report_long_stopped(long_stopped):
     if long_stopped:
         print "==== Instances stopped for a while ===="
         format_instance_list(sorted(long_stopped, reverse=True,
@@ -188,15 +250,7 @@ def instance_sanity_check(instances):
         print
 
 
-def get_not_attached(volumes):
-    bad_volumes = []
-    for v in volumes:
-        if v.status != "in-use":
-            bad_volumes.append((v, "Not attached"))
-    return bad_volumes
-
-
-def volume_sanity_check(volumes):
+def _report_volume_sanity_check(volumes):
     total = sum(v.size for v in volumes)
     not_attached = get_not_attached(volumes)
     print "Volume usage: %sG" % total
@@ -208,7 +262,7 @@ def volume_sanity_check(volumes):
         print
 
 
-def instance_stats(instances, regions):
+def _report_instance_stats(instances, regions):
     states = collections.defaultdict(int)
     types = collections.defaultdict(list)
     type_regexp = re.compile(r"(.*?)-?\d+$")
@@ -245,6 +299,38 @@ def instance_stats(instances, regions):
                                                 n.count(False))
     print
 
+
+def generate_report(connection, regions, instances, volumes):
+    bad_type = get_bad_type(instances=instances)
+    bad_state = get_bad_state(instances=instances)
+    long_running = get_stale(instances=instances,
+                             expected_stale_time=EXPECTED_MAX_UPTIME)
+    long_stopped = get_stale(instances=instances,
+                             expected_stale_time=EXPECTED_MAX_DOWNTIME,
+                             running_only=False)
+    loaned = get_loaned(instances)
+    impaired = get_impaired(connection, instances)
+
+    # create the report
+    _report_lazy_running_instances(long_running)
+    _report_instance_stats(instances, regions)
+    _report_long_running_instances(long_running)
+    _report_loaned(loaned)
+    _report_bad_type(bad_type)
+    _report_bad_state(bad_state)
+    _report_long_stopped(long_stopped)
+    _report_impaired(impaired)
+    _report_volume_sanity_check(volumes)
+
+
+def get_not_attached(volumes):
+    bad_volumes = []
+    for volume in volumes:
+        if volume.status != "in-use":
+            bad_volumes.append((volume, "Not attached"))
+    return bad_volumes
+
+
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
@@ -275,6 +361,8 @@ if __name__ == '__main__':
         conn = get_connection(region, secrets)
         all_instances.extend(get_all_instances(conn))
         all_volumes.extend(conn.get_all_volumes())
-    instance_stats(all_instances, args.regions)
-    instance_sanity_check(all_instances)
-    volume_sanity_check(all_volumes)
+
+    generate_report(connection=conn,
+                    regions=args.regions,
+                    instances=all_instances,
+                    volumes=all_volumes)
