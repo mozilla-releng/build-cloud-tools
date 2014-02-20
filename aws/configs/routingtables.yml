@@ -1,0 +1,114 @@
+us-west-1:
+    default:
+        routes:
+            50.18.181.150/32: IGW
+            50.18.181.153/32: IGW
+            178.236.0.0/21: IGW
+            hg.mozilla.org: IGW
+            10.130.0.0/16: local
+            0.0.0.0/0: VGW
+
+    nat:
+        routes:
+            10.130.0.0/16: local
+            10.0.0.0/8: VGW
+            0.0.0.0/0: null
+
+    "nat subnet":
+        routes:
+            0.0.0.0/0: IGW
+            10.0.0.0/8: VGW
+            10.130.0.0/16: local
+
+us-west-2:
+    default:
+        routes:
+            10.132.0.0/16: local
+            0.0.0.0/0: VGW
+
+    masters:
+        routes:
+            10.132.0.0/16: local
+            0.0.0.0/0: VGW
+
+    testers:
+        routes:
+            ftp-ssl.mozilla.org: IGW
+            hg.mozilla.org: IGW
+            10.132.0.0/16: local
+            0.0.0.0/0: VGW
+
+    builders:
+        routes:
+            ftp-ssl.mozilla.org: IGW
+            hg.mozilla.org: IGW
+            10.132.0.0/16: local
+            0.0.0.0/0: VGW
+
+    try:
+        routes:
+            # Amazon routes
+            176.32.96.0/21: IGW
+            207.171.160.0/19: IGW
+            72.21.192.0/19: IGW
+            205.251.192.0/18: IGW
+            54.239.0.0/17: IGW
+            54.240.0.0/12: IGW
+
+            # Mozilla stuff
+            hg.mozilla.org: IGW
+            10.132.0.0/16: local
+            0.0.0.0/0: VGW
+
+us-east-1:
+    default:
+        routes:
+            10.134.0.0/16: local
+            0.0.0.0/0: VGW
+
+    masters:
+        routes:
+            10.134.0.0/16: local
+            0.0.0.0/0: VGW
+
+    testers:
+        routes:
+            hg.mozilla.org: IGW
+            ftp-ssl.mozilla.org: IGW
+            10.134.0.0/16: local
+            0.0.0.0/0: VGW
+
+    builders:
+        routes:
+            hg.mozilla.org: IGW
+            ftp-ssl.mozilla.org: IGW
+            10.134.0.0/16: local
+            0.0.0.0/0: VGW
+
+    try:
+        routes:
+            # Amazon routes
+            176.32.96.0/21: IGW
+            207.171.160.0/19: IGW
+            72.21.192.0/19: IGW
+            205.251.192.0/18: IGW
+            54.239.0.0/17: IGW
+            54.240.0.0/12: IGW
+
+            # Mozilla stuff
+            hg.mozilla.org: IGW
+            10.134.0.0/16: local
+            0.0.0.0/0: VGW
+
+
+    "EB: NAT1":
+        routes:
+            10.134.0.0/16: local
+            10.0.0.0/8: VGW
+            0.0.0.0/0: i-0dc6a56a
+
+    "EB: NAT2":
+        routes:
+            10.134.0.0/16: local
+            10.0.0.0/8: VGW
+            0.0.0.0/0: IGW
