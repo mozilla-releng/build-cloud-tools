@@ -5,7 +5,6 @@ import time
 import boto
 import StringIO
 from socket import gethostbyname, gaierror, gethostbyaddr, herror
-import getpass
 import random
 
 from random import choice
@@ -470,7 +469,7 @@ if __name__ == '__main__':
         parser.error("unknown configuration")
 
     secrets = json.load(args.secrets)
-    deploypass = getpass.getpass("Enter puppetagain deploy password:").strip()
+    deploypass = secrets["deploy_password"]
 
     instance_data = json.load(args.instance_data)
     if not args.no_verify:
