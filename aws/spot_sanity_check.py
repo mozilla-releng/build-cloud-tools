@@ -108,6 +108,7 @@ def cancel_low_price(conn):
         if req.state in ["open", "failed"]:
             if req.status.code in CANCEL_STATUS_CODES:
                 log.info("Cancelling request %s", req)
+                req.add_tag("moz-cancel-reason", req.status.code)
                 req.cancel()
             elif req.status.code not in IGNORABLE_STATUS_CODES:
                 log.error("Uknown status for request %s: %s", req,
