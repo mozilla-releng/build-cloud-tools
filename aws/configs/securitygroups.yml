@@ -13,7 +13,7 @@ tests:
             - slaveapi-dev1.srv.releng.scl3.mozilla.com
             - 10.22.252.0/22
             - 10.22.248.0/22
-            - dev-master01.build.mozilla.org
+            - dev-master1.build.mozilla.org
         - proto: icmp
           ports: [-1]
           hosts:
@@ -22,7 +22,7 @@ tests:
             - cruncher.build.mozilla.org
             - slaveapi1.srv.releng.scl3.mozilla.com
             - slaveapi-dev1.srv.releng.scl3.mozilla.com
-            - dev-master01.build.mozilla.org
+            - dev-master1.build.mozilla.org
 
 
     outbound:
