@@ -3,6 +3,7 @@ import socket
 
 import boto.vpc
 import yaml
+import dns.resolver
 
 import logging
 log = logging.getLogger(__name__)
@@ -25,9 +26,10 @@ def resolve_host(hostname):
     if hostname in _dns_cache:
         return _dns_cache[hostname]
     log.info("resolving host %s", hostname)
-    ip = socket.gethostbyname(hostname)
-    _dns_cache[hostname] = ip
-    return ip
+    ips = dns.resolver.query(hostname, "A")
+    ips = [i.to_text() for i in ips]
+    _dns_cache[hostname] = ips
+    return ips
 
 
 def sync_tables(conn, my_tables, remote_tables):
@@ -72,9 +74,26 @@ def sync_tables(conn, my_tables, remote_tables):
         my_routes = set()
         IGW = None
         VGW = None
+
+        # Resolve hostnames
+        to_delete = set()
+        to_add = set()
         for cidr, dest in my_t['routes'].iteritems():
             if "/" not in cidr:
-                cidr = resolve_host(cidr) + "/32"
+                for ip in resolve_host(cidr):
+                    log.info("adding %s for %s", ip, cidr)
+                    to_add.add(("%s/32" % ip, dest))
+                to_delete.add(cidr)
+
+
+        for d in to_delete:
+            del my_t['routes'][d]
+
+        for cidr, dest in to_add:
+            my_t['routes'][cidr] = dest
+
+        for cidr, dest in my_t['routes'].iteritems():
+            assert "/" in cidr
             instance_id = None
             gateway_id = None
             if dest == "IGW":
