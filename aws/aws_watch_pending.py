@@ -24,6 +24,8 @@ from sqlalchemy.engine.reflection import Inspector
 import requests
 import os
 import logging
+from bid import decide as get_spot_choices
+
 log = logging.getLogger()
 
 
@@ -272,17 +274,28 @@ def aws_resume_instances(moz_instance_type, start_count, regions, secrets,
 
 
 def request_spot_instances(moz_instance_type, start_count, regions, secrets,
-                           region_priorities, spot_limits, dryrun,
+                           region_priorities, spot_config, dryrun,
                            cached_cert_dir):
     started = 0
-    instance_config = json.load(open("configs/%s" % moz_instance_type))
+    spot_rules = spot_config.get("rules", {}).get(moz_instance_type)
+    if not spot_rules:
+        log.warn("No spot rules found for %s", moz_instance_type)
+        return 0
 
-    # sort regions by their priority
-    for region in sorted(regions, key=lambda k: region_priorities.get(k, 0),
-                         reverse=True):
+    instance_config = json.load(open("configs/%s" % moz_instance_type))
+    connections = []
+    for region in regions:
+        connections.append(aws_connect_to_region(region, secrets))
+    spot_choices = get_spot_choices(connections, spot_rules)
+    if not spot_choices:
+        log.warn("No spot choices for %s", moz_instance_type)
+        return 0
+
+    to_start = {}
+    for region in regions:
         # Check if spots are enabled in this region for this type
-        region_limit = spot_limits.get(region, {}).get(
-            moz_instance_type, {}).get("instances")
+        region_limit = spot_config.get("limits", {}).get(region, {}).get(
+            moz_instance_type)
         if not region_limit:
             log.debug("No spot limits defined for %s in %s, skipping...",
                       moz_instance_type, region)
@@ -302,22 +315,31 @@ def request_spot_instances(moz_instance_type, start_count, regions, secrets,
         to_be_started = min(can_be_started, start_count - started)
         ami = get_ami(region=region, secrets=secrets,
                       moz_instance_type=moz_instance_type)
+        to_start[region] = {"ami": ami, "instances": to_be_started}
 
-        for _ in range(to_be_started):
-            # FIXME: failed requests increment the iterator
-            try:
-                # FIXME:use dynamic pricing
-                price = spot_limits[region][moz_instance_type]["price"]
-                instance_type = spot_limits[region][moz_instance_type]["instance_type"]
-                do_request_spot_instances(
-                    region=region, secrets=secrets,
-                    moz_instance_type=moz_instance_type, price=price,
-                    ami=ami, instance_config=instance_config, dryrun=dryrun,
-                    cached_cert_dir=cached_cert_dir,
-                    instance_type=instance_type)
-                started += 1
-            except (RuntimeError, KeyError):
-                log.warning("Spot request failed", exc_info=True)
+    if not to_start:
+        log.debug("Nothing to start for %s", moz_instance_type)
+        return 0
+
+    for choice in spot_choices:
+        region = choice.region
+        if region not in to_start:
+            log.debug("Skipping %s for %s", choice, region)
+            continue
+        need = min(to_start[region]["instances"], start_count - started)
+        log.debug("Need %s of %s in %s", need, moz_instance_type,
+                  choice.availability_zone)
+
+        log.debug("Using %s", choice)
+        launched = do_request_spot_instances(
+            amount=need,
+            region=region, secrets=secrets,
+            moz_instance_type=moz_instance_type,
+            ami=to_start[region]["ami"],
+            instance_config=instance_config, dryrun=dryrun,
+            cached_cert_dir=cached_cert_dir,
+            spot_choice=choice)
+        started += launched
 
         if started >= start_count:
             break
@@ -342,12 +364,33 @@ def get_puppet_certs(ip, secrets, cached_cert_dir):
     return cert_data
 
 
-def do_request_spot_instances(region, secrets, moz_instance_type, price, ami,
-                              instance_config, cached_cert_dir, instance_type,
+def do_request_spot_instances(amount, region, secrets, moz_instance_type, ami,
+                              instance_config, cached_cert_dir, spot_choice,
                               dryrun):
+    started = 0
+    for _ in range(amount):
+        try:
+            do_request_spot_instance(
+                region=region, secrets=secrets,
+                moz_instance_type=moz_instance_type,
+                price=spot_choice.bid_price,
+                availability_zone=spot_choice.availability_zone,
+                ami=ami, instance_config=instance_config,
+                cached_cert_dir=cached_cert_dir,
+                instance_type=spot_choice.instance_type, dryrun=dryrun)
+            started += 1
+        except (RuntimeError):
+            log.warn("Cannot start", exc_info=True)
+    return started
+
+
+def do_request_spot_instance(region, secrets, moz_instance_type, price, ami,
+                             instance_config, cached_cert_dir, instance_type,
+                             availability_zone, dryrun):
     conn = aws_connect_to_region(region, secrets)
-    interface = get_avalable_interface(
-        conn=conn, moz_instance_type=moz_instance_type)
+    interface = get_available_interface(
+        conn=conn, moz_instance_type=moz_instance_type,
+        availability_zone=availability_zone)
     if not interface:
         raise RuntimeError("No free network interfaces left in %s" % region)
 
@@ -356,7 +399,7 @@ def do_request_spot_instances(region, secrets, moz_instance_type, price, ami,
     if not fqdn:
         raise RuntimeError("Skipping %s without FQDN" % interface)
 
-    log.debug("Spot request for %s", fqdn)
+    log.debug("Spot request for %s (%s)", fqdn, price)
 
     if dryrun:
         log.info("Dry run. skipping")
@@ -406,7 +449,7 @@ EOF
         bdm[device] = bd
 
     sir = conn.request_spot_instances(
-        price=price,
+        price=str(price),
         image_id=ami.id,
         count=1,
         instance_type=instance_type,
@@ -419,13 +462,29 @@ EOF
     sir[0].add_tag("moz-type", moz_instance_type)
 
 
-def get_avalable_interface(conn, moz_instance_type):
-    # TODO: find a way to reserve interfaces to reduce collision
-    avail_ifs = conn.get_all_network_interfaces(
-        filters={"status": "available", "tag:moz-type": moz_instance_type})
-    # TODO: sort by AZ?
-    if avail_ifs:
-        return random.choice(avail_ifs)
+_cached_interfaces = {}
+
+
+def get_available_interface(conn, moz_instance_type, availability_zone):
+    global _cached_interfaces
+    if not _cached_interfaces.get(availability_zone):
+        _cached_interfaces[availability_zone] = {}
+    if _cached_interfaces[availability_zone].get(moz_instance_type) is None:
+        filters = {
+            "status": "available",
+            "tag:moz-type": moz_instance_type,
+            "availability-zone": availability_zone,
+        }
+        avail_ifs = conn.get_all_network_interfaces(filters=filters)
+        if avail_ifs:
+            random.shuffle(avail_ifs)
+        _cached_interfaces[availability_zone][moz_instance_type] = avail_ifs
+
+    log.debug("%s interfaces in %s",
+              len(_cached_interfaces[availability_zone][moz_instance_type]),
+              availability_zone)
+    if _cached_interfaces[availability_zone][moz_instance_type]:
+        return _cached_interfaces[availability_zone][moz_instance_type].pop()
     else:
         return None
 
@@ -441,7 +500,7 @@ def get_ami(region, secrets, moz_instance_type):
 
 
 def aws_watch_pending(dburl, regions, secrets, builder_map, region_priorities,
-                      spot_limits, dryrun, cached_cert_dir,
+                      spot_config, dryrun, cached_cert_dir,
                       instance_type_changes):
     # First find pending jobs in the db
     db = sa.create_engine(dburl)
@@ -468,7 +527,7 @@ def aws_watch_pending(dburl, regions, secrets, builder_map, region_priorities,
         started = request_spot_instances(
             moz_instance_type=instance_type, start_count=count,
             regions=regions, secrets=secrets,
-            region_priorities=region_priorities, spot_limits=spot_limits,
+            region_priorities=region_priorities, spot_config=spot_config,
             dryrun=dryrun, cached_cert_dir=cached_cert_dir)
         count -= started
         log.info("%s - started %i spot instances; need %i",
@@ -525,7 +584,7 @@ if __name__ == '__main__':
         builder_map=config['buildermap'],
         region_priorities=config['region_priorities'],
         dryrun=args.dryrun,
-        spot_limits=config.get("spot_limits"),
+        spot_config=config.get("spot"),
         cached_cert_dir=args.cached_cert_dir,
         instance_type_changes=config.get("instance_type_changes", {})
     )

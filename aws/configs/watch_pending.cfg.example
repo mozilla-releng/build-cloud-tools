@@ -20,39 +20,59 @@
         "^Ubuntu VM 12.04 x64.*": "tst-linux64",
         "^Ubuntu ASAN VM 12.04 x64.*": "tst-linux64"
     },
-    "spot_limits": {
-        "us-east-1": {
-            "tst-linux64": {
-                "instance_type": "m3.medium",
-                "instances": 200,
-                "price": "0.10"
-            },
-            "tst-linux32": {
-                "instance_type": "m1.medium",
-                "instances": 200,
-                "price": "0.10"
-            },
-            "try-linux64": {
-                "instance_type": "m3.xlarge",
-                "instances": 200,
-                "price": "0.40"
-            }
+    "spot": {
+        "rules": {
+            "tst-linux64": [
+                {"instance_type": "m1.medium",
+                "performance_constant": 1,
+                "bid_price": 0.09}
+            ],
+            "tst-linux32": [
+                {"instance_type": "m1.medium",
+                 "performance_constant": 1,
+                 "bid_price": 0.09}
+            ],
+            "bld-linux64": [
+                {"instance_type": "c3.xlarge",
+                 "performance_constant": 1,
+                 "bid_price": 0.25},
+                {"instance_type": "m3.xlarge",
+                 "performance_constant": 1.1,
+                 "bid_price": 0.25},
+                {"instance_type": "m3.2xlarge",
+                 "performance_constant": 1.2,
+                 "bid_price": 0.25},
+                {"instance_type": "c3.2xlarge",
+                 "performance_constant": 1.2,
+                 "bid_price": 0.25}
+            ],
+            "try-linux64": [
+                {"instance_type": "c3.xlarge",
+                 "performance_constant": 1,
+                 "bid_price": 0.25},
+                {"instance_type": "m3.xlarge",
+                 "performance_constant": 1.1,
+                 "bid_price": 0.25},
+                {"instance_type": "m3.2xlarge",
+                 "performance_constant": 1.2,
+                 "bid_price": 0.25},
+                {"instance_type": "c3.2xlarge",
+                 "performance_constant": 1.2,
+                 "bid_price": 0.25}
+            ]
         },
-        "us-west-2": {
-            "tst-linux64": {
-                "instance_type": "m3.medium",
-                "instances": 200,
-                "price": "0.10"
+        "limits": {
+            "us-east-1": {
+            "tst-linux64": 200,
+            "tst-linux32": 200,
+            "bld-linux64": 100,
+            "try-linux64": 200
             },
-            "tst-linux32": {
-                "instance_type": "m1.medium",
-                "instances": 200,
-                "price": "0.10"
-            },
-            "try-linux64": {
-                "instance_type": "m3.xlarge",
-                "instances": 200,
-                "price": "0.40"
+            "us-west-2": {
+            "tst-linux64": 200,
+            "tst-linux32": 200,
+            "bld-linux64": 100,
+            "try-linux64": 200
             }
         }
     },
