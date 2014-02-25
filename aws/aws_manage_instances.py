@@ -123,7 +123,7 @@ if __name__ == '__main__':
 
     logging.basicConfig(format="%(asctime)s - %(levelname)s - %(message)s")
     if not args.quiet:
-        log.setLevel(logging.DEBUG)
+        log.setLevel(logging.INFO)
     else:
         log.setLevel(logging.ERROR)
 
