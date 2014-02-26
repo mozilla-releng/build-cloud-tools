@@ -598,7 +598,7 @@ def aws_watch_pending(dburl, regions, secrets, builder_map, region_priorities,
     pending = find_pending(db)
 
     if not pending:
-        log.info("no pending jobs! all done!")
+        log.debug("no pending jobs! all done!")
         return
     log.info("processing %i pending jobs", len(pending))
 
@@ -622,7 +622,7 @@ def aws_watch_pending(dburl, regions, secrets, builder_map, region_priorities,
                       pending_buildername)
 
     if not to_create_spot and not to_create_ondemand:
-        log.info("no pending jobs we can do anything about! all done!")
+        log.debug("no pending jobs we can do anything about! all done!")
         return
 
     # For each instance_type, slaveset, find how many are currently running,
@@ -719,4 +719,4 @@ if __name__ == '__main__':
         cached_cert_dir=args.cached_cert_dir,
         instance_type_changes=config.get("instance_type_changes", {})
     )
-    log.info("done")
+    log.debug("done")
