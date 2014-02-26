@@ -394,7 +394,10 @@ def get_puppet_certs(ip, secrets, cached_cert_dir):
     """ reuse or generate certificates"""
     cert_file = os.path.join(cached_cert_dir, ip)
     if os.path.exists(cert_file):
-        return open(cert_file).read()
+        cert = open(cert_file).read()
+        # Make shure that the file is not empty
+        if cert:
+            return cert
 
     puppet_server = secrets["getcert_server"]
     url = "https://%s/deploy/getcert.cgi?%s" % (puppet_server, ip)
@@ -402,6 +405,8 @@ def get_puppet_certs(ip, secrets, cached_cert_dir):
     req = requests.get(url, auth=auth, verify=False)
     req.raise_for_status()
     cert_data = req.content
+    if not cert_data:
+        raise RuntimeError("Cannot retrieve puppet cert")
     with open(cert_file, "wb") as f:
         f.write(cert_data)
     return cert_data
