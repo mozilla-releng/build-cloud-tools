@@ -13,9 +13,32 @@
         "instance_profile_name": "buildbot-master",
         "device_map": {
             "/dev/sda1": {
-                "size": 20,
+                "size": 15,
                 "instance_dev": "/dev/xvde1"
+            },
+            "/dev/sdb": {
+                "ephemeral_name": "ephemeral0",
+                "instance_dev": "/dev/xvdf",
+                "delete_on_termination": false,
+                "skip_resize": true
             }
+        },
+        "lvm": {
+            "pvcreate": "/dev/xvdf",
+            "vgcreate": {
+                "instances_storage": "/dev/xvdf"
+            },
+            "lvcreate": {
+                "builds": {
+                    "vg": "instances_storage",
+                    "params": "-l 100%FREE",
+                    "format_as": "ext4",
+                    "mount_point": "/mnt/instance_storage"
+                }
+            }
+        },
+        "tags": {
+            "moz-type": "buildbot-master"
         }
     },
     "us-west-2": {
@@ -31,9 +54,32 @@
         "instance_profile_name": "buildbot-master",
         "device_map": {
             "/dev/sda1": {
-                "size": 20,
+                "size": 15,
                 "instance_dev": "/dev/xvde1"
+            },
+            "/dev/sdb": {
+                "ephemeral_name": "ephemeral0",
+                "instance_dev": "/dev/xvdf",
+                "delete_on_termination": false,
+                "skip_resize": true
             }
+        },
+        "lvm": {
+            "pvcreate": "/dev/xvdf",
+            "vgcreate": {
+                "instances_storage": "/dev/xvdf"
+            },
+            "lvcreate": {
+                "builds": {
+                    "vg": "instances_storage",
+                    "params": "-l 100%FREE",
+                    "format_as": "ext4",
+                    "mount_point": "/mnt/instance_storage"
+                }
+            }
+        },
+        "tags": {
+            "moz-type": "buildbot-master"
         }
     }
 }
