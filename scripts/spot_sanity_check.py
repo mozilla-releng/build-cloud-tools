@@ -4,8 +4,12 @@ import argparse
 import json
 import logging
 import datetime
+import site
+import os
 
-from boto.ec2 import connect_to_region
+site.addsitedir(os.path.join(os.path.dirname(__file__), ".."))
+from cloudtools.aws import get_aws_connection
+
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, String, DateTime, Float, Integer, \
     create_engine, ForeignKey
@@ -171,7 +175,7 @@ if __name__ == '__main__':
     if args.secrets:
         secrets = json.load(args.secrets)
     else:
-        secrets = None
+        secrets = {}
 
     logging.basicConfig(format="%(asctime)s - %(levelname)s - %(message)s")
     if not args.quiet:
@@ -187,13 +191,7 @@ if __name__ == '__main__':
     if not args.regions:
         args.regions = REGIONS
     for region in args.regions:
-        if secrets:
-            conn = connect_to_region(
-                region,
-                aws_access_key_id=secrets['aws_access_key_id'],
-                aws_secret_access_key=secrets['aws_secret_access_key']
-            )
-        else:
-            conn = connect_to_region(region)
+        conn = get_aws_connection(region, secrets.get("aws_access_key_id"),
+                                  secrets.get("aws_secret_access_key"))
         update_spot_stats(conn, session)
         cancel_low_price(conn)

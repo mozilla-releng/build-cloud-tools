@@ -4,27 +4,17 @@ import json
 import logging
 import time
 import random
-from boto.ec2 import connect_to_region
 from boto.ec2.blockdevicemapping import BlockDeviceMapping, BlockDeviceType
 from fabric.api import run, env, put, cd
+import os
+import site
 
-from aws_create_ami import create_instance, AMI_CONFIGS_DIR, \
-    INSTANCE_CONFIGS_DIR
+site.addsitedir(os.path.join(os.path.dirname(__file__), ".."))
+from cloudtools.aws import get_aws_connection, wait_for_status, \
+    AMI_CONFIGS_DIR, INSTANCE_CONFIGS_DIR
+from cloudtools.aws.instance import run_instance
+
 log = logging.getLogger(__name__)
-
-
-def wait_for_status(obj, attr_name, attr_value, update_method):
-    log.debug("waiting for %s availability", obj)
-    while True:
-        try:
-            getattr(obj, update_method)()
-            if getattr(obj, attr_name) == attr_value:
-                break
-            else:
-                time.sleep(1)
-        except:
-            log.exception('hit error waiting for snapshot to be taken')
-            time.sleep(10)
 
 
 def main():
@@ -32,7 +22,7 @@ def main():
     parser.add_argument("-k", "--secrets", type=argparse.FileType('r'),
                         help="optional file where secrets can be found")
     parser.add_argument("-r", "--region", dest="region", required=True,
-                        help="optional list of regions")
+                        help="Region")
     parser.add_argument("-q", "--quiet", action="store_true",
                         help="Supress logging messages")
     parser.add_argument("-c", "--ami-config", required=True, help="AMI config")
@@ -64,14 +54,8 @@ def main():
     else:
         log.setLevel(logging.ERROR)
 
-    if secrets:
-        conn = connect_to_region(
-            args.region,
-            aws_access_key_id=secrets['aws_access_key_id'],
-            aws_secret_access_key=secrets['aws_secret_access_key']
-        )
-    else:
-        conn = connect_to_region(args.region)
+    conn = get_aws_connection(args.region, secrets.get("aws_access_key_id"),
+                              secrets.get("aws_secret_access_key"))
 
     dated_target_name = "spot-%s-%s" % (
         args.ami_config, time.strftime("%Y-%m-%d-%H-%M", time.gmtime()))
@@ -97,7 +81,7 @@ def main():
     snap1 = v.create_snapshot("temporary snapshot of %s" % v_id)
 
     wait_for_status(snap1, "status", "completed", "update")
-    host_instance = create_instance(
+    host_instance = run_instance(
         connection=conn, instance_name="tmp", config=ami_config,
         key_name=args.ssh_key, user=args.user,
         subnet_id=random.choice(moz_type_config["subnet_ids"]))

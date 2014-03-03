@@ -2,7 +2,11 @@
 
 import re
 import json
-from boto.ec2 import connect_to_region
+import site
+import os
+
+site.addsitedir(os.path.join(os.path.dirname(__file__), ".."))
+from cloudtools.aws import get_aws_connection
 
 
 if __name__ == '__main__':
@@ -19,13 +23,12 @@ if __name__ == '__main__':
 
     hosts_re = [re.compile(x) for x in args]
 
-    if not options.secrets:
-        conn = connect_to_region(options.region)
+    if options.secrets:
+        secrets = json.load(args.secrets)
     else:
-        secrets = json.load(open(options.secrets))
-        conn = connect_to_region(
-            options.region, aws_access_key_id=secrets['aws_access_key_id'],
-            aws_secret_access_key=secrets['aws_secret_access_key'])
+        secrets = {}
+    conn = get_aws_connection(options.region, secrets.get("aws_access_key_id"),
+                              secrets.get("aws_secret_access_key"))
 
     res = conn.get_all_instances()
     if res:

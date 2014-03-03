@@ -13,13 +13,17 @@ except ImportError:
 
 import random
 import threading
+import boto.ec2
+import requests
+import logging
+import site
+import os
+from paramiko import SSHClient
 from Queue import Queue, Empty
 
-import boto.ec2
-from paramiko import SSHClient
-import requests
+site.addsitedir(os.path.join(os.path.dirname(__file__), ".."))
+from cloudtools.aws import get_aws_connection
 
-import logging
 log = logging.getLogger()
 
 # Instances runnnig less than STOP_THRESHOLD_MINS minutes within 1 hour
@@ -274,7 +278,8 @@ def aws_stop_idle(secrets, credentials, regions, masters_json, moz_types,
 
     for r in regions:
         log.debug("looking at region %s", r)
-        conn = boto.ec2.connect_to_region(r, **secrets)
+        conn = get_aws_connection(r, secrets["aws_access_key_id"],
+                                  secrets["aws_secret_access_key"])
 
         instances = get_buildbot_instances(conn, moz_types)
         impaired = conn.get_all_instance_status(

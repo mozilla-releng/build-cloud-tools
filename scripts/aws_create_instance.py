@@ -4,79 +4,33 @@ import uuid
 import time
 import boto
 import StringIO
-from socket import gethostbyname, gaierror, gethostbyaddr, herror
 import random
-
+import site
+import os
+import multiprocessing
+import sys
 from random import choice
 from fabric.api import run, put, env, sudo
 from fabric.context_managers import cd
-from boto.ec2 import connect_to_region
 from boto.ec2.blockdevicemapping import BlockDeviceMapping, BlockDeviceType
 from boto.ec2.networkinterface import NetworkInterfaceSpecification, \
     NetworkInterfaceCollection
-from boto.vpc import VPCConnection
-from IPy import IP
 
-from aws_create_ami import AMI_CONFIGS_DIR
+site.addsitedir(os.path.join(os.path.dirname(__file__), ".."))
+from cloudtools.aws import AMI_CONFIGS_DIR, get_aws_connection, get_vpc, \
+    name_available, wait_for_status
+from cloudtools.dns import get_ip, get_ptr
+from cloudtools.aws.vpc import get_subnet_id, ip_available
 
 import logging
 log = logging.getLogger(__name__)
-_connections = {}
-_vpcs = {}
-
-
-def get_ip(hostname):
-    try:
-        return gethostbyname(hostname)
-    except gaierror:
-        return None
-
-
-def get_ptr(ip):
-    try:
-        return gethostbyaddr(ip)[0]
-    except herror:
-        return None
-
-
-def get_subnet_id(vpc, ip):
-    subnets = vpc.get_all_subnets()
-    for s in subnets:
-        if IP(ip) in IP(s.cidr_block):
-            return s.id
-    return None
-
-
-def ip_available(conn, ip):
-    res = conn.get_all_instances()
-    instances = reduce(lambda a, b: a + b, [r.instances for r in res])
-    ips = [i.private_ip_address for i in instances]
-    interfaces = conn.get_all_network_interfaces()
-    ips.extend(i.private_ip_address for i in interfaces)
-    if ip in ips:
-        return False
-    else:
-        return True
-
-
-def name_available(conn, name):
-    res = conn.get_all_instances()
-    instances = reduce(lambda a, b: a + b, [r.instances for r in res])
-    names = [i.tags.get("Name") for i in instances if i.state != "terminated"]
-    if name in names:
-        return False
-    else:
-        return True
 
 
 def verify(hosts, config, region, secrets):
     """ Check DNS entries and IP availability for hosts"""
     passed = True
-    conn = get_connection(
-        region,
-        aws_access_key_id=secrets['aws_access_key_id'],
-        aws_secret_access_key=secrets['aws_secret_access_key']
-    )
+    conn = get_aws_connection(region, secrets['aws_access_key_id'],
+                              secrets['aws_secret_access_key'])
     for host in hosts:
         fqdn = "%s.%s" % (host, config["domain"])
         log.info("Checking name conflicts for %s", host)
@@ -99,11 +53,8 @@ def verify(hosts, config, region, secrets):
             if not ip_available(conn, ip):
                 log.error("IP %s reserved for %s, but not available", ip, host)
                 passed = False
-            vpc = get_vpc(
-                connection=conn,
-                aws_access_key_id=secrets['aws_access_key_id'],
-                aws_secret_access_key=secrets['aws_secret_access_key'])
-
+            vpc = get_vpc(region, secrets['aws_access_key_id'],
+                          secrets['aws_secret_access_key'])
             s_id = get_subnet_id(vpc, ip)
             if s_id not in config['subnet_ids']:
                 log.error("IP %s does not belong to assigned subnets", ip)
@@ -206,44 +157,14 @@ def assimilate(ip_addr, config, instance_data, deploypass):
     run("reboot")
 
 
-def get_connection(region, aws_access_key_id, aws_secret_access_key):
-    global _connections
-    if _connections.get(region):
-        return _connections[region]
-    _connections[region] = connect_to_region(
-        region,
-        aws_access_key_id=aws_access_key_id,
-        aws_secret_access_key=aws_secret_access_key
-    )
-    return _connections[region]
-
-
-def get_vpc(connection, aws_access_key_id, aws_secret_access_key):
-    global _vpcs
-    if _vpcs.get(connection.region.name):
-        return _vpcs[connection.region.name]
-    _vpcs[connection.region.name] = VPCConnection(
-        region=connection.region,
-        aws_access_key_id=aws_access_key_id,
-        aws_secret_access_key=aws_secret_access_key
-    )
-    return _vpcs[connection.region.name]
-
-
 def create_instance(name, config, region, secrets, key_name, instance_data,
                     deploypass, loaned_to, loan_bug):
     """Creates an AMI instance with the given name and config. The config must
     specify things like ami id."""
-    conn = get_connection(
-        region,
-        aws_access_key_id=secrets['aws_access_key_id'],
-        aws_secret_access_key=secrets['aws_secret_access_key']
-    )
-    vpc = get_vpc(
-        connection=conn,
-        aws_access_key_id=secrets['aws_access_key_id'],
-        aws_secret_access_key=secrets['aws_secret_access_key'])
-
+    conn = get_aws_connection(region, secrets['aws_access_key_id'],
+                              secrets['aws_secret_access_key'])
+    vpc = get_vpc(region, secrets['aws_access_key_id'],
+                  secrets['aws_secret_access_key'])
     # Make sure we don't request the same things twice
     token = str(uuid.uuid4())[:16]
 
@@ -314,15 +235,7 @@ def create_instance(name, config, region, secrets, key_name, instance_data,
     instance = reservation.instances[0]
     log.info("instance %s created, waiting to come up", instance)
     # Wait for the instance to come up
-    while True:
-        try:
-            instance.update()
-            if instance.state == 'running':
-                break
-        except Exception:
-            log.warn("waiting for instance to come up, retrying in 10 sec...")
-        time.sleep(10)
-
+    wait_for_status(instance, "state", "running", "update")
     instance.add_tag('Name', name)
     instance.add_tag('FQDN', instance_data['hostname'])
     instance.add_tag('created', time.strftime("%Y-%m-%d %H:%M:%S %Z",
@@ -345,62 +258,6 @@ def create_instance(name, config, region, secrets, key_name, instance_data,
                      instance_data['hostname'], instance.id)
             time.sleep(10)
     instance.add_tag('moz-state', 'ready')
-
-
-def ami_from_instance(instance):
-    base_ami = instance.connection.get_image(instance.image_id)
-    target_name = '%s-puppetized' % base_ami.name
-    v = instance.connection.get_all_volumes(
-        filters={'attachment.instance-id': instance.id})[0]
-    instance.stop()
-    log.info('Stopping instance')
-    while True:
-        try:
-            instance.update()
-            if instance.state == 'stopped':
-                break
-        except Exception:
-            log.info('Waiting for instance stop')
-            time.sleep(10)
-    log.info('Creating snapshot')
-    snapshot = v.create_snapshot('EBS-backed %s' % target_name)
-    while True:
-        try:
-            snapshot.update()
-            if snapshot.status == 'completed':
-                break
-        except Exception:
-            log.exception('hit error waiting for snapshot to be taken')
-            time.sleep(10)
-    snapshot.add_tag('Name', target_name)
-
-    log.info('Creating AMI')
-    block_map = BlockDeviceMapping()
-    block_map[base_ami.root_device_name] = BlockDeviceType(
-        snapshot_id=snapshot.id)
-    ami_id = instance.connection.register_image(
-        target_name,
-        '%s EBS AMI' % target_name,
-        architecture=base_ami.architecture,
-        kernel_id=base_ami.kernel_id,
-        ramdisk_id=base_ami.ramdisk_id,
-        root_device_name=base_ami.root_device_name,
-        block_device_map=block_map,
-    )
-    while True:
-        try:
-            ami = instance.connection.get_image(ami_id)
-            ami.add_tag('Name', target_name)
-            log.info('AMI created')
-            log.info('ID: {id}, name: {name}'.format(id=ami.id, name=ami.name))
-            break
-        except boto.exception.EC2ResponseError:
-            log.info('Wating for AMI')
-            time.sleep(10)
-    instance.terminate()
-
-import multiprocessing
-import sys
 
 
 class LoggingProcess(multiprocessing.Process):

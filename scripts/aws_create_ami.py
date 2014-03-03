@@ -1,28 +1,18 @@
 #!/usr/bin/env python
 
-import boto
-from boto.ec2 import connect_to_region
 from boto.ec2.blockdevicemapping import BlockDeviceMapping, BlockDeviceType
-from fabric.api import run, put, env, lcd, sudo
+from fabric.api import run, put, env, lcd
 import json
-import uuid
 import time
 import logging
 import os
+import site
+
+site.addsitedir(os.path.join(os.path.dirname(__file__), ".."))
+from cloudtools.aws import get_aws_connection, AMI_CONFIGS_DIR, wait_for_status
+from cloudtools.aws.instance import run_instance
+
 log = logging.getLogger()
-
-AMI_CONFIGS_DIR = "ami_configs"
-INSTANCE_CONFIGS_DIR = "configs"
-
-
-def create_connection(options):
-    secrets = json.load(open(options.secrets))
-    connection = connect_to_region(
-        options.region,
-        aws_access_key_id=secrets['aws_access_key_id'],
-        aws_secret_access_key=secrets['aws_secret_access_key'],
-    )
-    return connection
 
 
 def manage_service(service, target, state, distro="centos"):
@@ -30,57 +20,8 @@ def manage_service(service, target, state, distro="centos"):
     if distro in ("debian", "ubuntu"):
         pass
     else:
-        run('chroot %s chkconfig --level 2345 %s %s' % (target, service, state))
-
-
-def create_instance(connection, instance_name, config, key_name, user='root',
-                    subnet_id=None):
-
-    bdm = None
-    if 'device_map' in config:
-        bdm = BlockDeviceMapping()
-        for device, device_info in config['device_map'].items():
-            bdm[device] = BlockDeviceType(size=device_info['size'],
-                                          delete_on_termination=True)
-
-    reservation = connection.run_instances(
-        image_id=config['ami'],
-        key_name=key_name,
-        instance_type=config['instance_type'],
-        block_device_map=bdm,
-        client_token=str(uuid.uuid4())[:16],
-        subnet_id=subnet_id,
-    )
-
-    instance = reservation.instances[0]
-    log.info("instance %s created, waiting to come up", instance)
-    # Wait for the instance to come up
-    while True:
-        try:
-            instance.update()
-            if instance.state == 'running':
-                if subnet_id:
-                    env.host_string = instance.private_ip_address
-                else:
-                    env.host_string = instance.public_dns_name
-                env.user = user
-                env.abort_on_prompts = True
-                env.disable_known_hosts = True
-                if run('date').succeeded:
-                    break
-        except:
-            log.debug('hit error waiting for instance to come up')
-        time.sleep(10)
-    instance.add_tag('Name', instance_name)
-    # Overwrite root's limited authorized_keys
-    if user != 'root':
-        sudo("cp -f ~%s/.ssh/authorized_keys "
-             "/root/.ssh/authorized_keys" % user)
-        sudo("sed -i -e '/PermitRootLogin/d' "
-             "-e '$ a PermitRootLogin without-password' /etc/ssh/sshd_config")
-        sudo("service sshd restart || service ssh restart")
-        sudo("sleep 20")
-    return instance
+        run('chroot %s chkconfig --level 2345 %s %s' % (target, service,
+                                                        state))
 
 
 def create_ami(host_instance, options, config):
@@ -109,12 +50,11 @@ def create_ami(host_instance, options, config):
             log.debug('hit error waiting for volume to be attached')
             time.sleep(10)
 
+    wait_for_status(v, "status", "in-use", "update")
     while True:
         try:
-            v.update()
-            if v.status == 'in-use':
-                if run('ls %s' % int_dev_name).succeeded:
-                    break
+            if run('ls %s' % int_dev_name).succeeded:
+                break
         except:
             log.debug('hit error waiting for volume to be attached')
             time.sleep(10)
@@ -240,26 +180,12 @@ def create_ami(host_instance, options, config):
     run('umount %s' % mount_point)
 
     v.detach()
-    while True:
-        try:
-            v.update()
-            if v.status == 'available':
-                break
-        except:
-            log.exception('hit error waiting for volume to be detached')
-            time.sleep(10)
+    wait_for_status(v, "status", "available", "update")
 
     # Step 5: Create a snapshot
     log.info('Creating a snapshot')
     snapshot = v.create_snapshot('EBS-backed %s' % dated_target_name)
-    while True:
-        try:
-            snapshot.update()
-            if snapshot.status == 'completed':
-                break
-        except:
-            log.exception('hit error waiting for snapshot to be taken')
-            time.sleep(10)
+    wait_for_status(snapshot, "status", "completed", "update")
     snapshot.add_tag('Name', dated_target_name)
 
     # Step 6: Create an AMI
@@ -354,10 +280,13 @@ if __name__ == '__main__':
     try:
         config = json.load(open("%s/%s.json" % (AMI_CONFIGS_DIR,
                                                 options.config)))[options.region]
+        secrets = json.load(open(options.secrets))
     except KeyError:
         parser.error("unknown configuration")
 
-    connection = create_connection(options)
-    host_instance = create_instance(connection, args[0], config,
-                                    options.key_name, options.user)
-    target_ami = create_ami(host_instance, options, config)
+    connection = get_aws_connection(options.region,
+                                    secrets["aws_access_key_id"],
+                                    secrets["aws_secret_access_key"])
+    host_instance = run_instance(connection, args[0], config, options.key_name,
+                                 options.user)
+    create_ami(host_instance, options, config)

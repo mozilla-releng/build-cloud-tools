@@ -1,9 +1,12 @@
-from boto.ec2 import connect_to_region
-from boto.vpc import VPCConnection
-from IPy import IP
+import os
+import site
 import random
 import argparse
 import json
+from IPy import IP
+
+site.addsitedir(os.path.join(os.path.dirname(__file__), ".."))
+from cloudtools.aws import get_aws_connection, get_vpc
 
 
 parser = argparse.ArgumentParser()
@@ -25,19 +28,13 @@ except KeyError:
 
 if args.secrets:
     secrets = json.load(args.secrets)
-    conn = connect_to_region(
-        args.region,
-        aws_access_key_id=secrets['aws_access_key_id'],
-        aws_secret_access_key=secrets['aws_secret_access_key']
-    )
-    vpc = VPCConnection(
-        aws_access_key_id=secrets['aws_access_key_id'],
-        aws_secret_access_key=secrets['aws_secret_access_key'],
-        region=conn.region
-    )
 else:
-    conn = connect_to_region(args.region)
-    vpc = VPCConnection(region=conn.region)
+    secrets = {}
+
+conn = get_aws_connection(args.region, secrets.get("aws_access_key_id"),
+                          secrets.get("aws_secret_access_key"))
+vpc = get_vpc(args.region, secrets.get("aws_access_key_id"),
+              secrets.get("aws_secret_access_key"))
 
 interfaces = vpc.get_all_network_interfaces()
 used_ips = [i.private_ip_address for i in interfaces]

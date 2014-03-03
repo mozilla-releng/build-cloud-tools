@@ -4,7 +4,11 @@ import argparse
 import json
 import logging
 from time import gmtime, strftime
-from boto.ec2 import connect_to_region
+import site
+import os
+
+site.addsitedir(os.path.join(os.path.dirname(__file__), ".."))
+from cloudtools.aws import get_aws_connection
 
 log = logging.getLogger(__name__)
 REGIONS = ['us-east-1', 'us-west-2']
@@ -119,7 +123,7 @@ if __name__ == '__main__':
     if args.secrets:
         secrets = json.load(args.secrets)
     else:
-        secrets = None
+        secrets = {}
 
     logging.basicConfig(format="%(asctime)s - %(levelname)s - %(message)s")
     if not args.quiet:
@@ -130,14 +134,8 @@ if __name__ == '__main__':
     if not args.regions:
         args.regions = REGIONS
     for region in args.regions:
-        if secrets:
-            conn = connect_to_region(
-                region,
-                aws_access_key_id=secrets['aws_access_key_id'],
-                aws_secret_access_key=secrets['aws_secret_access_key']
-            )
-        else:
-            conn = connect_to_region(region)
+        conn = get_aws_connection(region, secrets.get("aws_access_key_id"),
+                                  secrets.get("aws_secret_access_key"))
 
         res = conn.get_all_instances()
         instances = reduce(lambda a, b: a + b, [r.instances for r in res])

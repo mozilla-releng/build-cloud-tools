@@ -13,7 +13,6 @@ try:
 except ImportError:
     import json
 
-import boto.ec2
 from boto.exception import BotoServerError
 from boto.ec2.networkinterface import NetworkInterfaceCollection, \
     NetworkInterfaceSpecification
@@ -25,6 +24,10 @@ import requests
 import os
 import logging
 from bid import decide as get_spot_choices
+import site
+
+site.addsitedir(os.path.join(os.path.dirname(__file__), ".."))
+from cloudtools.aws import get_aws_connection
 
 log = logging.getLogger()
 
@@ -66,26 +69,11 @@ def find_retries(db, brid):
     return db.execute(q, brid=brid).fetchone()[0]
 
 
-# Used by aws_connect_to_region to cache connection objects per region
-_aws_cached_connections = {}
-
-
-def aws_connect_to_region(region, secrets):
-    """Connect to an EC2 region. Caches connection objects"""
-    if region in _aws_cached_connections:
-        return _aws_cached_connections[region]
-    conn = boto.ec2.connect_to_region(
-        region,
-        aws_access_key_id=secrets['aws_access_key_id'],
-        aws_secret_access_key=secrets['aws_secret_access_key']
-    )
-    _aws_cached_connections[region] = conn
-    return conn
-
-
 def aws_get_spot_requests(region, secrets, moz_instance_type):
     """retruns a list of all open and active spot requests"""
-    conn = aws_connect_to_region(region, secrets)
+    conn = get_aws_connection(
+        region, aws_access_key_id=secrets['aws_access_key_id'],
+        aws_secret_access_key=secrets['aws_secret_access_key'])
     filters = {"tag:moz-type": moz_instance_type}
     req = conn.get_all_spot_instance_requests(filters=filters)
     return [r for r in req if r.state in ("open", "active")]
@@ -105,7 +93,9 @@ def aws_get_all_instances(regions, secrets):
             log.debug("aws_get_all_instances - cache hit for %s", region)
             retval.extend(_aws_instances_cache[region])
         else:
-            conn = aws_connect_to_region(region, secrets)
+            conn = get_aws_connection(
+                region, aws_access_key_id=secrets['aws_access_key_id'],
+                aws_secret_access_key=secrets['aws_secret_access_key'])
             reservations = conn.get_all_instances()
             region_instances = []
             for r in reservations:
@@ -163,7 +153,9 @@ def aws_get_reservations(regions, secrets):
     log.debug("getting reservations for %s", regions)
     retval = {}
     for region in regions:
-        conn = aws_connect_to_region(region, secrets)
+        conn = get_aws_connection(
+            region, aws_access_key_id=secrets['aws_access_key_id'],
+            aws_secret_access_key=secrets['aws_secret_access_key'])
         reservations = conn.get_all_reserved_instances(filters={
             'state': 'active',
         })
@@ -327,7 +319,10 @@ def request_spot_instances(moz_instance_type, start_count, regions, secrets,
     instance_config = json.load(open("configs/%s" % moz_instance_type))
     connections = []
     for region in regions:
-        connections.append(aws_connect_to_region(region, secrets))
+        conn = get_aws_connection(
+            region, aws_access_key_id=secrets['aws_access_key_id'],
+            aws_secret_access_key=secrets['aws_secret_access_key'])
+        connections.append(conn)
     spot_choices = get_spot_choices(connections, spot_rules)
     if not spot_choices:
         log.warn("No spot choices for %s", moz_instance_type)
@@ -437,7 +432,9 @@ def do_request_spot_instances(amount, region, secrets, moz_instance_type, ami,
 def do_request_spot_instance(region, secrets, moz_instance_type, price, ami,
                              instance_config, cached_cert_dir, instance_type,
                              availability_zone, slaveset, dryrun):
-    conn = aws_connect_to_region(region, secrets)
+    conn = get_aws_connection(
+        region, aws_access_key_id=secrets['aws_access_key_id'],
+        aws_secret_access_key=secrets['aws_secret_access_key'])
     interface = get_available_interface(
         conn=conn, moz_instance_type=moz_instance_type,
         availability_zone=availability_zone,
@@ -555,7 +552,9 @@ def get_available_interface(conn, moz_instance_type, availability_zone, slaveset
 
 
 def get_ami(region, secrets, moz_instance_type):
-    conn = aws_connect_to_region(region, secrets)
+    conn = get_aws_connection(
+        region, aws_access_key_id=secrets['aws_access_key_id'],
+        aws_secret_access_key=secrets['aws_secret_access_key'])
     avail_amis = conn.get_all_images(
         owners=["self"],
         filters={"tag:moz-type": moz_instance_type})

@@ -3,8 +3,11 @@
 import argparse
 import json
 import logging
-from boto.ec2 import connect_to_region
-from boto.vpc import VPCConnection
+import site
+import os
+
+site.addsitedir(os.path.join(os.path.dirname(__file__), ".."))
+from cloudtools.aws import get_aws_connection, get_vpc
 
 log = logging.getLogger(__name__)
 REGIONS = ['us-east-1', 'us-west-2']
@@ -36,7 +39,7 @@ if __name__ == '__main__':
     if args.secrets:
         secrets = json.load(args.secrets)
     else:
-        secrets = None
+        secrets = {}
 
     logging.basicConfig(format="%(asctime)s - %(levelname)s - %(message)s")
     if not args.quiet:
@@ -47,20 +50,10 @@ if __name__ == '__main__':
     if not args.regions:
         args.regions = REGIONS
     for region in args.regions:
-        if secrets:
-            conn = connect_to_region(
-                region,
-                aws_access_key_id=secrets['aws_access_key_id'],
-                aws_secret_access_key=secrets['aws_secret_access_key']
-            )
-            vpc = VPCConnection(
-                aws_access_key_id=secrets['aws_access_key_id'],
-                aws_secret_access_key=secrets['aws_secret_access_key'],
-                region=conn.region
-            )
-        else:
-            conn = connect_to_region(region)
-            vpc = VPCConnection(region=conn.region)
+        conn = get_aws_connection(region, secrets.get("aws_access_key_id"),
+                                  secrets.get("aws_secret_access_key"))
+        vpc = get_vpc(region, secrets.get("aws_access_key_id"),
+                      secrets.get("aws_secret_access_key"))
 
         spot_requests = conn.get_all_spot_instance_requests() or []
         for req in spot_requests:

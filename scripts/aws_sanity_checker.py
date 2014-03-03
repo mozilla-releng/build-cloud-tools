@@ -7,8 +7,12 @@ import time
 import calendar
 import collections
 import re
-from boto.ec2 import connect_to_region
-from aws_instances import Slave, AWSInstance
+import site
+import os
+
+site.addsitedir(os.path.join(os.path.dirname(__file__), ".."))
+from cloudtools.aws.sanity import Slave, AWSInstance
+from cloudtools.aws import get_aws_connection
 
 
 log = logging.getLogger(__name__)
@@ -51,18 +55,6 @@ EXPECTED_MAX_DOWNTIME = {
 
 def is_beanstalk_instance(i):
     return i.tags.get("elasticbeanstalk:environment-name") is not None
-
-
-def get_connection(region, secrets):
-    if secrets:
-        conn = connect_to_region(
-            region,
-            aws_access_key_id=secrets['aws_access_key_id'],
-            aws_secret_access_key=secrets['aws_secret_access_key']
-        )
-    else:
-        conn = connect_to_region(region)
-    return conn
 
 
 def get_all_instances(conn):
@@ -110,9 +102,8 @@ def get_loaned(instances):
             ret.append((uptime, i, "Loaned to %s in %s, up for %i hours" % (
                 i.tags["moz-loaned-to"], bug_string, uptime)))
         else:
-            ret.append((None, i, "Loaned to %s in %s, %s" % (i.tags["moz-loaned-to"],
-                                                             bug_string,
-                                                             i.state)))
+            ret.append((None, i, "Loaned to %s in %s, %s" %
+                        (i.tags["moz-loaned-to"], bug_string, i.state)))
     if ret:
         # sort by uptime, reconstruct ret
         ret = [(e[1], e[2]) for e in reversed(sorted(ret, key=lambda x: x[0]))]
@@ -345,7 +336,7 @@ if __name__ == '__main__':
     if args.secrets:
         secrets = json.load(args.secrets)
     else:
-        secrets = None
+        secrets = {}
 
     logging.basicConfig(format="%(asctime)s - %(levelname)s - %(message)s")
     if not args.quiet:
@@ -358,7 +349,8 @@ if __name__ == '__main__':
     all_instances = []
     all_volumes = []
     for region in args.regions:
-        conn = get_connection(region, secrets)
+        conn = get_aws_connection(region, secrets.get("aws_access_key_id"),
+                                  secrets.get("aws_secret_access_key"))
         all_instances.extend(get_all_instances(conn))
         all_volumes.extend(conn.get_all_volumes())
 

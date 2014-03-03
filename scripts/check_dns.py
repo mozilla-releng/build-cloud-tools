@@ -3,18 +3,14 @@ import argparse
 import json
 import logging
 from multiprocessing import Pool
-from boto.ec2 import connect_to_region
-from aws_create_instance import get_ip, get_ptr
-from socket import gethostbyname_ex
+import site
+import os
+
+site.addsitedir(os.path.join(os.path.dirname(__file__), ".."))
+from cloudtools.aws import get_aws_connection
+from cloudtools.dns import get_ip, get_ptr, get_cname
 
 log = logging.getLogger(__name__)
-
-
-def get_cname(cname):
-    try:
-        return gethostbyname_ex(cname)[0]
-    except:
-        return None
 
 
 def check_A(args):
@@ -61,7 +57,7 @@ def main():
     if args.secrets:
         secrets = json.load(args.secrets)
     else:
-        secrets = None
+        secrets = {}
 
     logging.basicConfig(format="%(asctime)s - %(levelname)s - %(message)s")
     if args.verbose:
@@ -69,14 +65,8 @@ def main():
     else:
         log.setLevel(logging.WARNING)
 
-    if secrets:
-        conn = connect_to_region(
-            args.region,
-            aws_access_key_id=secrets['aws_access_key_id'],
-            aws_secret_access_key=secrets['aws_secret_access_key']
-        )
-    else:
-        conn = connect_to_region(args.region)
+    conn = get_aws_connection(args.region, secrets.get("aws_access_key_id"),
+                              secrets.get("aws_secret_access_key"))
 
     pool = Pool()
     res = conn.get_all_instances()
