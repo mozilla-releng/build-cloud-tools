@@ -28,18 +28,12 @@ def tag_it(i, vpc):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("-k", "--secrets", type=argparse.FileType('r'),
-                        help="optional file where secrets can be found")
     parser.add_argument("-r", "--region", dest="regions", action="append",
                         help="optional list of regions")
     parser.add_argument("-q", "--quiet", action="store_true",
                         help="Supress logging messages")
 
     args = parser.parse_args()
-    if args.secrets:
-        secrets = json.load(args.secrets)
-    else:
-        secrets = {}
 
     logging.basicConfig(format="%(asctime)s - %(levelname)s - %(message)s")
     if not args.quiet:
@@ -50,11 +44,8 @@ if __name__ == '__main__':
     if not args.regions:
         args.regions = REGIONS
     for region in args.regions:
-        conn = get_aws_connection(region, secrets.get("aws_access_key_id"),
-                                  secrets.get("aws_secret_access_key"))
-        vpc = get_vpc(region, secrets.get("aws_access_key_id"),
-                      secrets.get("aws_secret_access_key"))
-
+        conn = get_aws_connection(region)
+        vpc = get_vpc(region)
         spot_requests = conn.get_all_spot_instance_requests() or []
         for req in spot_requests:
             if req.tags.get("moz-tagged"):

@@ -8,12 +8,8 @@ import logging
 log = logging.getLogger(__name__)
 
 
-def get_connection(region, aws_access_key_id=None, aws_secret_access_key=None):
-    return boto.ec2.connect_to_region(
-        region,
-        aws_access_key_id=aws_access_key_id,
-        aws_secret_access_key=aws_secret_access_key,
-    )
+def get_connection(region):
+    return boto.ec2.connect_to_region(region)
 
 
 def load_config(filename):

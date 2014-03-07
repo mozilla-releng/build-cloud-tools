@@ -11,26 +11,15 @@ INSTANCE_CONFIGS_DIR = os.path.join(os.path.dirname(__file__), "../../configs")
 
 
 @lru_cache(10)
-def get_aws_connection(region, aws_access_key_id=None,
-                       aws_secret_access_key=None):
+def get_aws_connection(region):
     """Connect to an EC2 region. Caches connection objects"""
-    conn = connect_to_region(
-        region,
-        aws_access_key_id=aws_access_key_id,
-        aws_secret_access_key=aws_secret_access_key
-    )
-    return conn
+    return connect_to_region(region)
 
 
 @lru_cache(10)
-def get_vpc(region, aws_access_key_id=None, aws_secret_access_key=None):
-    conn = get_aws_connection(region, aws_access_key_id, aws_secret_access_key)
-    vpc = VPCConnection(
-        region=conn.region,
-        aws_access_key_id=aws_access_key_id,
-        aws_secret_access_key=aws_secret_access_key
-    )
-    return vpc
+def get_vpc(region):
+    conn = get_aws_connection(region)
+    return VPCConnection(region=conn.region)
 
 
 def wait_for_status(obj, attr_name, attr_value, update_method):

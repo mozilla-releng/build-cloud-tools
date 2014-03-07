@@ -264,12 +264,12 @@ def aws_safe_stop_instance(i, impaired_ids, credentials, masters_json,
     return stopped
 
 
-def aws_stop_idle(secrets, credentials, regions, masters_json, moz_types,
+def aws_stop_idle(credentials, regions, masters_json, moz_types,
                   dryrun=False, concurrency=8):
     if not regions:
         # Look at all regions
         log.debug("loading all regions")
-        regions = [r.name for r in boto.ec2.regions(**secrets)]
+        regions = [r.name for r in boto.ec2.regions()]
 
     min_running_by_type = 0
 
@@ -278,9 +278,7 @@ def aws_stop_idle(secrets, credentials, regions, masters_json, moz_types,
 
     for r in regions:
         log.debug("looking at region %s", r)
-        conn = get_aws_connection(r, secrets["aws_access_key_id"],
-                                  secrets["aws_secret_access_key"])
-
+        conn = get_aws_connection(r)
         instances = get_buildbot_instances(conn, moz_types)
         impaired = conn.get_all_instance_status(
             filters={'instance-status.status': 'impaired'})
@@ -367,8 +365,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("-r", "--region", action="append", dest="regions",
                         required=True)
-    parser.add_argument("-k", "--secrets", type=argparse.FileType('r'),
-                        required=True)
     parser.add_argument("-v", "--verbose", action="store_const",
                         dest="loglevel", const=logging.DEBUG,
                         default=logging.INFO)
@@ -406,16 +402,13 @@ if __name__ == '__main__':
 
     log.debug("starting")
     credentials = json.load(args.credentials)
-    secrets = json.load(args.secrets)
-    secrets = dict(aws_access_key_id=secrets['aws_access_key_id'],
-                   aws_secret_access_key=secrets['aws_secret_access_key'])
 
     try:
         masters_json = json.load(open(args.masters_json))
     except IOError:
         masters_json = requests.get(args.masters_json).json()
 
-    aws_stop_idle(secrets, credentials, args.regions, masters_json,
+    aws_stop_idle(credentials, args.regions, masters_json,
                   args.moz_types, dryrun=args.dry_run,
                   concurrency=args.concurrency)
     log.debug("done")

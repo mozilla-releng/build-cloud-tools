@@ -26,11 +26,10 @@ import logging
 log = logging.getLogger(__name__)
 
 
-def verify(hosts, config, region, secrets):
+def verify(hosts, config, region):
     """ Check DNS entries and IP availability for hosts"""
     passed = True
-    conn = get_aws_connection(region, secrets['aws_access_key_id'],
-                              secrets['aws_secret_access_key'])
+    conn = get_aws_connection(region)
     for host in hosts:
         fqdn = "%s.%s" % (host, config["domain"])
         log.info("Checking name conflicts for %s", host)
@@ -53,8 +52,7 @@ def verify(hosts, config, region, secrets):
             if not ip_available(conn, ip):
                 log.error("IP %s reserved for %s, but not available", ip, host)
                 passed = False
-            vpc = get_vpc(region, secrets['aws_access_key_id'],
-                          secrets['aws_secret_access_key'])
+            vpc = get_vpc(region)
             s_id = get_subnet_id(vpc, ip)
             if s_id not in config['subnet_ids']:
                 log.error("IP %s does not belong to assigned subnets", ip)
@@ -157,14 +155,12 @@ def assimilate(ip_addr, config, instance_data, deploypass):
     run("reboot")
 
 
-def create_instance(name, config, region, secrets, key_name, instance_data,
+def create_instance(name, config, region, key_name, instance_data,
                     deploypass, loaned_to, loan_bug):
     """Creates an AMI instance with the given name and config. The config must
     specify things like ami id."""
-    conn = get_aws_connection(region, secrets['aws_access_key_id'],
-                              secrets['aws_secret_access_key'])
-    vpc = get_vpc(region, secrets['aws_access_key_id'],
-                  secrets['aws_secret_access_key'])
+    conn = get_aws_connection(region)
+    vpc = get_vpc(region)
     # Make sure we don't request the same things twice
     token = str(uuid.uuid4())[:16]
 
@@ -273,14 +269,14 @@ class LoggingProcess(multiprocessing.Process):
         return super(LoggingProcess, self).run()
 
 
-def make_instances(names, config, region, secrets, key_name, instance_data,
+def make_instances(names, config, region, key_name, instance_data,
                    deploypass, loaned_to, loan_bug):
     """Create instances for each name of names for the given configuration"""
     procs = []
     for name in names:
         p = LoggingProcess(log="{name}.log".format(name=name),
                            target=create_instance,
-                           args=(name, config, region, secrets, key_name,
+                           args=(name, config, region, key_name,
                                  instance_data, deploypass, loaned_to, loan_bug),
                            )
         p.start()
@@ -333,6 +329,6 @@ if __name__ == '__main__':
     instance_data = json.load(args.instance_data)
     if not args.no_verify:
         log.info("Sanity checking DNS entries...")
-        verify(args.hosts, config, args.region, secrets)
-    make_instances(args.hosts, config, args.region, secrets, args.key_name,
+        verify(args.hosts, config, args.region)
+    make_instances(args.hosts, config, args.region, args.key_name,
                    instance_data, deploypass, args.loaned_to, args.bug)

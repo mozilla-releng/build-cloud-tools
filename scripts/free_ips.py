@@ -15,8 +15,6 @@ parser.add_argument("-c", "--config", required=True,
                     help="instance configuration to use")
 parser.add_argument("-r", "--region", help="region to use",
                     default="us-east-1")
-parser.add_argument("-k", "--secrets", type=argparse.FileType('r'),
-                    help="optional file where secrets can be found")
 parser.add_argument("-n", "--number", type=int, required=True,
                     help="How many IPs you need")
 args = parser.parse_args()
@@ -26,15 +24,8 @@ try:
 except KeyError:
     parser.error("unknown configuration")
 
-if args.secrets:
-    secrets = json.load(args.secrets)
-else:
-    secrets = {}
-
-conn = get_aws_connection(args.region, secrets.get("aws_access_key_id"),
-                          secrets.get("aws_secret_access_key"))
-vpc = get_vpc(args.region, secrets.get("aws_access_key_id"),
-              secrets.get("aws_secret_access_key"))
+conn = get_aws_connection(args.region)
+vpc = get_vpc(args.region)
 
 interfaces = vpc.get_all_network_interfaces()
 used_ips = [i.private_ip_address for i in interfaces]

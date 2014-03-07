@@ -46,18 +46,12 @@ def check_CNAME(args):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("-k", "--secrets", type=argparse.FileType('r'),
-                        help="optional file where secrets can be found")
     parser.add_argument("-r", "--region", dest="region", required=True,
                         help="optional list of regions")
     parser.add_argument("-v", "--verbose", action="store_true",
                         help="Supress logging messages")
 
     args = parser.parse_args()
-    if args.secrets:
-        secrets = json.load(args.secrets)
-    else:
-        secrets = {}
 
     logging.basicConfig(format="%(asctime)s - %(levelname)s - %(message)s")
     if args.verbose:
@@ -65,8 +59,7 @@ def main():
     else:
         log.setLevel(logging.WARNING)
 
-    conn = get_aws_connection(args.region, secrets.get("aws_access_key_id"),
-                              secrets.get("aws_secret_access_key"))
+    conn = get_aws_connection(args.region)
 
     pool = Pool()
     res = conn.get_all_instances()

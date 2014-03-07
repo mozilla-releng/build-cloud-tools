@@ -1,6 +1,3 @@
 \.pyc$
-secrets/
 \..*\.swp
-certs\..*/
 .*\.log
-ca-scripts

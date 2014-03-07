@@ -19,8 +19,6 @@ log = logging.getLogger(__name__)
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("-k", "--secrets", type=argparse.FileType('r'),
-                        help="optional file where secrets can be found")
     parser.add_argument("-r", "--region", dest="region", required=True,
                         help="Region")
     parser.add_argument("-q", "--quiet", action="store_true",
@@ -34,10 +32,6 @@ def main():
                         help="Generate a public AMI (no secrets)")
 
     args = parser.parse_args()
-    if args.secrets:
-        secrets = json.load(args.secrets)
-    else:
-        secrets = None
     try:
         ami_config = json.load(
             open("%s/%s.json" % (AMI_CONFIGS_DIR, args.ami_config))
@@ -54,8 +48,7 @@ def main():
     else:
         log.setLevel(logging.ERROR)
 
-    conn = get_aws_connection(args.region, secrets.get("aws_access_key_id"),
-                              secrets.get("aws_secret_access_key"))
+    conn = get_aws_connection(args.region)
 
     dated_target_name = "spot-%s-%s" % (
         args.ami_config, time.strftime("%Y-%m-%d-%H-%M", time.gmtime()))

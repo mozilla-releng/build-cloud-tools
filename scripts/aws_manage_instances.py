@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 import argparse
-import json
 import logging
 from time import gmtime, strftime
 import site
@@ -103,8 +102,6 @@ def status(i):
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("-k", "--secrets", type=argparse.FileType('r'),
-                        help="optional file where secrets can be found")
     parser.add_argument("-r", "--region", dest="regions", action="append",
                         help="optional list of regions")
     parser.add_argument("action", choices=["stop", "start", "restart",
@@ -120,10 +117,6 @@ if __name__ == '__main__':
                         help="hosts to be processed")
 
     args = parser.parse_args()
-    if args.secrets:
-        secrets = json.load(args.secrets)
-    else:
-        secrets = {}
 
     logging.basicConfig(format="%(asctime)s - %(levelname)s - %(message)s")
     if not args.quiet:
@@ -134,9 +127,7 @@ if __name__ == '__main__':
     if not args.regions:
         args.regions = REGIONS
     for region in args.regions:
-        conn = get_aws_connection(region, secrets.get("aws_access_key_id"),
-                                  secrets.get("aws_secret_access_key"))
-
+        conn = get_aws_connection(region)
         res = conn.get_all_instances()
         instances = reduce(lambda a, b: a + b, [r.instances for r in res])
         for i in instances:

@@ -69,10 +69,9 @@ def find_retries(db, brid):
     return db.execute(q, brid=brid).fetchone()[0]
 
 
-def aws_get_spot_requests(region, secrets, moz_instance_type):
+def aws_get_spot_requests(region, moz_instance_type):
     """retruns a list of all open and active spot requests"""
-    conn = get_aws_connection(region, secrets['aws_access_key_id'],
-                              secrets['aws_secret_access_key'])
+    conn = get_aws_connection(region)
     filters = {"tag:moz-type": moz_instance_type}
     req = conn.get_all_spot_instance_requests(filters=filters)
     return [r for r in req if r.state in ("open", "active")]
@@ -81,7 +80,7 @@ def aws_get_spot_requests(region, secrets, moz_instance_type):
 _aws_instances_cache = {}
 
 
-def aws_get_all_instances(regions, secrets):
+def aws_get_all_instances(regions):
     """
     Returns a list of all instances in the given regions
     """
@@ -92,8 +91,7 @@ def aws_get_all_instances(regions, secrets):
             log.debug("aws_get_all_instances - cache hit for %s", region)
             retval.extend(_aws_instances_cache[region])
         else:
-            conn = get_aws_connection(region, secrets['aws_access_key_id'],
-                                      secrets['aws_secret_access_key'])
+            conn = get_aws_connection(region)
             reservations = conn.get_all_instances()
             region_instances = []
             for r in reservations:
@@ -144,15 +142,14 @@ def aws_get_running_instances(all_instances, instance_type, slaveset):
     return retval
 
 
-def aws_get_reservations(regions, secrets):
+def aws_get_reservations(regions):
     """
     Return a mapping of (availability zone, ec2 instance type) -> count
     """
     log.debug("getting reservations for %s", regions)
     retval = {}
     for region in regions:
-        conn = get_aws_connection(region, secrets['aws_access_key_id'],
-                                  secrets['aws_secret_access_key'])
+        conn = get_aws_connection(region)
         reservations = conn.get_all_reserved_instances(filters={
             'state': 'active',
         })
@@ -192,7 +189,7 @@ def aws_resume_instances(moz_instance_type, start_count, regions, secrets,
     """Resume up to `start_count` stopped instances of the given type in the
     given regions"""
     # Fetch all our instance information
-    all_instances = aws_get_all_instances(regions, secrets)
+    all_instances = aws_get_all_instances(regions)
 
     # We'll filter by these tags in general
     tags = {'moz-state': 'ready', 'moz-type': moz_instance_type}
@@ -230,7 +227,7 @@ def aws_resume_instances(moz_instance_type, start_count, regions, secrets,
     log.debug("stopped_instances: %s", stopped_instances)
 
     # Get our current reservations
-    reservations = aws_get_reservations(regions, secrets)
+    reservations = aws_get_reservations(regions)
     log.debug("current reservations: %s", reservations)
 
     # Get our currently running instances
@@ -316,8 +313,7 @@ def request_spot_instances(moz_instance_type, start_count, regions, secrets,
     instance_config = json.load(open(os.path.join(INSTANCE_CONFIGS_DIR, moz_instance_type)))
     connections = []
     for region in regions:
-        conn = get_aws_connection(region, secrets['aws_access_key_id'],
-                                  secrets['aws_secret_access_key'])
+        conn = get_aws_connection(region)
         connections.append(conn)
     spot_choices = get_spot_choices(connections, spot_rules)
     if not spot_choices:
@@ -336,8 +332,7 @@ def request_spot_instances(moz_instance_type, start_count, regions, secrets,
 
         # check the limits
         active_count = len(aws_get_spot_requests(
-            region=region, secrets=secrets,
-            moz_instance_type=moz_instance_type))
+            region=region, moz_instance_type=moz_instance_type))
         can_be_started = region_limit - active_count
         if can_be_started < 1:
             log.debug("Not starting. Active spot request count in %s region "
@@ -346,8 +341,7 @@ def request_spot_instances(moz_instance_type, start_count, regions, secrets,
             continue
 
         to_be_started = min(can_be_started, start_count - started)
-        ami = get_ami(region=region, secrets=secrets,
-                      moz_instance_type=moz_instance_type)
+        ami = get_ami(region=region, moz_instance_type=moz_instance_type)
         to_start[region] = {"ami": ami, "instances": to_be_started}
 
     if not to_start:
@@ -428,8 +422,7 @@ def do_request_spot_instances(amount, region, secrets, moz_instance_type, ami,
 def do_request_spot_instance(region, secrets, moz_instance_type, price, ami,
                              instance_config, cached_cert_dir, instance_type,
                              availability_zone, slaveset, dryrun):
-    conn = get_aws_connection(region, secrets['aws_access_key_id'],
-                              secrets['aws_secret_access_key'])
+    conn = get_aws_connection(region)
     interface = get_available_interface(
         conn=conn, moz_instance_type=moz_instance_type,
         availability_zone=availability_zone,
@@ -546,9 +539,8 @@ def get_available_interface(conn, moz_instance_type, availability_zone, slaveset
     return None
 
 
-def get_ami(region, secrets, moz_instance_type):
-    conn = get_aws_connection(region, secrets['aws_access_key_id'],
-                              secrets['aws_secret_access_key'])
+def get_ami(region, moz_instance_type):
+    conn = get_aws_connection(region)
     avail_amis = conn.get_all_images(
         owners=["self"],
         filters={"tag:moz-type": moz_instance_type})
@@ -620,7 +612,7 @@ def aws_watch_pending(dburl, regions, secrets, builder_map, region_priorities,
 
     # For each instance_type, slaveset, find how many are currently running,
     # and scale our count accordingly
-    all_instances = aws_get_all_instances(regions, secrets)
+    all_instances = aws_get_all_instances(regions)
     for d in to_create_spot, to_create_ondemand:
         to_delete = set()
         for (instance_type, slaveset), count in d.iteritems():

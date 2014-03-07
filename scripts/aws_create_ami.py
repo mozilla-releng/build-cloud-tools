@@ -243,7 +243,6 @@ if __name__ == '__main__':
     parser.set_defaults(
         config=None,
         region="us-west-1",
-        secrets=None,
         key_name=None,
         action="create",
         keep_volume=False,
@@ -252,8 +251,6 @@ if __name__ == '__main__':
     parser.add_option("-c", "--config", dest="config",
                       help="instance configuration to use")
     parser.add_option("-r", "--region", dest="region", help="region to use")
-    parser.add_option("-k", "--secrets", dest="secrets",
-                      help="file where secrets can be found")
     parser.add_option("-s", "--key-name", dest="key_name", help="SSH key name")
     parser.add_option('--keep-volume', dest='keep_volume', action='store_true',
                       help="Don't delete target volume")
@@ -271,22 +268,16 @@ if __name__ == '__main__':
     if not options.config:
         parser.error("config name is required")
 
-    if not options.secrets:
-        parser.error("secrets are required")
-
     if not options.key_name:
         parser.error("SSH key name name is required")
 
     try:
         config = json.load(open("%s/%s.json" % (AMI_CONFIGS_DIR,
                                                 options.config)))[options.region]
-        secrets = json.load(open(options.secrets))
     except KeyError:
         parser.error("unknown configuration")
 
-    connection = get_aws_connection(options.region,
-                                    secrets["aws_access_key_id"],
-                                    secrets["aws_secret_access_key"])
+    connection = get_aws_connection(options.region)
     host_instance = run_instance(connection, args[0], config, options.key_name,
                                  options.user)
     create_ami(host_instance, options, config)
