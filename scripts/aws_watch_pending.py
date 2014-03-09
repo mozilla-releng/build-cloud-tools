@@ -63,7 +63,7 @@ def usable_choice(choice, minutes=15):
     delta = datetime.timedelta(minutes=minutes)
     recent_spot_requests = []
     for r in spot_requests:
-        t = aws_time_to_datetime(r.create_time)
+        t = aws_time_to_datetime(r.status.update_time)
         tz = t.tzinfo
         now = datetime.datetime.now(tz)
         if t > now - delta:
