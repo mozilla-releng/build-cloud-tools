@@ -7,25 +7,18 @@ import datetime
 import site
 import os
 
-site.addsitedir(os.path.join(os.path.dirname(__file__), ".."))
-from cloudtools.aws import get_aws_connection
-
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, String, DateTime, Float, Integer, \
     create_engine, ForeignKey
 from sqlalchemy.orm import validates, relationship, sessionmaker
 
+site.addsitedir(os.path.join(os.path.dirname(__file__), ".."))
+from cloudtools.aws import get_aws_connection
+from cloudtools.aws.spot import CANCEL_STATUS_CODES, IGNORABLE_STATUS_CODES
+
 log = logging.getLogger(__name__)
 REGIONS = ['us-east-1', 'us-west-2']
 Base = declarative_base()
-
-CANCEL_STATUS_CODES = ["capacity-oversubscribed", "price-too-low",
-                       "capacity-not-available"]
-IGNORABLE_STATUS_CODES = CANCEL_STATUS_CODES + [
-    "bad-parameters", "canceled-before-fulfillment", "fulfilled",
-    "instance-terminated-by-price", "instance-terminated-by-user",
-    "instance-terminated-capacity-oversubscribed", "pending-evaluation",
-    "pending-fulfillment"]
 
 
 def aws_time_to_gm(aws_time):

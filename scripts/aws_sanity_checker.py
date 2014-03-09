@@ -4,7 +4,6 @@ import argparse
 import json
 import logging
 import time
-import calendar
 import collections
 import re
 import site
@@ -12,7 +11,7 @@ import os
 
 site.addsitedir(os.path.join(os.path.dirname(__file__), ".."))
 from cloudtools.aws.sanity import Slave, AWSInstance
-from cloudtools.aws import get_aws_connection
+from cloudtools.aws import get_aws_connection, parse_aws_time
 
 
 log = logging.getLogger(__name__)
@@ -66,12 +65,6 @@ def get_all_instances(conn):
     return [i for i in instances if not is_beanstalk_instance(i)]
 
 
-def parse_launch_time(launch_time):
-    launch_time = calendar.timegm(time.strptime(
-        launch_time[:19], '%Y-%m-%dT%H:%M:%S'))
-    return launch_time
-
-
 def get_bad_type(instances):
     bad_types = []
     for i in instances:
@@ -111,7 +104,7 @@ def get_loaned(instances):
 
 
 def get_uptime(instance):
-    return (time.time() - parse_launch_time(instance.launch_time)) / 3600
+    return (time.time() - parse_aws_time(instance.launch_time)) / 3600
 
 
 def get_stale(instances, expected_stale_time, running_only=True):

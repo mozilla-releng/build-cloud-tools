@@ -4,6 +4,7 @@ Watches pending jobs and starts or creates EC2 instances if required
 """
 import re
 import time
+import datetime
 import random
 from collections import defaultdict
 
@@ -27,9 +28,65 @@ from bid import decide as get_spot_choices
 import site
 
 site.addsitedir(os.path.join(os.path.dirname(__file__), ".."))
-from cloudtools.aws import get_aws_connection, INSTANCE_CONFIGS_DIR
+from cloudtools.aws import get_aws_connection, INSTANCE_CONFIGS_DIR, \
+    aws_time_to_datetime
+from cloudtools.aws.spot import CANCEL_STATUS_CODES, \
+    TERMINATED_BY_AWS_STATUS_CODES
 
 log = logging.getLogger()
+
+
+def usable_choice(choice, minutes=15):
+    """Sanity check recent spot requests"""
+    region = choice.region
+    az = choice.availability_zone
+    instance_type = choice.instance_type
+    bid_price = choice.bid_price
+    current_price = choice.current_price
+    log.debug("Sanity checking %s in %s", instance_type, az)
+
+    # if price is higher than 80% of the bid price do not use the choice
+    if current_price > bid_price * 0.8:
+        log.debug("Price is higher than 80%% of ours, %s", choice)
+        return False
+
+    conn = get_aws_connection(region)
+    filters = {
+        "launch.instance-type": instance_type,
+        "launched-availability-zone": az}
+    spot_requests = conn.get_all_spot_instance_requests(filters=filters)
+    if not spot_requests:
+        log.debug("No available spot requests in last %sm", minutes)
+        return True
+    # filter out requests older than 15 min
+    # first, get the tzinfo of one of the requests
+    delta = datetime.timedelta(minutes=minutes)
+    recent_spot_requests = []
+    for r in spot_requests:
+        t = aws_time_to_datetime(r.create_time)
+        tz = t.tzinfo
+        now = datetime.datetime.now(tz)
+        if t > now - delta:
+            recent_spot_requests.append(r)
+
+    if not recent_spot_requests:
+        log.debug("No recent spot requests in last %sm", minutes)
+        return True
+    bad_statuses = CANCEL_STATUS_CODES + TERMINATED_BY_AWS_STATUS_CODES
+    bad_req = [r for r in spot_requests
+               if r.status.code in bad_statuses or
+               r.tags.get("moz-cancel-reason") in bad_statuses]
+    # Do not try if bad ratio is higher than 10%
+    total = len(spot_requests)
+    total_bad = len(bad_req)
+    log.debug("Found %s recent, %s bad", total, total_bad)
+    if float(total_bad / total) > 0.10:
+        log.debug("Skipping %s, too many failures (%s out of %s)", choice,
+                  total_bad, total)
+        return False
+    # All good!
+    log.debug("Choice %s passes", choice)
+    return True
 
 
 def find_pending(db):
@@ -352,6 +409,9 @@ def request_spot_instances(moz_instance_type, start_count, regions, secrets,
         region = choice.region
         if region not in to_start:
             log.debug("Skipping %s for %s", choice, region)
+            continue
+        if not usable_choice(choice):
+            log.debug("Skipping %s for %s - unusable", choice, region)
             continue
         need = min(to_start[region]["instances"], start_count - started)
         log.debug("Need %s of %s in %s", need, moz_instance_type,
@@ -689,6 +749,7 @@ if __name__ == '__main__':
                         format="%(asctime)s - %(message)s")
     logging.getLogger("boto").setLevel(logging.INFO)
     logging.getLogger("requests").setLevel(logging.WARN)
+    logging.getLogger("iso8601").setLevel(logging.INFO)
 
     config = json.load(args.config)
     secrets = json.load(args.secrets)

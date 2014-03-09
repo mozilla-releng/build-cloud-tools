@@ -1,6 +1,8 @@
 import os
 import logging
 import time
+import calendar
+import iso8601
 from boto.ec2 import connect_to_region
 from boto.vpc import VPCConnection
 from repoze.lru import lru_cache
@@ -44,3 +46,13 @@ def name_available(conn, name):
         return False
     else:
         return True
+
+
+def parse_aws_time(t):
+    """Parses ISO8601 time format and returns local epoch time"""
+    t = calendar.timegm(time.strptime(t[:19], '%Y-%m-%dT%H:%M:%S'))
+    return t
+
+
+def aws_time_to_datetime(t):
+    return iso8601.parse_date(t)
