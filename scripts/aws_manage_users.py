@@ -23,6 +23,8 @@ def make_mfa_policy(user_name):
                        "iam:DeleteVirtualMFADevice",
                        "iam:ListVirtualMFADevices",
                        "iam:ResyncMFADevice",
+                       "iam:EnableMFADevice",
+                       "iam:CreateAccessKey",
                        "iam:DeactivateMFADevice"
                        ],
             "Resource": ["arn:aws:iam::*:mfa/%s" % user_name,
