@@ -7,6 +7,7 @@ import time
 import datetime
 import random
 from collections import defaultdict
+from repoze.lru import lru_cache
 
 try:
     import simplejson as json
@@ -36,6 +37,32 @@ from cloudtools.aws.spot import CANCEL_STATUS_CODES, \
 log = logging.getLogger()
 
 
+@lru_cache(10)
+def get_all_spot_requests(region):
+    log.info("getting all spot requests for %s", region)
+    conn = get_aws_connection(region)
+    spot_requests = conn.get_all_spot_instance_requests()
+    return spot_requests
+
+
+@lru_cache(100)
+def get_spot_requests(region, instance_type, availability_zone):
+    log.info("getting filtered spot requests for %s (%s)", availability_zone, instance_type)
+    all_requests = get_all_spot_requests(region)
+    retval = []
+    if not all_requests:
+        return retval
+
+    for r in all_requests:
+        if r.launch_specification.instance_type != instance_type:
+            continue
+        if r.launched_availability_zone != availability_zone:
+            continue
+        retval.append(r)
+    return retval
+
+
+@lru_cache(100)
 def usable_choice(choice, minutes=15):
     """Sanity check recent spot requests"""
     region = choice.region
@@ -50,11 +77,7 @@ def usable_choice(choice, minutes=15):
         log.debug("Price is higher than 80%% of ours, %s", choice)
         return False
 
-    conn = get_aws_connection(region)
-    filters = {
-        "launch.instance-type": instance_type,
-        "launched-availability-zone": az}
-    spot_requests = conn.get_all_spot_instance_requests(filters=filters)
+    spot_requests = get_spot_requests(region, instance_type, az)
     if not spot_requests:
         log.debug("No available spot requests in last %sm", minutes)
         return True
