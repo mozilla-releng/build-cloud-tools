@@ -401,6 +401,7 @@ def request_spot_instances(moz_instance_type, start_count, regions, secrets,
         return 0
 
     to_start = {}
+    active_network_ids = {}
     for region in regions:
         # Check if spots are enabled in this region for this type
         region_limit = spot_config.get("limits", {}).get(region, {}).get(
@@ -411,8 +412,12 @@ def request_spot_instances(moz_instance_type, start_count, regions, secrets,
             continue
 
         # check the limits
-        active_count = len(aws_get_spot_requests(
-            region=region, moz_instance_type=moz_instance_type))
+        # Count how many unique network interfaces are active
+        # Sometimes we have multiple requests for the same interface
+        active_requests = aws_get_spot_requests(region=region, moz_instance_type=moz_instance_type)
+        active_network_ids[region] = set(r.launch_specification.networkInterfaceId for r in active_requests)
+        active_count = len(active_network_ids[region])
+        log.debug("%s: %i running spot instances in %s", moz_instance_type, active_count, region)
         can_be_started = region_limit - active_count
         if can_be_started < 1:
             log.debug("Not starting. Active spot request count in %s region "
@@ -449,7 +454,9 @@ def request_spot_instances(moz_instance_type, start_count, regions, secrets,
             instance_config=instance_config, dryrun=dryrun,
             cached_cert_dir=cached_cert_dir,
             spot_choice=choice,
-            slaveset=slaveset)
+            slaveset=slaveset,
+            active_network_ids=active_network_ids[region],
+        )
         started += launched
 
         if started >= start_count:
@@ -482,7 +489,7 @@ def get_puppet_certs(ip, secrets, cached_cert_dir):
 
 def do_request_spot_instances(amount, region, secrets, moz_instance_type, ami,
                               instance_config, cached_cert_dir, spot_choice,
-                              slaveset, dryrun):
+                              slaveset, active_network_ids, dryrun):
     started = 0
     for _ in range(amount):
         try:
@@ -494,22 +501,23 @@ def do_request_spot_instances(amount, region, secrets, moz_instance_type, ami,
                 ami=ami, instance_config=instance_config,
                 cached_cert_dir=cached_cert_dir,
                 instance_type=spot_choice.instance_type, slaveset=slaveset,
-                dryrun=dryrun)
+                active_network_ids=active_network_ids, dryrun=dryrun)
             if r:
                 started += 1
-        except (RuntimeError):
+        except Exception:
             log.warn("Cannot start", exc_info=True)
     return started
 
 
 def do_request_spot_instance(region, secrets, moz_instance_type, price, ami,
                              instance_config, cached_cert_dir, instance_type,
-                             availability_zone, slaveset, dryrun):
+                             availability_zone, slaveset, active_network_ids, dryrun):
     conn = get_aws_connection(region)
     interface = get_available_interface(
         conn=conn, moz_instance_type=moz_instance_type,
         availability_zone=availability_zone,
-        slaveset=slaveset)
+        slaveset=slaveset,
+        active_network_ids=active_network_ids)
     if not interface:
         log.warn("No free network interfaces left in %s" % region)
         return False
@@ -586,7 +594,7 @@ EOF
 _cached_interfaces = {}
 
 
-def get_available_interface(conn, moz_instance_type, availability_zone, slaveset):
+def get_available_interface(conn, moz_instance_type, availability_zone, slaveset, active_network_ids):
     global _cached_interfaces
     if not _cached_interfaces.get(availability_zone):
         _cached_interfaces[availability_zone] = {}
@@ -608,6 +616,9 @@ def get_available_interface(conn, moz_instance_type, availability_zone, slaveset
         # Find one in our slaveset
         if slaveset:
             for i in _cached_interfaces[availability_zone][moz_instance_type]:
+                if i.id in active_network_ids:
+                    log.debug("skipping %i since it's active", i.id)
+                    continue
                 if i.tags.get("FQDN").split(".")[0] in slaveset:
                     _cached_interfaces[availability_zone][moz_instance_type].remove(i)
                     log.debug("using %s", i.tags.get("FQDN"))
@@ -615,6 +626,8 @@ def get_available_interface(conn, moz_instance_type, availability_zone, slaveset
         else:
             allocated_slaves = get_allocated_slaves(None)
             for i in _cached_interfaces[availability_zone][moz_instance_type]:
+                if i.id in active_network_ids:
+                    log.debug("skipping %i since it's active", i.id)
                 if i.tags.get("FQDN").split(".")[0] not in allocated_slaves:
                     _cached_interfaces[availability_zone][moz_instance_type].remove(i)
                     log.debug("using %s", i.tags.get("FQDN"))
