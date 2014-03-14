@@ -43,9 +43,21 @@ if __name__ == '__main__':
 
     if not args.regions:
         args.regions = REGIONS
+
     for region in args.regions:
+        log.info("Processing region %s", region)
         conn = get_aws_connection(region)
         vpc = get_vpc(region)
+        all_spot_instances = conn.get_only_instances(filters={'instance-lifecycle': 'spot'})
+        for i in all_spot_instances:
+            log.info("Processing %s", i)
+            name = i.tags.get('Name')
+            fqdn = i.tags.get('FQDN')
+            moz_type = i.tags.get('moz-type')
+            # If one of the tags is unset/empty
+            if not all([name, fqdn, moz_type]):
+                tag_it(i, vpc)
+
         spot_requests = conn.get_all_spot_instance_requests() or []
         for req in spot_requests:
             if req.tags.get("moz-tagged"):
@@ -72,3 +84,4 @@ if __name__ == '__main__':
                 pass
             else:
                 req.add_tag("moz-tagged", "1")
+
