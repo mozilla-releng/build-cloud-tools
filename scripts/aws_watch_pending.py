@@ -617,7 +617,7 @@ def get_available_interface(conn, moz_instance_type, availability_zone, slaveset
         if slaveset:
             for i in _cached_interfaces[availability_zone][moz_instance_type]:
                 if i.id in active_network_ids:
-                    log.debug("skipping %i since it's active", i.id)
+                    log.debug("skipping %s since it's active", i.id)
                     continue
                 if i.tags.get("FQDN").split(".")[0] in slaveset:
                     _cached_interfaces[availability_zone][moz_instance_type].remove(i)
@@ -627,7 +627,7 @@ def get_available_interface(conn, moz_instance_type, availability_zone, slaveset
             allocated_slaves = get_allocated_slaves(None)
             for i in _cached_interfaces[availability_zone][moz_instance_type]:
                 if i.id in active_network_ids:
-                    log.debug("skipping %i since it's active", i.id)
+                    log.debug("skipping %s since it's active", i.id)
                 if i.tags.get("FQDN").split(".")[0] not in allocated_slaves:
                     _cached_interfaces[availability_zone][moz_instance_type].remove(i)
                     log.debug("using %s", i.tags.get("FQDN"))
