@@ -395,7 +395,7 @@ def request_spot_instances(moz_instance_type, start_count, regions, secrets,
     for region in regions:
         conn = get_aws_connection(region)
         connections.append(conn)
-    spot_choices = get_spot_choices(connections, spot_rules)
+    spot_choices = get_spot_choices(connections, spot_rules, "Linux/UNIX (Amazon VPC)")
     if not spot_choices:
         log.warn("No spot choices for %s", moz_instance_type)
         return 0
