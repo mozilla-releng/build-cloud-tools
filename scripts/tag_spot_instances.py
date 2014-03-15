@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 import argparse
-import json
 import logging
 import site
 import os
@@ -14,8 +13,11 @@ log = logging.getLogger(__name__)
 
 def tag_it(i, vpc):
     log.debug("Tagging %s", i)
+    if i.state == "terminated":
+        log.debug("Skipping terminated instances %s", i)
+        return
     if not i.interfaces:
-        log.error("%s has no interfaces", i)
+        log.error("%s  with state '%s' has no interfaces", i, i.state)
         return
     netif = i.interfaces[0]
     # network interface needs to be reloaded usin VPC to get the tags
@@ -51,7 +53,8 @@ if __name__ == '__main__':
         log.info("Processing region %s", region)
         conn = get_aws_connection(region)
         vpc = get_vpc(region)
-        all_spot_instances = conn.get_only_instances(filters={'instance-lifecycle': 'spot'})
+        all_spot_instances = conn.get_only_instances(
+            filters={'instance-lifecycle': 'spot'})
         for i in all_spot_instances:
             log.info("Processing %s", i)
             name = i.tags.get('Name')
@@ -87,4 +90,3 @@ if __name__ == '__main__':
                 pass
             else:
                 req.add_tag("moz-tagged", "1")
-
