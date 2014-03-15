@@ -25,6 +25,7 @@ def make_mfa_policy(user_name):
                        "iam:ResyncMFADevice",
                        "iam:EnableMFADevice",
                        "iam:CreateAccessKey",
+                       "iam:UpdateLoginProfile",
                        "iam:DeactivateMFADevice"
                        ],
             "Resource": ["arn:aws:iam::*:mfa/%s" % user_name,
