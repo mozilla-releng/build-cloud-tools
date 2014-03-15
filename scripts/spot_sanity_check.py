@@ -13,11 +13,10 @@ from sqlalchemy import Column, String, DateTime, Float, Integer, \
 from sqlalchemy.orm import validates, relationship, sessionmaker
 
 site.addsitedir(os.path.join(os.path.dirname(__file__), ".."))
-from cloudtools.aws import get_aws_connection
+from cloudtools.aws import get_aws_connection, DEFAULT_REGIONS
 from cloudtools.aws.spot import CANCEL_STATUS_CODES, IGNORABLE_STATUS_CODES
 
 log = logging.getLogger(__name__)
-REGIONS = ['us-east-1', 'us-west-2']
 Base = declarative_base()
 
 
@@ -176,7 +175,7 @@ if __name__ == '__main__':
     session = Session()
 
     if not args.regions:
-        args.regions = REGIONS
+        args.regions = DEFAULT_REGIONS
     for region in args.regions:
         conn = get_aws_connection(region)
         update_spot_stats(conn, session)

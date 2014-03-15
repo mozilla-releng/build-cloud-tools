@@ -11,11 +11,11 @@ import os
 
 site.addsitedir(os.path.join(os.path.dirname(__file__), ".."))
 from cloudtools.aws.sanity import Slave, AWSInstance
-from cloudtools.aws import get_aws_connection, parse_aws_time
+from cloudtools.aws import get_aws_connection, parse_aws_time, \
+    DEFAULT_REGIONS
 
 
 log = logging.getLogger(__name__)
-REGIONS = ('us-east-1', 'us-west-2')
 KNOWN_TYPES = ('puppetmaster', 'buildbot-master', 'dev-linux64', 'bld-linux64',
                'try-linux64', 'tst-linux32', 'tst-linux64', 'tst-win64', 'dev',
                'servo-linux64', 'packager', 'vcssync', 'infra')
@@ -332,7 +332,7 @@ if __name__ == '__main__':
         log.setLevel(logging.ERROR)
 
     if not args.regions:
-        args.regions = REGIONS
+        args.regions = DEFAULT_REGIONS
     all_instances = []
     all_volumes = []
     for region in args.regions:

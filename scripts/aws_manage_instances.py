@@ -7,10 +7,9 @@ import site
 import os
 
 site.addsitedir(os.path.join(os.path.dirname(__file__), ".."))
-from cloudtools.aws import get_aws_connection
+from cloudtools.aws import get_aws_connection, DEFAULT_REGIONS
 
 log = logging.getLogger(__name__)
-REGIONS = ['us-east-1', 'us-west-2']
 
 
 def start(i, dry_run):
@@ -125,7 +124,7 @@ if __name__ == '__main__':
         log.setLevel(logging.ERROR)
 
     if not args.regions:
-        args.regions = REGIONS
+        args.regions = DEFAULT_REGIONS
     for region in args.regions:
         conn = get_aws_connection(region)
         res = conn.get_all_instances()
