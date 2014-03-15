@@ -10,6 +10,7 @@ from repoze.lru import lru_cache
 log = logging.getLogger(__name__)
 AMI_CONFIGS_DIR = os.path.join(os.path.dirname(__file__), "../../ami_configs")
 INSTANCE_CONFIGS_DIR = os.path.join(os.path.dirname(__file__), "../../configs")
+DEFAULT_REGIONS = ['us-east-1', 'us-west-2']
 
 
 @lru_cache(10)

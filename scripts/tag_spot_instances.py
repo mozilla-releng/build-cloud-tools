@@ -7,13 +7,16 @@ import site
 import os
 
 site.addsitedir(os.path.join(os.path.dirname(__file__), ".."))
-from cloudtools.aws import get_aws_connection, get_vpc
+from cloudtools.aws import get_aws_connection, get_vpc, DEFAULT_REGIONS
 
 log = logging.getLogger(__name__)
-REGIONS = ['us-east-1', 'us-west-2']
 
 
 def tag_it(i, vpc):
+    log.debug("Tagging %s", i)
+    if not i.interfaces:
+        log.error("%s has no interfaces", i)
+        return
     netif = i.interfaces[0]
     # network interface needs to be reloaded usin VPC to get the tags
     interface = vpc.get_all_network_interfaces(
@@ -42,7 +45,7 @@ if __name__ == '__main__':
         log.setLevel(logging.ERROR)
 
     if not args.regions:
-        args.regions = REGIONS
+        args.regions = DEFAULT_REGIONS
 
     for region in args.regions:
         log.info("Processing region %s", region)
