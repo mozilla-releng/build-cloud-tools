@@ -15,7 +15,7 @@ try:
 except ImportError:
     import json
 
-from boto.exception import BotoServerError
+from boto.exception import BotoServerError, EC2ResponseError
 from boto.ec2.networkinterface import NetworkInterfaceCollection, \
     NetworkInterfaceSpecification
 from boto.ec2.blockdevicemapping import BlockDeviceMapping, BlockDeviceType
@@ -504,6 +504,11 @@ def do_request_spot_instances(amount, region, secrets, moz_instance_type, ami,
                 active_network_ids=active_network_ids, dryrun=dryrun)
             if r:
                 started += 1
+        except EC2ResponseError, e:
+            if e.code == "MaxSpotInstanceCountExceeded":
+                log.warn("MaxSpotInstanceCountExceeded in %s; giving up", region)
+                return started
+            log.warn("Cannot start", exc_info=True)
         except Exception:
             log.warn("Cannot start", exc_info=True)
     return started
@@ -525,7 +530,8 @@ def do_request_spot_instance(region, secrets, moz_instance_type, price, ami,
     # TODO: check DNS
     fqdn = interface.tags.get("FQDN")
     if not fqdn:
-        raise RuntimeError("Skipping %s without FQDN" % interface)
+        log.warn("interface %s has no FQDN", interface)
+        return False
 
     log.debug("Spot request for %s (%s)", fqdn, price)
 
@@ -681,7 +687,7 @@ def aws_watch_pending(dburl, regions, secrets, builder_map, region_priorities,
     if not pending:
         log.debug("no pending jobs! all done!")
         return
-    log.info("processing %i pending jobs", len(pending))
+    log.debug("processing %i pending jobs", len(pending))
 
     # Mapping of (instance types, slaveset) to # of instances we want to
     # creates
@@ -713,21 +719,21 @@ def aws_watch_pending(dburl, regions, secrets, builder_map, region_priorities,
         to_delete = set()
         for (instance_type, slaveset), count in d.iteritems():
             running = aws_get_running_instances(all_instances, instance_type, slaveset)
-            log.debug("%i running for %s %s", len(running), instance_type, slaveset)
+            log.info("%i running for %s %s", len(running), instance_type, slaveset)
             # TODO: This logic is probably too simple
             # Reduce the number of required slaves by 10% of those that are
             # running
             delta = len(running) / 10
-            log.debug("reducing required count for %s %s by %i (%i running; need %i)", instance_type, slaveset, delta, len(running), count)
+            log.info("reducing required count for %s %s by %i (%i running; need %i)", instance_type, slaveset, delta, len(running), count)
             d[instance_type, slaveset] = max(0, count - delta)
             if d[instance_type, slaveset] == 0:
-                log.debug("removing requirement for %s %s", instance_type, slaveset)
+                log.info("removing requirement for %s %s", instance_type, slaveset)
                 to_delete.add((instance_type, slaveset))
 
             # If slaveset is not None, and all our slaves are running, we should
             # remove it from the set of things to try and start instances for
             if slaveset and set(i.tags.get('Name') for i in running) == slaveset:
-                log.debug("removing %s %s since all the slaves are running", instance_type, slaveset)
+                log.info("removing %s %s since all the slaves are running", instance_type, slaveset)
                 to_delete.add((instance_type, slaveset))
 
         for instance_type, slaveset in to_delete:
@@ -782,7 +788,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     logging.basicConfig(level=args.loglevel,
-                        format="%(asctime)s - %(message)s")
+                        format="%(asctime)s - %(levelname)s - %(message)s")
     logging.getLogger("boto").setLevel(logging.INFO)
     logging.getLogger("requests").setLevel(logging.WARN)
     logging.getLogger("iso8601").setLevel(logging.INFO)
