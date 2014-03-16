@@ -7,15 +7,14 @@ import os
 
 site.addsitedir(os.path.join(os.path.dirname(__file__), ".."))
 from cloudtools.aws import get_aws_connection, get_vpc, DEFAULT_REGIONS
+from cloudtools.aws.spot import get_spot_instances
 
 log = logging.getLogger(__name__)
 
 
-def tag_it(i, vpc):
+def tag_it(i):
     log.debug("Tagging %s", i)
-    if not i.interfaces:
-        log.error("%s  with state '%s' has no interfaces", i, i.state)
-        return
+    vpc = get_vpc(i.region.name)
     netif = i.interfaces[0]
     # network interface needs to be reloaded usin VPC to get the tags
     interface = vpc.get_all_network_interfaces(
@@ -47,14 +46,8 @@ if __name__ == '__main__':
         args.regions = DEFAULT_REGIONS
 
     for region in args.regions:
-        log.info("Processing region %s", region)
         conn = get_aws_connection(region)
-        vpc = get_vpc(region)
-        filters = {
-            'instance-lifecycle': 'spot',
-            'instance-state-name': 'running',
-        }
-        all_spot_instances = conn.get_only_instances(filters=filters)
+        all_spot_instances = get_spot_instances(region)
         for i in all_spot_instances:
             log.info("Processing %s", i)
             name = i.tags.get('Name')
@@ -62,31 +55,7 @@ if __name__ == '__main__':
             moz_type = i.tags.get('moz-type')
             # If one of the tags is unset/empty
             if not all([name, fqdn, moz_type]):
-                tag_it(i, vpc)
-
-        spot_requests = conn.get_all_spot_instance_requests() or []
-        for req in spot_requests:
-            if req.tags.get("moz-tagged"):
-                log.debug("Skipping already processed spot request %s", req)
-                continue
-            i_id = req.instance_id
-            if not i_id:
-                log.debug("Skipping spot request %s without instance_id", req)
-                continue
-            res = conn.get_all_instances(instance_ids=[i_id])
-            try:
-                for r in res:
-                    for i in r.instances:
-                        log.info("Processing %s", i)
-                        name = i.tags.get('Name')
-                        fqdn = i.tags.get('FQDN')
-                        moz_type = i.tags.get('moz-type')
-                        # If one of the tags is unset/empty
-                        if not all([name, fqdn, moz_type]):
-                            tag_it(i, vpc)
-            except IndexError:
-                # tag it next time
-                log.debug("Failed to tag %s", req)
-                pass
-            else:
-                req.add_tag("moz-tagged", "1")
+                try:
+                    tag_it(i)
+                except IndexError:
+                    log.debug("Failed to tag %s", i)
