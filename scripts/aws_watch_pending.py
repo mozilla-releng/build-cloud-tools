@@ -7,7 +7,9 @@ import time
 import datetime
 import random
 from collections import defaultdict
-from repoze.lru import lru_cache
+import calendar
+import os
+import logging
 
 try:
     import simplejson as json
@@ -21,14 +23,14 @@ from boto.ec2.networkinterface import NetworkInterfaceCollection, \
 from boto.ec2.blockdevicemapping import BlockDeviceMapping, BlockDeviceType
 import sqlalchemy as sa
 from sqlalchemy.engine.reflection import Inspector
-
+import iso8601
+from repoze.lru import lru_cache
 import requests
-import os
-import logging
 from bid import decide as get_spot_choices
-import site
 
+import site
 site.addsitedir(os.path.join(os.path.dirname(__file__), ".."))
+
 from cloudtools.aws import get_aws_connection, INSTANCE_CONFIGS_DIR, \
     aws_time_to_datetime
 from cloudtools.aws.spot import CANCEL_STATUS_CODES, \
@@ -40,6 +42,10 @@ log = logging.getLogger()
 # instances if number of retires a larger than this number. If you update this
 # number, you also need to update the same viariable in buildbotcustom/misc.py
 MAX_SPOT_RETRIES = 1
+
+# Number of seconds from an instance's launch time for it to be considered
+# 'fresh'
+FRESH_INSTANCE_DELAY = 20 * 60
 
 
 @lru_cache(10)
@@ -233,6 +239,17 @@ def aws_get_spot_instances(all_instances):
 
 def aws_get_ondemand_instances(all_instances):
     return [i for i in all_instances if i.spot_instance_request_id is None]
+
+
+def aws_get_fresh_instances(all_instances, launched_since):
+    "Returns a list of instances that were launched since `launched_since` (a timestamp)"
+    retval = []
+    for i in all_instances:
+        d = iso8601.parse_date(i.launch_time)
+        t = calendar.timegm(d.utctimetuple())
+        if t > launched_since:
+            retval.append(i)
+    return retval
 
 
 def aws_get_reservations(regions):
@@ -742,11 +759,17 @@ def aws_watch_pending(dburl, regions, secrets, builder_map, region_priorities,
                 running = aws_get_spot_instances(running)
             else:
                 running = aws_get_ondemand_instances(running)
-            log.info("%i running for %s %s %s", len(running), create_type, instance_type, slaveset)
+
+            # Get instances launched recently
+            fresh = aws_get_fresh_instances(running, time.time() - FRESH_INSTANCE_DELAY)
+            log.info("%i running for %s %s %s (%i fresh)", len(running), create_type, instance_type, slaveset, len(fresh))
             # TODO: This logic is probably too simple
-            # Reduce the number of required slaves by 10% of those that are
-            # running
-            delta = len(running) / 10
+            # Reduce the number of required slaves by the number of freshly
+            # started instaces, plus 10% of those that have been running a
+            # while
+            num_fresh = len(fresh)
+            num_old = len(running) - num_fresh
+            delta = num_fresh + (num_old / 10)
             log.info("reducing required count for %s %s %s by %i (%i running; need %i)", create_type, instance_type, slaveset, delta, len(running), count)
             d[instance_type, slaveset] = max(0, count - delta)
             if d[instance_type, slaveset] == 0:
