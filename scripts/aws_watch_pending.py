@@ -36,6 +36,11 @@ from cloudtools.aws.spot import CANCEL_STATUS_CODES, \
 
 log = logging.getLogger()
 
+# Number of job retries allowed to run on spot instances. We stop using spot
+# instances if number of retires a larger than this number. If you update this
+# number, you also need to update the same viariable in buildbotcustom/misc.py
+MAX_SPOT_RETRIES = 1
+
 
 @lru_cache(10)
 def get_all_spot_requests(region):
@@ -699,10 +704,10 @@ def aws_watch_pending(dburl, regions, secrets, builder_map, region_priorities,
         for buildername_exp, instance_type in builder_map.items():
             if re.match(buildername_exp, pending_buildername):
                 slaveset = get_allocated_slaves(pending_buildername)
-                if find_retries(db, brid) == 0:
-                    to_create_spot[instance_type, slaveset] += 1
-                else:
+                if find_retries(db, brid) > MAX_SPOT_RETRIES:
                     to_create_ondemand[instance_type, slaveset] += 1
+                else:
+                    to_create_spot[instance_type, slaveset] += 1
                 break
         else:
             log.debug("%s has pending jobs, but no instance types defined",
