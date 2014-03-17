@@ -227,6 +227,14 @@ def aws_get_running_instances(all_instances, instance_type, slaveset):
     return retval
 
 
+def aws_get_spot_instances(all_instances):
+    return [i for i in all_instances if i.spot_instance_request_id]
+
+
+def aws_get_ondemand_instances(all_instances):
+    return [i for i in all_instances if i.spot_instance_request_id is None]
+
+
 def aws_get_reservations(regions):
     """
     Return a mapping of (availability zone, ec2 instance type) -> count
@@ -696,14 +704,19 @@ def aws_watch_pending(dburl, regions, secrets, builder_map, region_priorities,
 
     # Mapping of (instance types, slaveset) to # of instances we want to
     # creates
-    to_create_ondemand = defaultdict(int)
-    to_create_spot = defaultdict(int)
+    to_create = {
+        'spot': defaultdict(int),
+        'ondemand': defaultdict(int),
+    }
+    to_create_ondemand = to_create['ondemand']
+    to_create_spot = to_create['spot']
 
     # Then match them to the builder_map
     for pending_buildername, brid in pending:
         for buildername_exp, instance_type in builder_map.items():
             if re.match(buildername_exp, pending_buildername):
                 slaveset = get_allocated_slaves(pending_buildername)
+                log.debug("%s instance type %s slaveset %s", pending_buildername, instance_type, slaveset)
                 if find_retries(db, brid) > MAX_SPOT_RETRIES:
                     to_create_ondemand[instance_type, slaveset] += 1
                 else:
@@ -720,19 +733,24 @@ def aws_watch_pending(dburl, regions, secrets, builder_map, region_priorities,
     # For each instance_type, slaveset, find how many are currently running,
     # and scale our count accordingly
     all_instances = aws_get_all_instances(regions)
-    for d in to_create_spot, to_create_ondemand:
+    for create_type, d in to_create.iteritems():
         to_delete = set()
         for (instance_type, slaveset), count in d.iteritems():
             running = aws_get_running_instances(all_instances, instance_type, slaveset)
-            log.info("%i running for %s %s", len(running), instance_type, slaveset)
+            # Filter by create_type
+            if create_type == 'spot':
+                running = aws_get_spot_instances(running)
+            else:
+                running = aws_get_ondemand_instances(running)
+            log.info("%i running for %s %s %s", len(running), create_type, instance_type, slaveset)
             # TODO: This logic is probably too simple
             # Reduce the number of required slaves by 10% of those that are
             # running
             delta = len(running) / 10
-            log.info("reducing required count for %s %s by %i (%i running; need %i)", instance_type, slaveset, delta, len(running), count)
+            log.info("reducing required count for %s %s %s by %i (%i running; need %i)", create_type, instance_type, slaveset, delta, len(running), count)
             d[instance_type, slaveset] = max(0, count - delta)
             if d[instance_type, slaveset] == 0:
-                log.info("removing requirement for %s %s", instance_type, slaveset)
+                log.info("removing requirement for %s %s %s", create_type, instance_type, slaveset)
                 to_delete.add((instance_type, slaveset))
 
             # If slaveset is not None, and all our slaves are running, we should
