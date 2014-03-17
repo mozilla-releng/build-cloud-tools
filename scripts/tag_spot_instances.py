@@ -4,9 +4,11 @@ import argparse
 import logging
 import site
 import os
+import threading
+from Queue import Queue
 
 site.addsitedir(os.path.join(os.path.dirname(__file__), ".."))
-from cloudtools.aws import get_aws_connection, get_vpc, DEFAULT_REGIONS
+from cloudtools.aws import get_vpc, DEFAULT_REGIONS
 from cloudtools.aws.spot import get_spot_instances
 
 log = logging.getLogger(__name__)
@@ -27,12 +29,39 @@ def tag_it(i):
     i.add_tag("moz-state", "ready")
 
 
+def tagging_worker(q):
+    while True:
+        i = q.get()
+        try:
+            tag_it(i)
+        except IndexError:
+            log.debug("Failed to tag %s", i)
+        finally:
+            q.task_done()
+
+
+def populate_queue(region, q):
+    log.debug("Connecting to %s", region)
+    log.debug("Getting all spot instances in %s...", region)
+    all_spot_instances = get_spot_instances(region)
+    log.debug("Done with %s", region)
+    for i in all_spot_instances:
+        name = i.tags.get('Name')
+        fqdn = i.tags.get('FQDN')
+        moz_type = i.tags.get('moz-type')
+        # If one of the tags is unset/empty
+        if not all([name, fqdn, moz_type]):
+            log.debug("Adding %s in %s to queue", i, region)
+            q.put(i)
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("-r", "--region", dest="regions", action="append",
                         help="optional list of regions")
     parser.add_argument("-q", "--quiet", action="store_true",
                         help="Supress logging messages")
+    parser.add_argument("-j", "--concurrency", type=int, default=8)
 
     args = parser.parse_args()
 
@@ -45,17 +74,22 @@ if __name__ == '__main__':
     if not args.regions:
         args.regions = DEFAULT_REGIONS
 
+    q = Queue()
+
+    for _ in range(args.concurrency):
+        t = threading.Thread(target=tagging_worker, args=(q,))
+        # daemonize tagging threads to make so we can simplify the code by
+        # joining the queue instead of joining all threads
+        t.daemon = True
+        t.start()
+
+    threads = []
     for region in args.regions:
-        conn = get_aws_connection(region)
-        all_spot_instances = get_spot_instances(region)
-        for i in all_spot_instances:
-            log.info("Processing %s", i)
-            name = i.tags.get('Name')
-            fqdn = i.tags.get('FQDN')
-            moz_type = i.tags.get('moz-type')
-            # If one of the tags is unset/empty
-            if not all([name, fqdn, moz_type]):
-                try:
-                    tag_it(i)
-                except IndexError:
-                    log.debug("Failed to tag %s", i)
+        t = threading.Thread(target=populate_queue, args=(region, q))
+        t.start()
+        threads.append(t)
+
+    for t in threads:
+        t.join()
+    log.debug("Waiting for workers")
+    q.join()
