@@ -524,7 +524,7 @@ def do_request_spot_instance(region, secrets, moz_instance_type, price, ami,
         slaveset=slaveset,
         active_network_ids=active_network_ids)
     if not interface:
-        log.warn("No free network interfaces left in %s" % region)
+        log.debug("No free network interfaces left in %s" % region)
         return False
 
     # TODO: check DNS
