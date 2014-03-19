@@ -26,9 +26,10 @@ from cloudtools.aws import get_aws_connection
 
 log = logging.getLogger()
 
-# Instances runnnig less than STOP_THRESHOLD_MINS minutes within 1 hour
+# Instances running less than STOP_THRESHOLD_MINS minutes within 1 hour
 # boundary won't be stopped.
-STOP_THRESHOLD_MINS = 45
+STOP_THRESHOLD_MINS_SPOT = 45
+STOP_THRESHOLD_MINS_ONDEMAND = 30
 
 
 def stop(i, ssh_client=None):
@@ -221,7 +222,11 @@ def aws_safe_stop_instance(i, impaired_ids, credentials, masters_json,
 
     # skip instances running not close to 1hr boundary
     uptime_min = int((time.time() - launch_time) / 60)
-    if uptime_min % 60 < STOP_THRESHOLD_MINS:
+    if i.spot_instance_request_id:
+        threshold = STOP_THRESHOLD_MINS_SPOT
+    else:
+        threshold = STOP_THRESHOLD_MINS_ONDEMAND
+    if uptime_min % 60 < threshold:
         log.debug("Skipping %s, with uptime %s", name, uptime_min)
         return False
 
