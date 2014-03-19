@@ -31,11 +31,11 @@ def tag_it(i):
 
 def tagging_worker(q):
     while True:
-        i = q.get()
+        i = q.get(30)
         try:
             tag_it(i)
-        except IndexError:
-            log.debug("Failed to tag %s", i)
+        except:
+            log.debug("Failed to tag %s", i, exc_info=True)
         finally:
             q.task_done()
 
@@ -90,6 +90,6 @@ if __name__ == '__main__':
         threads.append(t)
 
     for t in threads:
-        t.join()
+        t.join(30)
     log.debug("Waiting for workers")
     q.join()
