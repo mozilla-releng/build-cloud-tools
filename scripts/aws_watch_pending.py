@@ -535,6 +535,7 @@ EOF
         instance_profile_name=instance_config[region].get("instance_profile_name"),
     )
     max_tries = 10
+    sleep_time = 5
     for i in range(max_tries):
         try:
             sir[0].add_tag("moz-type", moz_instance_type)
@@ -544,7 +545,16 @@ EOF
                 if i < max_tries - 1:
                     # Try again
                     log.debug("waiting for spot request")
-                    time.sleep(5)
+                    time.sleep(sleep_time)
+                    sleep_time = min(30, sleep_time * 1.5)
+                    continue
+        except BotoServerError, e:
+            if e.code == "RequestLimitExceeded":
+                if i < max_tries - 1:
+                    # Try again
+                    log.debug("request limit exceeded; sleeping and trying again")
+                    time.sleep(sleep_time)
+                    sleep_time = min(30, sleep_time * 1.5)
                     continue
             raise
 
