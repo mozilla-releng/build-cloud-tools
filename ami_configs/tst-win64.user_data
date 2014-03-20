@@ -1,0 +1,255 @@
+<powershell>
+### TODO: Add error handling
+### TODO: Check Windows defender, indexing service
+### TODO: Add runslave.bat with: msys, unzip, hg (to system-wide path?)
+### TODO: Figure out how to resolve http://repos/
+### TODO: Minimize cmdwindow?
+### TODO: install win32file
+
+Start-Transcript -Path 'c:\userdata-transcript.txt' -Force
+Set-StrictMode -Version Latest
+Set-ExecutionPolicy Unrestricted
+
+Import-Module AWSPowerShell
+
+$MOZBUILD = "C:\mozilla-build"
+$VIRTUALENV = "$MOZBUILD\buildbotve"
+$PYTHONDIR = "C:\Python27"
+$PYTHON = "$PYTHONDIR\python.exe"
+
+$LOG = 'c:\userdata-log.txt'
+Function Log ($str) {{
+    $d = Get-Date
+    Add-Content $LOG -value "$d - $str"
+}}
+
+Log "Userdata started"
+
+
+### Functions
+
+# We need this helper, because PowerShell has a separate
+# notion of directory for all child commands, and directory
+# for the script. Running commands directly use the
+# location set by cd, while things like DownloadFile
+# will use the script directory (set by SetCurrentDirectory)
+#
+# This function makes things a little bit easier to follow
+Function SetDirectory ($dir) {{
+    Set-Location $dir
+    [System.IO.Directory]::SetCurrentDirectory($dir)
+}}
+
+# silent MSI install helper
+Function InstallMSI ($msi) {{
+    Start-Process -Wait -FilePath "msiexec.exe" -ArgumentList "/qb /i $msi"
+}}
+
+# HTTP download helper
+Function GetFromHTTP ($url, $path) {{
+    Log "Downloading $url to $path"
+    $client = new-object System.Net.WebClient
+    $client.DownloadFile($url, $path)
+}}
+
+# Fetch something from our S3 bucket; less verbose version than writing
+# Out the Read-S3Object command. Always puts in current dir.
+Function GetFromS3 ($obj) {{
+    Read-S3Object -BucketName mozilla-releng-tools -Key $obj -File $obj
+}}
+
+
+### Install stuff
+SetDirectory $Env:USERPROFILE
+
+### Install python
+GetFromS3 python-2.7.5.msi
+Log "Installing python"
+Start-Process -Wait -FilePath "python-2.7.5.msi" -ArgumentList "/qn"
+Log "Done"
+
+
+### Install MozillaBuild
+GetFromS3 MozillaBuildSetup-Latest.exe
+Log "Install MozillaBuild"
+Start-Process -Wait -FilePath "MozillaBuildSetup-Latest.exe" -ArgumentList "/S"
+Log "Done"
+
+### Append to system PATH
+[System.Environment]::SetEnvironmentVariable("PATH", $Env:Path + ";c:\mozilla-build\msys\bin;c:\mozilla-build\hg;c:\mozilla-build\vim\vim72;c:\mozilla-build\python;c:\mozilla-build\python\scripts;c:\mozilla-build\7zip;c:\mozilla-build\info-zip;c:\mozilla-build\wget", "Machine")
+
+# Grab the Debug CRT runtimes and install them
+Log "Installing Debug CRTs"
+GetFromS3 Microsoft_VC100_DebugCRT_x64.msi
+GetFromS3 Microsoft_VC100_DebugCRT_x86.msi
+InstallMSI Microsoft_VC100_DebugCRT_x64.msi
+InstallMSI Microsoft_VC100_DebugCRT_x86.msi
+Log "Done"
+
+### Install SSH
+Log "Installing SSH"
+SetDirectory "C:\Program Files (x86)"
+GetFromS3 KTS.zip
+& $MOZBUILD\7zip\7z x -y KTS.zip
+del KTS.zip
+SetDirectory "C:\Program Files (x86)\KTS"
+& .\install.bat
+
+Log "Adding sshd to firewall"
+netsh advfirewall firewall add rule name="sshd" dir=in action=allow program="C:\Program Files (x86)\KTS\daemon.exe" enable=yes
+Log "Done"
+
+### Install buildbot
+Log "Installing buildbot"
+SetDirectory $Env:USERPROFILE
+# Grab Python and its packages from S3, all in a single tar file.
+GetFromS3 python-packages.tar
+& $MOZBUILD\7zip\7z x -y python-packages.tar
+SetDirectory 'C:\mozilla-build'
+# delete the old buildbotve dir and create a new one
+Remove-Item $VIRTUALENV -Force -Recurse -EA SilentlyContinue
+New-Item -itemtype directory -path $VIRTUALENV -force
+
+# two steps, because 7zip.
+& $MOZBUILD\7zip\7z e -y $Env:USERPROFILE\virtualenv-1.9.1.tar.gz
+& $MOZBUILD\7zip\7z x -y virtualenv-1.9.1.tar
+del virtualenv-1.9.1.tar
+
+# set up the virtualenv
+& $PYTHON virtualenv-1.9.1\virtualenv.py --distribute $VIRTUALENV
+Log "Set up virtualenv"
+Copy-Item virtualenv-1.9.1\virtualenv.py -Destination $VIRTUALENV\virtualenv.py
+
+# install the world
+$python_packages = @("pywin32-218.win32-py2.7.exe",
+"zope.interface-3.6.1-py2.7-win32.egg",
+"Twisted-13.0.0.win32-py2.7.exe",
+"buildbot-slave-0.8.4-pre-moz2.tar.gz",
+"buildbot-0.8.4-pre-moz2.tar.gz",
+"simplejson-3.3.0.tar.gz")
+foreach ($pp in $python_packages) {{
+    Log "Installing $pp.."
+    if (($pp).EndsWith(".exe") -or ($pp).EndsWith(".egg")) {{
+        & $VIRTUALENV\Scripts\easy_install.exe $Env:USERPROFILE\$pp
+    }} else {{
+        & $VIRTUALENV\Scripts\pip.exe install --no-deps $Env:USERPROFILE\$pp
+    }}
+}}
+
+Log "Installed python packages"
+
+# patch twisted
+Log "Patching twisted"
+Clear-Content "$VIRTUALENV\twisted.patch" -EA SilentlyContinue
+Add-Content "$VIRTUALENV\twisted.patch" -value @"
+--- twisted/internet/_dumbwin32proc.py.orig  2013-06-08 11:39:31 -0400
++++ twisted/internet/_dumbwin32proc.py  2013-06-08 11:39:20 -0400
+@@ -252,7 +252,8 @@
+         if self.pid is None:
+             raise error.ProcessExitedAlready()
+         if signalID in ("INT", "TERM", "KILL"):
+-            win32process.TerminateProcess(self.hProcess, 1)
++            # win32process.TerminateProcess(self.hProcess, 1)
++            os.popen('taskkill /T /F /PID %s' % self.pid)
+ 
+ 
+     def _getReason(self, status):
+"@
+& $MOZBUILD\msys\bin\patch.exe "$VIRTUALENV\Lib\site-packages\Twisted-13.0.0-py2.7-win32.egg\twisted\internet\_dumbwin32proc.py" "$VIRTUALENV\twisted.patch" 
+
+### Set up users
+net user cltbld password123! /add
+net localgroup "Remote Desktop Users" cltbld /add
+wmic path Win32_UserAccount where Name='cltbld' set PasswordExpires=false
+
+net user cltbld-starter password123! /add
+net localgroup "Remote Desktop Users" cltbld-starter /add
+wmic path Win32_UserAccount where Name='cltbld-starter' set PasswordExpires=false
+
+net user Administrator password123!
+wmic path Win32_UserAccount where Name='Administrator' set PasswordExpires=false
+
+# Get this for later
+SetDirectory $Env:USERPROFILE
+GetFromS3 Autologon.exe
+GetFromS3 userpolicy.inf
+
+### Set up runslave.py
+SetDirectory "C:\"
+GetFromS3 runslave.py
+GetFromS3 runslave.bat
+Log "Grabbed runslave.py"
+
+Log "Enabling cleartype on login"
+schtasks /create /tn cleartype /tr "powershell -noexit C:\cleartype.ps1" /sc ONLOGON /ru cltbld
+Log "Done"
+
+Log "Creating scheduled task to run buildbot on boot"
+schtasks /create /tn runslave /tr "C:\runslave.bat" /sc ONLOGON /ru cltbld
+Log "Done"
+
+Log "Creating scheduled task to login to localhost via RDP on boot"
+# From http://www.donkz.nl/
+# Does cmdline rdp sessions
+# Run "rdp.exe /encrypt" to generate encrypted forms of passwords
+GetFromS3 rdp.exe
+GetFromS3 start-rdp.bat
+GetFromS3 cleartype.ps1
+
+schtasks /create /tn start-rdp /tr "C:\start-rdp.bat" /sc ONLOGON /ru cltbld-starter
+Log "Done"
+
+### We use uptime.exe from aws_stop_idle.py to find the host's uptime since we
+### don't always have access to run 'net stats srv'
+GetFromS3 uptime.exe
+
+
+### Set up the maintenance service
+Log "Setting up maintenance service"
+Remove-Item "$MOZBUILD\maintenance" -Force -Recurse -EA SilentlyContinue
+New-Item -itemtype directory -path "$MOZBUILD\maintenance"
+SetDirectory "$MOZBUILD\maintenance"
+
+GetFromS3 maintenanceservice.zip
+GetFromS3 MozRoot.cer
+GetFromS3 maintenance-service-keys.reg
+
+# Add MozRoot.cer
+& certutil -addstore CA MozRoot.cer
+Log "Installed MozRoot.cer"
+
+& regedit /s keys.reg
+Log "Installed service registry keys"
+
+& $MOZBUILD\7zip\7z x -y maintenanceservice.zip
+& .\maintenanceservice_installer.exe
+Log "Installed service"
+
+Log "Done"
+
+# Enable EC2Config to run at the next boot
+Log "Enabling EC2Config at next boot"
+$EC2SettingsFile="C:\Program Files\Amazon\Ec2ConfigService\Settings\Config.xml"
+$xml = [xml](get-content $EC2SettingsFile)
+$xmlElement = $xml.get_DocumentElement()
+$xmlElementToModify = $xmlElement.Plugins
+
+foreach ($element in $xmlElementToModify.Plugin)
+{{
+    if ($element.name -eq "Ec2SetPassword")
+    {{
+        $element.State="Enabled"
+    }}
+    elseif ($element.name -eq "Ec2HandleUserData")
+    {{
+        $element.State="Enabled"
+    }}
+}}
+$xml.Save($EC2SettingsFile)
+Log "Done"
+
+### Shutdown to signal we're done. We also need to shutdown/restart to get the hostname changed
+### aws_create_instance will clear our user data.
+Log "Done. Shutting down now!"
+shutdown /t 0 /f /s /c "AMI shutdown"
+</powershell>

@@ -1,0 +1,41 @@
+{
+    "hostname": "tst-win64-ec2-%03d",
+    "us-east-1": {
+        "type": "tst-win64",
+        "instance_profile_name": "tst-win64",
+        "domain": "test.releng.use1.mozilla.com",
+        "ami": "ami-7527031c",
+        "subnet_ids": ["subnet-8f32cbe5", "subnet-3835cc52", "subnet-ed35cc87", "subnet-ae35ccc4"],
+        "security_group_ids": ["sg-18a07677", "sg-f3927c9c"],
+        "instance_type": "m1.medium",
+        "distro": "win2012",
+        "user_data_file": "ami_configs/tst-win64.user_data",
+        "use_public_ip": true,
+        "device_map": {
+            "/dev/sda1": {
+                "size": 30,
+                "instance_dev": "C:"
+            }
+        }
+    },
+    "us-west-2": {
+        "type": "tst-win64",
+        "instance_profile_name": "tst-win64",
+        "domain": "test.releng.usw2.mozilla.com",
+        "ami_desc": "Windows_Server-2012-RTM-English-64Bit-Base-2013.11.13",
+        "ami": "ami-b652c986",
+        "subnet_ids": ["subnet-a4cba8cd", "subnet-aecba8c7", "subnet-be89a2ca", "subnet-d6cba8bf"],
+        "security_group_desc": ["default VPC security group", "windows slaves"],
+        "security_group_ids": ["sg-d5617cb9", "sg-84beade6"],
+        "instance_type": "m1.medium",
+        "distro": "win2012",
+        "user_data_file": "ami_configs/tst-win64.user_data",
+        "use_public_ip": true,
+        "device_map": {
+            "/dev/sda1": {
+                "size": 30,
+                "instance_dev": "C:"
+            }
+        }
+    }
+}

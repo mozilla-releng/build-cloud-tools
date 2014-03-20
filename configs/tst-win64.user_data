@@ -1,0 +1,110 @@
+<powershell>
+Start-Transcript -Path 'c:\userdata-transcript.txt' -Force
+Set-StrictMode -Version Latest
+Set-ExecutionPolicy Unrestricted
+
+Import-Module AWSPowerShell
+
+$log = 'c:\userdata-log.txt'
+Function Log ($str) {{
+    $d = Get-Date
+    Add-Content $log -value "$d - $str"
+}}
+
+Log "Userdata started"
+
+# We need this helper, because PowerShell has a separate
+# notion of directory for all child commands, and directory
+# for the script. Running commands directly use the
+# location set by cd, while things like DownloadFile
+# will use the script directory (set by SetCurrentDirectory)
+#
+# This function makes things a little bit easier to follow
+Function SetDirectory ($dir) {{
+    Set-Location $dir
+    [System.IO.Directory]::SetCurrentDirectory($dir)
+}}
+
+# silent MSI install helper
+Function InstallMSI ($msi) {{
+    Start-Process -Wait -FilePath "msiexec.exe" -ArgumentList "/qb /i $msi"
+}}
+
+# HTTP download helper
+Function GetFromHTTP ($url, $path) {{
+    Log "Downloading $url to $path"
+    $client = new-object System.Net.WebClient
+    $client.DownloadFile($url, $path)
+}}
+
+# For setting the hostname
+Function SetHostname ($hostname, $domain) {{
+        # http://msdn.microsoft.com/en-us/library/ms724224(v=vs.85).aspx
+        $ComputerNamePhysicalDnsHostname = 5
+        $ComputerNamePhysicalDnsDomain = 6
+
+        Add-Type -TypeDefinition @"
+        using System;
+        using System.Runtime.InteropServices;
+
+        namespace ComputerSystem {{
+            public class Identification {{
+                [DllImport("kernel32.dll", CharSet = CharSet.Auto)]
+                static extern bool SetComputerNameEx(int NameType, string lpBuffer);
+
+                public static bool SetPrimaryDnsSuffix(string suffix) {{
+                    try {{
+                        return SetComputerNameEx($ComputerNamePhysicalDnsDomain, suffix);
+                    }}
+                    catch (Exception) {{
+                        return false;
+                    }}
+                }}
+            }}
+        }}
+"@
+        [ComputerSystem.Identification]::SetPrimaryDnsSuffix($domain)
+        $computerName = Get-WmiObject Win32_ComputerSystem 
+        $computerName.Rename($hostname)
+}}
+
+Log "Setting hostname"
+SetHostname {hostname} {domain}
+Log "Setting dns search list - {dns_search_domain}"
+Set-DnsClientGlobalSetting -SuffixSearchList @("{dns_search_domain}")
+
+SetDirectory $Env:USERPROFILE
+
+Log "Setting up ssh"
+SetDirectory "C:\Program Files (x86)\KTS"
+& .\install.bat
+Log "Done"
+
+### cltbld-starter logs in first, which then logs in locally as cltbld via RDP
+Log "Setting up autologon."
+SetDirectory $Env:USERPROFILE
+Start-Process -Wait -FilePath Autologon.exe -ArgumentList "/accepteula cltbld-starter $env:COMPUTERNAME {password}"
+Log "Done"
+
+Log "Resetting Admininstrator password"
+net user Administrator {password}
+wmic path Win32_UserAccount where Name='Administrator' set PasswordExpires=false
+
+### User policies allow cltbld to reboot the machine
+Log "Setting up cltbld user policies"
+secedit /import /cfg userpolicy.inf /db userpolicy.sdb
+secedit /configure /db userpolicy.sdb
+Remove-Item userpolicy.inf
+Remove-Item userpolicy.sdb
+Log "Done"
+
+# Enable the Desktop Experience! Ooooh
+Log "Enabling Desktop Experience"
+dism /Online /Enable-Feature /FeatureName:DesktopExperience /All /NoRestart
+Log "Done"
+
+### Shutdown to signal we're done. We also need to shutdown/restart to get the hostname changed
+### aws_create_instance will clear our user data.
+Log "Done. Shutting down now!"
+shutdown /t 0 /f /s
+</powershell>
