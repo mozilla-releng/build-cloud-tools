@@ -22,11 +22,14 @@ def tag_it(i):
     interface = vpc.get_all_network_interfaces(
         filters={"network-interface-id": netif.id})[0]
     # copy interface tags over
+    tags = {}
     for tag_name, tag_value in interface.tags.iteritems():
-        log.info("Adding '%s' tag with '%s' value to %s", tag_name, tag_value,
-                 i)
-        i.add_tag(tag_name, tag_value)
-    i.add_tag("moz-state", "ready")
+        if not tag_name in i.tags:
+            log.info("Adding '%s' tag with '%s' value to %s", tag_name, tag_value,
+                    i)
+            tags[tag_name] = tag_value
+    tags["moz-state"] = "ready"
+    i.connection.create_tags([i.id], tags)
 
 
 def tagging_worker(q):
