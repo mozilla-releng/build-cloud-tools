@@ -219,14 +219,11 @@ def aws_filter_reservations(reservations, running_instances):
             del reservations[k]
 
 
-def aws_resume_instances(moz_instance_type, start_count, regions, secrets,
-                         region_priorities, instance_type_changes, dryrun,
-                         slaveset):
+def aws_resume_instances(all_instances, moz_instance_type, start_count,
+                         regions, secrets, region_priorities,
+                         instance_type_changes, dryrun, slaveset):
     """Resume up to `start_count` stopped instances of the given type in the
     given regions"""
-    # Fetch all our instance information
-    all_instances = aws_get_all_instances(regions)
-
     # We'll filter by these tags in general
     tags = {'moz-state': 'ready', 'moz-type': moz_instance_type}
 
@@ -322,9 +319,9 @@ def aws_resume_instances(moz_instance_type, start_count, regions, secrets,
     return started
 
 
-def request_spot_instances(moz_instance_type, start_count, regions, secrets,
-                           region_priorities, spot_config, dryrun,
-                           cached_cert_dir, slaveset):
+def request_spot_instances(all_instances, moz_instance_type, start_count,
+                           regions, secrets, region_priorities, spot_config,
+                           dryrun, cached_cert_dir, slaveset):
     started = 0
     spot_rules = spot_config.get("rules", {}).get(moz_instance_type)
     if not spot_rules:
@@ -343,6 +340,7 @@ def request_spot_instances(moz_instance_type, start_count, regions, secrets,
 
     to_start = {}
     active_network_ids = {}
+    acitve_instance_ids = set(i.id for i in all_instances)
     for region in regions:
         # Check if spots are enabled in this region for this type
         region_limit = spot_config.get("limits", {}).get(region, {}).get(
@@ -356,6 +354,10 @@ def request_spot_instances(moz_instance_type, start_count, regions, secrets,
         # Count how many unique network interfaces are active
         # Sometimes we have multiple requests for the same interface
         active_requests = get_spot_requests_for_moztype(region=region, moz_instance_type=moz_instance_type)
+        log.debug("%i active spot requests for %s %s", len(active_requests), region, moz_instance_type)
+        # Filter out requests for instances that don't exist
+        active_requests = [r for r in active_requests if r.instance_id is not None and r.instance_id in acitve_instance_ids]
+        log.debug("%i real active spot requests for %s %s", len(active_requests), region, moz_instance_type)
         active_network_ids[region] = set(r.launch_specification.networkInterfaceId for r in active_requests)
         active_count = len(active_network_ids[region])
         log.debug("%s: %i active network interfaces for spot requests in %s", moz_instance_type, active_count, region)
@@ -734,6 +736,7 @@ def aws_watch_pending(dburl, regions, secrets, builder_map, region_priorities,
                     continue
 
         started = request_spot_instances(
+            all_instances,
             moz_instance_type=moz_instance_type, start_count=count,
             regions=regions, secrets=secrets,
             region_priorities=region_priorities, spot_config=spot_config,
@@ -765,8 +768,8 @@ def aws_watch_pending(dburl, regions, secrets, builder_map, region_priorities,
 
         # Check for stopped instances in the given regions and start them if
         # there are any
-        started = aws_resume_instances(moz_instance_type, count, regions, secrets,
-                                       region_priorities,
+        started = aws_resume_instances(all_instances, moz_instance_type, count,
+                                       regions, secrets, region_priorities,
                                        instance_type_changes, dryrun, slaveset)
         count -= started
         log.info("%s - started %i instances for slaveset %s; need %i",
