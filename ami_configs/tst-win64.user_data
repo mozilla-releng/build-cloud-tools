@@ -68,6 +68,13 @@ Log "Installing python"
 Start-Process -Wait -FilePath "python-2.7.5.msi" -ArgumentList "/qn"
 Log "Done"
 
+Log "Installing pywin32 to $PYTHON"
+GetFromS3 ez_setup.py
+GetFromS3 setuptools-3.3.zip
+GetFromS3 pywin32-218.win32-py2.7.exe
+& $PYTHON ez_setup.py setuptools-3.3.zip
+& $PYTHONDIR\Scripts\easy_install.exe pywin32-218.win32-py2.7.exe
+Log "Done"
 
 ### Install MozillaBuild
 GetFromS3 MozillaBuildSetup-Latest.exe
