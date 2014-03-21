@@ -188,6 +188,14 @@ Log "Creating scheduled task to run buildbot on boot"
 schtasks /create /tn runslave /tr "C:\runslave.bat" /sc ONLOGON /ru cltbld
 Log "Done"
 
+Log "Creating registry entry to run Explorer on login to force the Desktop interface"
+reg add HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Run /v desktopmode /d C:\Windows\explorer.exe
+Log "Done"
+
+#Log "Creating scheduled task to run tests on login"
+#schtasks /create /tn runtests /tr "C:\runtests.bat" /sc ONLOGON /ru cltbld
+#Log "Done"
+
 Log "Creating scheduled task to login to localhost via RDP on boot"
 # From http://www.donkz.nl/
 # Does cmdline rdp sessions
