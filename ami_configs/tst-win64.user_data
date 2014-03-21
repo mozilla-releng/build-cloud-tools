@@ -158,15 +158,15 @@ Add-Content "$VIRTUALENV\twisted.patch" -value @"
 & $MOZBUILD\msys\bin\patch.exe "$VIRTUALENV\Lib\site-packages\Twisted-13.0.0-py2.7-win32.egg\twisted\internet\_dumbwin32proc.py" "$VIRTUALENV\twisted.patch" 
 
 ### Set up users
-net user cltbld password123! /add
+net user cltbld {password} /add
 net localgroup "Remote Desktop Users" cltbld /add
 wmic path Win32_UserAccount where Name='cltbld' set PasswordExpires=false
 
-net user cltbld-starter password123! /add
+net user cltbld-starter {password} /add
 net localgroup "Remote Desktop Users" cltbld-starter /add
 wmic path Win32_UserAccount where Name='cltbld-starter' set PasswordExpires=false
 
-net user Administrator password123!
+net user Administrator {password}
 wmic path Win32_UserAccount where Name='Administrator' set PasswordExpires=false
 
 # Get this for later

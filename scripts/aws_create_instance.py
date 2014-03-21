@@ -61,13 +61,33 @@ def verify(hosts, config, region):
         raise RuntimeError("Sanity check failed")
 
 
-def assimilate(ip_addr, config, instance_data, deploypass):
+def assimilate_windows(instance, config, instance_data):
+    # Wait for the instance to stop, and then clear its userData and start it
+    # again
+    log.info("waiting for instance to shut down")
+    wait_for_status(instance, 'state', 'stopped', 'update')
+
+    log.info("clearing userData")
+    instance.modify_attribute("userData", None)
+    log.info("starting instance")
+    instance.start()
+    log.info("waiting for instance to start")
+    # Wait for the instance to come up
+    wait_for_status(instance, 'state', 'running', 'update')
+
+
+def assimilate(instance, config, instance_data, deploypass):
     """Assimilate hostname into our collective
 
     What this means is that hostname will be set up with some basic things like
     a script to grab AWS user data, and get it talking to puppet (which is
     specified in said config).
     """
+    ip_addr = instance.private_ip_address
+    distro = config.get('distro')
+    if distro.startswith('win'):
+        return assimilate_windows(instance, config, instance_data)
+
     env.host_string = ip_addr
     env.user = 'root'
     env.abort_on_prompts = True
@@ -76,7 +96,6 @@ def assimilate(ip_addr, config, instance_data, deploypass):
     # Sanity check
     run("date")
 
-    distro = config.get('distro')
     # Set our hostname
     hostname = "{hostname}".format(**instance_data)
     log.info("Bootstrapping %s...", hostname)
@@ -166,6 +185,7 @@ def create_instance(name, config, region, key_name, instance_data,
 
     instance_data = instance_data.copy()
     instance_data['name'] = name
+    instance_data['domain'] = config['domain']
     instance_data['hostname'] = '{name}.{domain}'.format(
         name=name, domain=config['domain'])
 
@@ -213,6 +233,19 @@ def create_instance(name, config, region, key_name, instance_data,
 
     while True:
         try:
+            if 'user_data_file' in config:
+                user_data = open(config['user_data_file']).read()
+                user_data = user_data.format(
+                    puppet_server=instance_data.get('default_puppet_server'),
+                    fqdn=instance_data['hostname'],
+                    hostname=instance_data['name'],
+                    domain=instance_data['domain'],
+                    dns_search_domain=config.get('dns_search_domain'),
+                    password=deploypass,
+                    )
+            else:
+                user_data = None
+
             reservation = conn.run_instances(
                 image_id=config['ami'],
                 key_name=key_name,
@@ -220,8 +253,9 @@ def create_instance(name, config, region, key_name, instance_data,
                 block_device_map=bdm,
                 client_token=token,
                 disable_api_termination=bool(config.get('disable_api_termination')),
+                user_data=user_data,
+                instance_profile_name=config.get('instance_profile_name'),
                 network_interfaces=interfaces,
-                instance_profile_name=config.get("instance_profile_name"),
             )
             break
         except boto.exception.BotoServerError:
