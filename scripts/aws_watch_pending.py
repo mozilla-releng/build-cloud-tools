@@ -536,6 +536,9 @@ EOF
         network_interfaces=nc,
         instance_profile_name=instance_config[region].get("instance_profile_name"),
     )
+    # Sleep for a little bit to prevent us hitting
+    # InvalidSpotInstanceRequestID.NotFound right away
+    time.sleep(0.5)
     max_tries = 10
     sleep_time = 5
     for i in range(max_tries):
