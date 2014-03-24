@@ -24,6 +24,8 @@ def main():
                         required=True)
     parser.add_argument("--keep-last", type=int,
                         help="Keep last N AMIs, delete others")
+    parser.add_argument("--ssh-key", required=True,
+                        help="SSH key to be used by Fabric")
     parser.add_argument("-q", "--quiet", action="store_true",
                         help="Supress logging messages")
     args = parser.parse_args()
@@ -32,11 +34,13 @@ def main():
     else:
         log.setLevel(logging.ERROR)
 
+    if not os.path.exists(args.ssh_key):
+        parser.error("Cannot read %s" % args.ssh_key)
     config = json.load(args.config)
     for cfg in config:
         ami_config_name = cfg["ami-config"]
         instance_config = cfg["instance-config"]
-        ssh_key = cfg["ssh-key"]
+        ssh_key_name = cfg["ssh-key"]
         ssh_user = cfg["ssh-user"]
         regions = list(cfg["regions"])
         # Pick a random region to work in. Save the rest regions and copy the
@@ -58,9 +62,10 @@ def main():
         ami = instance2ami(ami_name=dated_target_name, region=region,
                            ami_config=ami_config,
                            ami_config_name=ami_config_name,
-                           instance_config=instance_config, ssh_key=ssh_key,
-                           ssh_user=ssh_user, moz_type_config=moz_type_config,
-                           public=False)
+                           instance_config=instance_config,
+                           ssh_key_name=ssh_key_name, ssh_user=ssh_user,
+                           ssh_key=args.ssh_key,
+                           moz_type_config=moz_type_config, public=False)
         log.info("AMI %s created, copying to other regions %s", ami,
                  regions_to_copy)
         for r in regions_to_copy:
@@ -73,8 +78,8 @@ def main():
 
 
 def instance2ami(ami_name, region, ami_config, ami_config_name,
-                 instance_config, ssh_key, ssh_user, moz_type_config,
-                 public=False):
+                 instance_config, ssh_key, ssh_key_name, ssh_user,
+                 moz_type_config, public=False):
     log.debug("Creting %s in %s", ami_name, region)
     conn = get_aws_connection(region)
 
@@ -101,13 +106,14 @@ def instance2ami(ami_name, region, ami_config, ami_config_name,
     wait_for_status(snap1, "status", "completed", "update")
     host_instance = run_instance(
         connection=conn, instance_name="tmp", config=ami_config,
-        key_name=ssh_key, user=ssh_user,
+        key_name=ssh_key_name, user=ssh_user, key_filename=ssh_key,
         subnet_id=random.choice(moz_type_config["subnet_ids"]))
 
     env.host_string = host_instance.private_ip_address
     env.user = 'root'
     env.abort_on_prompts = True
     env.disable_known_hosts = True
+    env.key_filename = ssh_key
     int_dev_name = ami_config['target']['int_dev_name']
     mount_dev = int_dev_name
     mount_point = ami_config['target']['mount_point']

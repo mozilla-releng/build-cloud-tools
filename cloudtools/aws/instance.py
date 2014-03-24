@@ -9,7 +9,7 @@ log = logging.getLogger(__name__)
 
 
 def run_instance(connection, instance_name, config, key_name, user='root',
-                 subnet_id=None):
+                 key_filename=None, subnet_id=None):
     bdm = None
     if 'device_map' in config:
         bdm = BlockDeviceMapping()
@@ -37,6 +37,8 @@ def run_instance(connection, instance_name, config, key_name, user='root',
     env.user = user
     env.abort_on_prompts = True
     env.disable_known_hosts = True
+    if key_filename:
+        env.key_filename = key_filename
 
     # wait until the instance is responsive
     while True:
