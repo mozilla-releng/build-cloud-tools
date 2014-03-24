@@ -18,40 +18,66 @@ log = logging.getLogger(__name__)
 
 
 def main():
+    logging.basicConfig(format="%(asctime)s - %(levelname)s - %(message)s")
     parser = argparse.ArgumentParser()
-    parser.add_argument("-r", "--region", dest="region", required=True,
-                        help="Region")
+    parser.add_argument("-c", "--config", type=argparse.FileType('r'),
+                        required=True)
+    parser.add_argument("--keep-last", type=int,
+                        help="Keep last N AMIs, delete others")
     parser.add_argument("-q", "--quiet", action="store_true",
                         help="Supress logging messages")
-    parser.add_argument("-c", "--ami-config", required=True, help="AMI config")
-    parser.add_argument("-i", "--instance-config", required=True,
-                        help="Instance config")
-    parser.add_argument("--ssh-key", required=True, help="SSH key name")
-    parser.add_argument("--user", help="Login name")
-    parser.add_argument("--public", action="store_true", default=False,
-                        help="Generate a public AMI (no secrets)")
-
     args = parser.parse_args()
-    try:
-        ami_config = json.load(
-            open("%s/%s.json" % (AMI_CONFIGS_DIR, args.ami_config))
-        )[args.region]
-        moz_type_config = json.load(
-            open("%s/%s" % (INSTANCE_CONFIGS_DIR, args.instance_config))
-        )[args.region]
-    except KeyError:
-        parser.error("unknown configuration")
-
-    logging.basicConfig(format="%(asctime)s - %(levelname)s - %(message)s")
     if not args.quiet:
         log.setLevel(logging.DEBUG)
     else:
         log.setLevel(logging.ERROR)
 
-    conn = get_aws_connection(args.region)
+    config = json.load(args.config)
+    for cfg in config:
+        ami_config_name = cfg["ami-config"]
+        instance_config = cfg["instance-config"]
+        ssh_key = cfg["ssh-key"]
+        ssh_user = cfg["ssh-user"]
+        regions = list(cfg["regions"])
+        # Pick a random region to work in. Save the rest regions and copy the
+        # generated AMI to those regions.
+        region = regions.pop(random.randint(0, len(regions) - 1))
+        regions_to_copy = regions
+        try:
+            ami_config = json.load(
+                open("%s/%s.json" % (AMI_CONFIGS_DIR,
+                                     ami_config_name)))[region]
+            moz_type_config = json.load(
+                open("%s/%s" % (INSTANCE_CONFIGS_DIR, instance_config)))
+            moz_type_config = moz_type_config[region]
+        except KeyError:
+            log.error("Skipping unknown configuration %s", cfg, exc_info=True)
+            continue
+        dated_target_name = "spot-%s-%s" % (
+            ami_config_name, time.strftime("%Y-%m-%d-%H-%M", time.gmtime()))
+        ami = instance2ami(ami_name=dated_target_name, region=region,
+                           ami_config=ami_config,
+                           ami_config_name=ami_config_name,
+                           instance_config=instance_config, ssh_key=ssh_key,
+                           ssh_user=ssh_user, moz_type_config=moz_type_config,
+                           public=False)
+        log.info("AMI %s created, copying to other regions %s", ami,
+                 regions_to_copy)
+        for r in regions_to_copy:
+            copy_ami(ami, r)
+        # Delete old AMIs
+        if args.keep_last:
+            for r in cfg["regions"]:
+                cleanup_spot_amis(region=r, tags=moz_type_config["tags"],
+                                  keep_last=args.keep_last)
 
-    dated_target_name = "spot-%s-%s" % (
-        args.ami_config, time.strftime("%Y-%m-%d-%H-%M", time.gmtime()))
+
+def instance2ami(ami_name, region, ami_config, ami_config_name,
+                 instance_config, ssh_key, ssh_user, moz_type_config,
+                 public=False):
+    log.debug("Creting %s in %s", ami_name, region)
+    conn = get_aws_connection(region)
+
     filters = {
         "tag:moz-state": "ready",
         "instance-state-name": "stopped"
@@ -59,12 +85,11 @@ def main():
     for tag, value in moz_type_config["tags"].iteritems():
         filters["tag:%s" % tag] = value
     using_stopped_instance = True
-    res = conn.get_all_instances(filters=filters)
-    if not res:
+    instances = conn.get_only_instances(filters=filters)
+    if not instances:
         filters["instance-state-name"] = "running"
-        res = conn.get_all_instances(filters=filters)
+        instances = conn.get_only_instances(filters=filters)
         using_stopped_instance = False
-    instances = reduce(lambda a, b: a + b, [r.instances for r in res])
     # skip loaned instances
     instances = [i for i in instances if not i.tags.get("moz-loaned-to")]
     i = sorted(instances, key=lambda i: i.launch_time)[-1]
@@ -76,7 +101,7 @@ def main():
     wait_for_status(snap1, "status", "completed", "update")
     host_instance = run_instance(
         connection=conn, instance_name="tmp", config=ami_config,
-        key_name=args.ssh_key, user=args.user,
+        key_name=ssh_key, user=ssh_user,
         subnet_id=random.choice(moz_type_config["subnet_ids"]))
 
     env.host_string = host_instance.private_ip_address
@@ -121,15 +146,15 @@ def main():
         run("rm -f etc/spot_setup.done")
         run("rm -f var/lib/puppet/ssl/private_keys/*")
         run("rm -f var/lib/puppet/ssl/certs/*")
-        if not using_stopped_instance or args.public:
+        if not using_stopped_instance or public:
             run("rm -rf builds/slave")
         else:
             run("rm -f builds/slave/buildbot.tac")
         run("echo localhost > etc/hostname")
         run("sed -i -e 's/127.0.0.1.*/127.0.0.1 localhost/g' etc/hosts")
-        if args.public:
+        if public:
             # put rc.local
-            put("%s/%s/etc/rc.local" % (AMI_CONFIGS_DIR, args.ami_config),
+            put("%s/%s/etc/rc.local" % (AMI_CONFIGS_DIR, ami_config_name),
                 "etc/rc.local", mirror_local_mode=True)
             run("rm -rf home/cltbld/.ssh")
             run("rm -rf root/.ssh/*")
@@ -149,9 +174,9 @@ def main():
     host_instance.terminate()
     wait_for_status(tmp_v, "status", "available", "update")
     log.info('Creating a snapshot')
-    snap2 = tmp_v.create_snapshot(dated_target_name)
+    snap2 = tmp_v.create_snapshot(ami_name)
     wait_for_status(snap2, "status", "completed", "update")
-    snap2.add_tag("Name", dated_target_name)
+    snap2.add_tag("Name", ami_name)
 
     bdm = BlockDeviceMapping()
     bdm[i.root_device_name] = BlockDeviceType(snapshot_id=snap2.id)
@@ -164,8 +189,8 @@ def main():
         kernel_id = i.kernel
 
     ami_id = conn.register_image(
-        dated_target_name,
-        dated_target_name,
+        ami_name,
+        ami_name,
         architecture=ami_config["arch"],
         kernel_id=kernel_id,
         root_device_name=i.root_device_name,
@@ -176,7 +201,7 @@ def main():
     while True:
         try:
             ami = conn.get_image(ami_id)
-            ami.add_tag('Name', dated_target_name)
+            ami.add_tag('Name', ami_name)
             ami.add_tag('moz-created', int(time.mktime(time.gmtime())))
             for tag, value in moz_type_config["tags"].iteritems():
                 ami.add_tag(tag, value)
@@ -190,7 +215,62 @@ def main():
     log.info('Cleanup...')
     tmp_v.delete()
     snap1.delete()
+    return ami
 
+
+def copy_ami(source_ami, region_to_copy):
+    log.info("Copying %s to %s", source_ami, region_to_copy)
+    conn = get_aws_connection(region_to_copy)
+    ami_copy = conn.copy_image(source_ami.region.name, source_ami.id,
+                               source_ami.name, source_ami.description)
+    while True:
+        try:
+            new_ami = conn.get_image(ami_copy.image_id)
+            for tag, value in source_ami.tags.iteritems():
+                new_ami.add_tag(tag, value)
+            new_ami.update()
+            log.info('AMI created')
+            log.info('ID: {id}, name: {name}'.format(id=new_ami.id,
+                                                     name=new_ami.name))
+            break
+        except:
+            log.info('Wating for AMI')
+            time.sleep(10)
+        else:
+            return new_ami
+
+
+def get_spot_amis(region, tags):
+    conn = get_aws_connection(region)
+    filters = {}
+    for tag, value in tags.iteritems():
+        filters["tag:%s" % tag] = value
+    # override Name tag
+    filters["tag:Name"] = "spot-*"
+    avail_amis = conn.get_all_images(owners=["self"], filters=filters)
+    return sorted(avail_amis, key=lambda ami: ami.tags.get("moz-created"))
+
+
+def cleanup_spot_amis(region, tags, keep_last, dry_run=False):
+    amis = get_spot_amis(region, tags)
+    conn = get_aws_connection(region)
+    if len(amis) > keep_last:
+        amis_to_delete = amis[:-keep_last]
+        if dry_run:
+            log.warn("Would delete %s AMIs out of %s", len(amis_to_delete),
+                     len(amis))
+            log.warn("Would delete these AMIs: %s" % amis_to_delete)
+            log.warn("AMIs all: %s", ", ".join(ami.name for ami in amis))
+            log.warn("AMIs del: %s", ", ".join(ami.name for ami in
+                                               amis_to_delete))
+            return
+        for a in amis_to_delete:
+            snap_id = a.block_device_mapping[a.root_device_name].snapshot_id
+            snap = conn.get_all_snapshots(snapshot_ids=[snap_id])[0]
+            log.warn("Deleting %s" % a)
+            a.deregister()
+            log.warn("Deleting %s" % snap)
+            snap.delete()
 
 if __name__ == '__main__':
     main()

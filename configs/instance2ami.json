@@ -1,0 +1,22 @@
+[
+    {"ami-config": "centos-6-x86_64-hvm-try",
+     "instance-config": "try-linux64",
+     "ssh-key": "aws-releng",
+     "ssh-user": "ec2-user",
+     "regions": ["us-east-1", "us-west-2"]},
+    {"ami-config": "ubuntu-12.04-x86_64-desktop",
+     "instance-config": "tst-linux64",
+     "ssh-key": "aws-releng",
+     "ssh-user": "ubuntu",
+     "regions": ["us-east-1", "us-west-2"]},
+    {"ami-config": "ubuntu-12.04-i386-desktop",
+     "instance-config": "tst-linux32",
+     "ssh-key": "aws-releng",
+     "ssh-user": "ubuntu",
+     "regions": ["us-east-1", "us-west-2"]},
+    {"ami-config": "centos-6-x86_64-hvm-base",
+     "instance-config": "bld-linux64",
+     "ssh-key": "aws-releng",
+     "ssh-user": "ec2-user",
+     "regions": ["us-east-1", "us-west-2"]}
+]
