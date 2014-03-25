@@ -664,13 +664,23 @@ def aws_watch_pending(dburl, regions, secrets, builder_map, region_priorities,
     to_create_ondemand = to_create['ondemand']
     to_create_spot = to_create['spot']
 
-    # Then match them to the builder_map
+    # (buildername, slaveset) -> # of retries
+    retries = defaultdict(int)
+    # Count how many retries we have per builder
+    for pending_buildername, brid in pending:
+        for buildername_exp, moz_instance_type in builder_map.items():
+            if re.match(buildername_exp, pending_buildername):
+                slaveset = get_allocated_slaves(pending_buildername)
+                retries[pending_buildername, slaveset] += find_retries(db, brid)
+                break
+
+    # Map pending builder names to instance types
     for pending_buildername, brid in pending:
         for buildername_exp, moz_instance_type in builder_map.items():
             if re.match(buildername_exp, pending_buildername):
                 slaveset = get_allocated_slaves(pending_buildername)
                 log.debug("%s instance type %s slaveset %s", pending_buildername, moz_instance_type, slaveset)
-                if find_retries(db, brid) > MAX_SPOT_RETRIES:
+                if retries[pending_buildername, slaveset] > MAX_SPOT_RETRIES:
                     to_create_ondemand[moz_instance_type, slaveset] += 1
                 else:
                     to_create_spot[moz_instance_type, slaveset] += 1
