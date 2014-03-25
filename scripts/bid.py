@@ -1,26 +1,75 @@
 from boto.ec2 import connect_to_region
+from datetime import datetime, timedelta
 import logging
 
 log = logging.getLogger(__name__)
 
 
-def get_current_spot_prices(connection):
-    # TODO: pass product_description
-    all_prices = connection.get_spot_price_history(
-        product_description="Linux/UNIX (Amazon VPC)")
-    # make sure to sort them by the timestamp, so we don't process the same
-    # entry twice
-    all_prices = sorted(all_prices, key=lambda x: x.timestamp, reverse=True)
+_spot_cache = {}
+
+
+def get_current_spot_prices(connection, product_description, start_time=None, instance_type=None, ignore_cache=False):
+    """
+    Get the current spot prices for the region associated with the given
+    connection. This may return cached results. Pass ignore_cache=True to
+    bypass the cache
+
+    Args:
+        connection (boto.ec2.Connection): connection to a region
+        product_description (str): which products to restrict the spot prices
+            for, e.g. "Linux/UNIX (Amazon VPC)"
+        start_time (iso8601 str): get spot prices starting from this time
+        instance_type (str): restrict results to this instance type, e.g.
+            "m1.medium"
+        ignore_cache (bool): ignore cached results
+
+    Returns:
+        A dict mapping region to a mapping of instance type to a mapping of
+        availability zone to price. (phew!)
+        For example:
+            {'us-east-1': {'m1.medium': {'us-east-1a': 0.01}}}
+
+    """
+    next_token = None
     region = connection.region.name
     current_prices = {}
-    for price in all_prices:
-        az = price.availability_zone
-        instance_type = price.instance_type
-        if not current_prices.get(instance_type):
-            current_prices[instance_type] = {}
-        if not current_prices[instance_type].get(az):
-            current_prices[instance_type][az] = price.price
-    return {region: current_prices}
+    cache_key = (region, product_description, start_time, instance_type)
+    if not ignore_cache and cache_key in _spot_cache:
+        log.debug("returning cached results")
+        return _spot_cache[cache_key]
+
+    if not start_time:
+        # Default to 24 hours
+        now = datetime.utcnow()
+        yesterday = now - timedelta(hours=24)
+        start_time = yesterday.isoformat() + "Z"
+
+    while True:
+        log.debug("getting spot prices for instance_type %s from %s (next_token %s)", instance_type, start_time, next_token)
+        all_prices = connection.get_spot_price_history(
+            product_description=product_description,
+            instance_type=instance_type,
+            start_time=start_time,
+            next_token=next_token,
+        )
+        next_token = all_prices.next_token
+        # make sure to sort them by the timestamp, so we don't process the same
+        # entry twice
+        all_prices = sorted(all_prices, key=lambda x: x.timestamp, reverse=True)
+        log.debug("got %i results", len(all_prices))
+        for price in all_prices:
+            az = price.availability_zone
+            inst_type = price.instance_type
+            if not current_prices.get(inst_type):
+                current_prices[inst_type] = {}
+            if not current_prices[inst_type].get(az):
+                current_prices[inst_type][az] = price.price
+        if not next_token:
+            break
+
+    retval = {region: current_prices}
+    _spot_cache[cache_key] = retval
+    return retval
 
 
 class Spot:
@@ -41,6 +90,9 @@ class Spot:
     def __str__(self):
         return self.__repr__()
 
+    def __hash__(self):
+        return hash(self.__repr__())
+
     @property
     def value(self):
         return self.current_price / self.performance_constant
@@ -49,11 +101,11 @@ class Spot:
         return cmp(self.value, other.value)
 
 
-def decide(connections, rules):
+def decide(connections, rules, product_description, start_time=None, instance_type=None):
     choices = []
     prices = {}
     for connection in connections:
-        prices.update(get_current_spot_prices(connection))
+        prices.update(get_current_spot_prices(connection, product_description, start_time, instance_type))
     for rule in rules:
         instance_type = rule["instance_type"]
         bid_price = rule["bid_price"]
