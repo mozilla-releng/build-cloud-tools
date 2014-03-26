@@ -14,6 +14,7 @@ tests:
             - 10.22.252.0/22
             - 10.22.248.0/22
             - dev-master1.build.mozilla.org
+            - aws-manager1.srv.releng.scl3.mozilla.com
         - proto: icmp
           ports: [-1]
           hosts:
@@ -23,6 +24,7 @@ tests:
             - slaveapi1.srv.releng.scl3.mozilla.com
             - slaveapi-dev1.srv.releng.scl3.mozilla.com
             - dev-master1.build.mozilla.org
+            - aws-manager1.srv.releng.scl3.mozilla.com
 
 
     outbound:
