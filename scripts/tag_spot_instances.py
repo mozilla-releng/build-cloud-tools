@@ -34,6 +34,9 @@ def tag_it(i):
 
 def tagging_worker(q):
     while True:
+        # Handle shutdown, don't try to use q
+        if q is None:
+            return
         i = q.get(timeout=30)
         try:
             tag_it(i)
