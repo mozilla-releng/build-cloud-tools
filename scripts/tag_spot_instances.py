@@ -4,8 +4,8 @@ import argparse
 import logging
 import site
 import os
-import threading
-from Queue import Queue
+from threading import Thread
+from Queue import Queue, Empty
 
 site.addsitedir(os.path.join(os.path.dirname(__file__), ".."))
 from cloudtools.aws import get_vpc, DEFAULT_REGIONS
@@ -35,15 +35,14 @@ def tag_it(i):
 def tagging_worker(q):
     while True:
         try:
-            i = q.get(timeout=30)
-        except TypeError:
+            i = q.get(timeout=0.1)
+        except Empty:
+            log.debug("Exiting worker...")
             return
         try:
             tag_it(i)
         except:
             log.debug("Failed to tag %s", i, exc_info=True)
-        finally:
-            q.task_done()
 
 
 def populate_queue(region, q):
@@ -81,20 +80,20 @@ if __name__ == '__main__':
 
     q = Queue()
 
-    for _ in range(args.concurrency):
-        t = threading.Thread(target=tagging_worker, args=(q,))
-        # daemonize tagging threads to make so we can simplify the code by
-        # joining the queue instead of joining all threads
-        t.daemon = True
-        t.start()
-
-    threads = []
-    for region in args.regions:
-        t = threading.Thread(target=populate_queue, args=(region, q))
-        t.start()
-        threads.append(t)
-
+    threads = [Thread(target=populate_queue, args=(r, q)) for r in
+               args.regions]
+    log.debug("Waiting for regions...")
     for t in threads:
-        t.join(timeout=30)
-    log.debug("Waiting for workers")
-    q.join()
+        t.start()
+    for t in threads:
+        t.join(timeout=60)
+
+    if not q.empty():
+        num_threads = min(args.concurrency, q.qsize())
+        threads = [Thread(target=tagging_worker, args=(q,)) for _ in
+                   range(num_threads)]
+        log.debug("Waiting for %s workers...", num_threads)
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join(timeout=240)
