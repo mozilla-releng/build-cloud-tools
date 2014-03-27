@@ -47,10 +47,8 @@ def tagging_worker(q):
 
 
 def populate_queue(region, q):
-    log.debug("Connecting to %s", region)
     log.debug("Getting all spot instances in %s...", region)
     all_spot_instances = get_spot_instances(region)
-    log.debug("Done with %s", region)
     for i in all_spot_instances:
         name = i.tags.get('Name')
         fqdn = i.tags.get('FQDN')
@@ -59,6 +57,7 @@ def populate_queue(region, q):
         if not all([name, fqdn, moz_type]):
             log.debug("Adding %s in %s to queue", i, region)
             q.put(i)
+    log.debug("Done with %s", region)
 
 
 if __name__ == '__main__':
