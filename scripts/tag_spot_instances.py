@@ -25,8 +25,8 @@ def tag_it(i):
     tags = {}
     for tag_name, tag_value in interface.tags.iteritems():
         if not tag_name in i.tags:
-            log.info("Adding '%s' tag with '%s' value to %s", tag_name, tag_value,
-                    i)
+            log.info("Adding '%s' tag with '%s' value to %s", tag_name,
+                     tag_value, i)
             tags[tag_name] = tag_value
     tags["moz-state"] = "ready"
     i.connection.create_tags([i.id], tags)
@@ -34,7 +34,7 @@ def tag_it(i):
 
 def tagging_worker(q):
     while True:
-        i = q.get(30)
+        i = q.get(timeout=30)
         try:
             tag_it(i)
         except:
@@ -93,6 +93,6 @@ if __name__ == '__main__':
         threads.append(t)
 
     for t in threads:
-        t.join(30)
+        t.join(timeout=30)
     log.debug("Waiting for workers")
     q.join()
