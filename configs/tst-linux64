@@ -13,7 +13,7 @@
         "instance_profile_name": "tst-linux64",
         "device_map": {
             "/dev/sda1": {
-                "size": 15,
+                "size": 20,
                 "instance_dev": "/dev/xvda1"
             }
         },
@@ -34,7 +34,7 @@
         "instance_profile_name": "tst-linux64",
         "device_map": {
             "/dev/sda1": {
-                "size": 15,
+                "size": 20,
                 "instance_dev": "/dev/xvda1"
             }
         },
