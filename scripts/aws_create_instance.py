@@ -242,7 +242,7 @@ def create_instance(name, config, region, key_name, instance_data,
                     domain=instance_data['domain'],
                     dns_search_domain=config.get('dns_search_domain'),
                     password=deploypass,
-                    )
+                )
             else:
                 user_data = None
 
@@ -280,8 +280,7 @@ def create_instance(name, config, region, key_name, instance_data,
     instance.add_tag('moz-state', 'pending')
     while True:
         try:
-            assimilate(instance.private_ip_address, config, instance_data,
-                       deploypass)
+            assimilate(instance, config, instance_data, deploypass)
             break
         except:
             log.warn("problem assimilating %s (%s), retrying in 10 sec ...",
@@ -310,8 +309,8 @@ def make_instances(names, config, region, key_name, instance_data,
     for name in names:
         p = LoggingProcess(log="{name}.log".format(name=name),
                            target=create_instance,
-                           args=(name, config, region, key_name,
-                                 instance_data, deploypass, loaned_to, loan_bug),
+                           args=(name, config, region, key_name, instance_data,
+                                 deploypass, loaned_to, loan_bug),
                            )
         p.start()
         procs.append(p)
