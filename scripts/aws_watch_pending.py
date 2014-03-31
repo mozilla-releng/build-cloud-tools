@@ -544,6 +544,8 @@ EOF
     for i in range(max_tries):
         try:
             sir[0].add_tag("moz-type", moz_instance_type)
+            sir[0].add_tag("Name", interface.tags.get("Name"))
+            sir[0].add_tag("FQDN", fqdn)
             return True
         except EC2ResponseError, e:
             if e.code == "InvalidSpotInstanceRequestID.NotFound":
