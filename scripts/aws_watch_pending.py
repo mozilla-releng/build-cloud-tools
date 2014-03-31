@@ -518,6 +518,11 @@ EOF
                 assert ami_size <= device_info['size'], \
                     "Instance root device size cannot be smaller than AMI " \
                     "root device"
+                if device_info['size'] > ami_size:
+                    # needs resizing
+                    user_data += """
+/sbin/resize2fs {dev} || true
+ """.format(dev=device_info['instance_dev'])
         if device_info.get("delete_on_termination") is not False:
             bd.delete_on_termination = True
         if device_info.get("ephemeral_name"):
