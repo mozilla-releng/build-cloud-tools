@@ -52,8 +52,9 @@ def populate_queue(region, q):
         name = i.tags.get('Name')
         fqdn = i.tags.get('FQDN')
         moz_type = i.tags.get('moz-type')
+        moz_state = i.tags.get('moz-state')
         # If one of the tags is unset/empty
-        if not all([name, fqdn, moz_type]):
+        if not all([name, fqdn, moz_type, moz_state]):
             log.debug("Adding %s in %s to queue", i, region)
             q.put(i)
     log.debug("Done with %s", region)
