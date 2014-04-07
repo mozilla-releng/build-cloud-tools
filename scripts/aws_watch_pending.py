@@ -816,14 +816,16 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
+    logging.getLogger().setLevel(logging.DEBUG)
+    logging.getLogger("boto").setLevel(logging.INFO)
+    logging.getLogger("requests").setLevel(logging.WARN)
+    logging.getLogger("iso8601").setLevel(logging.INFO)
+
     formatter = logging.Formatter("%(asctime)s - %(message)s")
     handler = logging.StreamHandler()
     handler.setFormatter(formatter)
     handler.setLevel(args.loglevel)
     logging.getLogger().addHandler(handler)
-    logging.getLogger("boto").setLevel(logging.INFO)
-    logging.getLogger("requests").setLevel(logging.WARN)
-    logging.getLogger("iso8601").setLevel(logging.INFO)
     if args.logfile:
         fhandler = logging.handlers.RotatingFileHandler(
             args.logfile, maxBytes=10 * (1024 ** 2), backupCount=100)
