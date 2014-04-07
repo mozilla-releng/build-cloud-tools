@@ -811,14 +811,25 @@ if __name__ == '__main__':
                         help="Directory for cached puppet certificates")
     parser.add_argument("-n", "--dryrun", dest="dryrun", action="store_true",
                         help="don't actually do anything")
+    parser.add_argument("-l", "--logfile", dest="logfile",
+                        help="log file for full debug log")
 
     args = parser.parse_args()
 
-    logging.basicConfig(level=args.loglevel,
-                        format="%(asctime)s - %(levelname)s - %(message)s")
+    formatter = logging.Formatter("%(asctime)s - %(message)s")
+    handler = logging.StreamHandler()
+    handler.setFormatter(formatter)
+    handler.setLevel(args.loglevel)
+    logging.getLogger().addHandler(handler)
     logging.getLogger("boto").setLevel(logging.INFO)
     logging.getLogger("requests").setLevel(logging.WARN)
     logging.getLogger("iso8601").setLevel(logging.INFO)
+    if args.logfile:
+        fhandler = logging.handlers.RotatingFileHandler(
+            args.logfile, maxBytes=10 * (1024 ** 2), backupCount=100)
+        fhandler.setLevel(logging.DEBUG)
+        fhandler.setFormatter(formatter)
+        logging.getLogger().addHandler(fhandler)
 
     config = json.load(args.config)
     secrets = json.load(args.secrets)
