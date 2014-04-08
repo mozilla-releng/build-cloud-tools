@@ -39,10 +39,10 @@ def stop(i):
     name = i.tags.get("Name")
     # on-demand instances don't have instanceLifecycle attribute
     if hasattr(i, "instanceLifecycle") and i.instanceLifecycle == "spot":
-        log.info("Terminating %s (%s)", name, i)
+        log.debug("Terminating %s (%s)", name, i)
         i.terminate()
     else:
-        log.info("Stopping %s (%s)", name, i)
+        log.debug("Stopping %s (%s)", name, i)
         i.stop()
 
 
@@ -221,7 +221,7 @@ def aws_safe_stop_instance(i, impaired_ids, credentials, masters_json,
                         "%s - shut down an instance with impaired status", name)
                     stop(i)
                 else:
-                    log.info("%s - would have stopped", name)
+                    log.debug("%s - would have stopped", name)
         return stopped
 
     uptime_min = int((time.time() - launch_time) / 60)
@@ -243,11 +243,11 @@ def aws_safe_stop_instance(i, impaired_ids, credentials, masters_json,
     if last_activity == "stopped":
         stopped = True
         if not dryrun:
-            log.info("%s - stopping instance (launched %s)", name,
-                     i.launch_time)
+            log.debug("%s - stopping instance (launched %s)", name,
+                      i.launch_time)
             stop(i)
         else:
-            log.info("%s - would have stopped", name)
+            log.debug("%s - would have stopped", name)
         return stopped
 
     if last_activity == "booting":
@@ -258,7 +258,8 @@ def aws_safe_stop_instance(i, impaired_ids, credentials, masters_json,
 
     # If it looks like we're idle for more than 8 hours, kill the machine
     if last_activity > 8 * 3600:
-        log.info("%s - last activity more than 8 hours ago; shutting down", name)
+        log.warning("%s - last activity more than 8 hours ago; shutting down",
+                    name)
         if not dryrun:
             log.debug("%s - starting graceful shutdown", name)
             graceful_shutdown(name, ip, ssh_client, masters_json)
@@ -280,10 +281,10 @@ def aws_safe_stop_instance(i, impaired_ids, credentials, masters_json,
                 stop(i)
                 stopped = True
             else:
-                log.info(
+                log.debug(
                     "%s - not stopping, waiting for graceful shutdown", name)
         else:
-            log.info("%s - would have started graceful shutdown", name)
+            log.debug("%s - would have started graceful shutdown", name)
             stopped = True
     else:
         log.debug("%s - not stopping", name)
