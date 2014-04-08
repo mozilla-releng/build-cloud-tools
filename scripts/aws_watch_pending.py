@@ -2,6 +2,7 @@
 """
 Watches pending jobs and starts or creates EC2 instances if required
 """
+# lint_ignore=E501,C901
 import re
 import time
 import random
@@ -33,11 +34,6 @@ from cloudtools.aws import get_aws_connection, INSTANCE_CONFIGS_DIR
 from cloudtools.aws.spot import get_spot_requests_for_moztype, usable_spot_choice
 
 log = logging.getLogger()
-
-# Number of job retries allowed to run on spot instances. We stop using spot
-# instances if number of retires a larger than this number. If you update this
-# number, you also need to update the same viariable in buildbotcustom/misc.py
-MAX_SPOT_RETRIES = 1
 
 # Number of seconds from an instance's launch time for it to be considered
 # 'fresh'
@@ -73,12 +69,6 @@ def find_pending(db):
     )
     retval = result.fetchall()
     return retval
-
-
-def find_retries(db, brid):
-    """Returns the number of previous builds for this build request id"""
-    q = sa.text("SELECT count(*) from builds where brid=:brid")
-    return db.execute(q, brid=brid).fetchone()[0]
 
 
 _aws_instances_cache = {}
@@ -671,26 +661,13 @@ def aws_watch_pending(dburl, regions, secrets, builder_map, region_priorities,
     to_create_ondemand = to_create['ondemand']
     to_create_spot = to_create['spot']
 
-    # (buildername, slaveset) -> # of retries
-    retries = defaultdict(int)
-    # Count how many retries we have per builder
-    for pending_buildername, brid in pending:
-        for buildername_exp, moz_instance_type in builder_map.items():
-            if re.match(buildername_exp, pending_buildername):
-                slaveset = get_allocated_slaves(pending_buildername)
-                retries[pending_buildername, slaveset] += find_retries(db, brid)
-                break
-
     # Map pending builder names to instance types
     for pending_buildername, brid in pending:
         for buildername_exp, moz_instance_type in builder_map.items():
             if re.match(buildername_exp, pending_buildername):
                 slaveset = get_allocated_slaves(pending_buildername)
                 log.debug("%s instance type %s slaveset %s", pending_buildername, moz_instance_type, slaveset)
-                if retries[pending_buildername, slaveset] > MAX_SPOT_RETRIES:
-                    to_create_ondemand[moz_instance_type, slaveset] += 1
-                else:
-                    to_create_spot[moz_instance_type, slaveset] += 1
+                to_create_spot[moz_instance_type, slaveset] += 1
                 break
         else:
             log.debug("%s has pending jobs, but no instance types defined",
