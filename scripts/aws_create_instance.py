@@ -129,9 +129,6 @@ def assimilate(instance, config, instance_data, deploypass):
             '/etc/yum.repos.d/releng-public.repo')
         run('yum clean all')
         run('yum install -q -y lvm-init puppet')
-        lvm_init_cfg = StringIO.StringIO(json.dumps(config))
-        put(lvm_init_cfg, "/etc/lvm-init/lvm-init.json")
-        run("/sbin/lvm-init")
 
     run("wget -O /root/puppetize.sh https://hg.mozilla.org/build/puppet/raw-file/production/modules/puppet/files/puppetize.sh")
     run("chmod 755 /root/puppetize.sh")

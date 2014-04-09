@@ -483,14 +483,6 @@ cd /var/lib/puppet/ssl || exit 1
 %(certs)s
 cd -
 """ % dict(fqdn=fqdn, certs=certs)
-    if instance_config[region].get("lvm"):
-        user_data += """
-mkdir -p /etc/lvm-init/
-cat <<EOF > /etc/lvm-init/lvm-init.json
-%s
-EOF
-/sbin/lvm-init
-""" % json.dumps(instance_config[region])
 
     bdm = BlockDeviceMapping()
     for device, device_info in instance_config[region]['device_map'].items():
