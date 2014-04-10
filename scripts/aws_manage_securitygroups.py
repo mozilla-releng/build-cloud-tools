@@ -3,6 +3,7 @@ import socket
 
 import boto.ec2
 import yaml
+import dns.resolver
 
 import logging
 log = logging.getLogger(__name__)
@@ -25,6 +26,17 @@ def get_remote_sg_by_name(groups, name):
     log.info("Didn't find %s; returning None", name)
 
 
+_dns_cache = {}
+def resolve_host(hostname):
+    if hostname in _dns_cache:
+        return _dns_cache[hostname]
+    log.info("resolving host %s", hostname)
+    ips = dns.resolver.query(hostname, "A")
+    ips = [i.to_text() for i in ips]
+    _dns_cache[hostname] = ips
+    return ips
+
+
 def make_rules_for_def(rule):
     """Returns a set of rules for a given config definition. A rule is a
     (proto, from_port, to_port, hosts) tuple
@@ -37,14 +49,14 @@ def make_rules_for_def(rule):
         ports = [None]
     hosts = rule['hosts']
     # Resolve the hostnames
-    # TODO: find all IPs, not just the first one returned
     log.debug("%s %s %s", proto, ports, hosts)
     log.debug("Resolving hostnames")
     for h in hosts[:]:
         if '/' not in h:
-            ip = socket.gethostbyname(h)
+            ips = resolve_host(h)
             hosts.remove(h)
-            hosts.append("%s/32" % ip)
+            for ip in ips:
+                hosts.append("%s/32" % ip)
     log.debug("%s %s %s", proto, ports, hosts)
 
     for port in ports:
@@ -169,6 +181,9 @@ def main():
                     vpc_id=sg_config['regions'][region],
                     description=sg_config['description'],
                 )
+                # Fetch it again so we get all the rules
+                log.info("Re-loading group %s", sg_name)
+                remote_sg = conn.get_all_security_groups(group_ids=[remote_sg.id])[0]
 
             sync_security_group(remote_sg, sg_config, prompt=prompt)
 
