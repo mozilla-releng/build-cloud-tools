@@ -4,6 +4,14 @@ tests:
         us-west-1: vpc-7a7dd613
         us-west-2: vpc-cd63f2a4
         us-east-1: vpc-b42100df
+    apply-to:
+        instances:
+            tags:
+                - [moz-type, tst-linux*]
+                - [Name, tst-linux*-ec2-*]
+        interfaces:
+            tags:
+                - [moz-type, tst-linux*]
     inbound:
         - proto: tcp
           ports: [22, 5900]
@@ -38,6 +46,14 @@ build:
         us-west-1: vpc-7a7dd613
         us-west-2: vpc-cd63f2a4
         us-east-1: vpc-b42100df
+    apply-to:
+        instances:
+            tags:
+                - [moz-type, bld-linux64]
+                - [Name, bld-linux64-ec2-*]
+        interfaces:
+            tags:
+                - [moz-type, bld-linux64]
     inbound:
         - proto: tcp
           ports: [22, 5900]
