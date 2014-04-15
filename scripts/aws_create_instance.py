@@ -84,7 +84,7 @@ def assimilate(instance, config, instance_data, deploypass):
     specified in said config).
     """
     ip_addr = instance.private_ip_address
-    distro = config.get('distro')
+    distro = config.get('distro', '')
     if distro.startswith('win'):
         return assimilate_windows(instance, config, instance_data)
 
