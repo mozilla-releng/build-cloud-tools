@@ -95,7 +95,7 @@ class Spot:
 
     @property
     def value(self):
-        return self.current_price / self.performance_constant
+        return self.current_price / float(self.performance_constant)
 
     def __cmp__(self, other):
         return cmp(self.value, other.value)
