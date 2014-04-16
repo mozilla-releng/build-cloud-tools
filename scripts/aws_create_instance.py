@@ -76,7 +76,7 @@ def assimilate_windows(instance, config, instance_data):
     wait_for_status(instance, 'state', 'running', 'update')
 
 
-def assimilate(instance, config, instance_data, deploypass):
+def assimilate(instance, config, ssh_key, instance_data, deploypass):
     """Assimilate hostname into our collective
 
     What this means is that hostname will be set up with some basic things like
@@ -92,6 +92,7 @@ def assimilate(instance, config, instance_data, deploypass):
     env.user = 'root'
     env.abort_on_prompts = True
     env.disable_known_hosts = True
+    env.key_filename = ssh_key
 
     # Sanity check
     run("date")
@@ -171,7 +172,7 @@ def assimilate(instance, config, instance_data, deploypass):
     run("reboot")
 
 
-def create_instance(name, config, region, key_name, instance_data,
+def create_instance(name, config, region, key_name, ssh_key, instance_data,
                     deploypass, loaned_to, loan_bug):
     """Creates an AMI instance with the given name and config. The config must
     specify things like ami id."""
@@ -277,7 +278,7 @@ def create_instance(name, config, region, key_name, instance_data,
     instance.add_tag('moz-state', 'pending')
     while True:
         try:
-            assimilate(instance, config, instance_data, deploypass)
+            assimilate(instance, config, ssh_key, instance_data, deploypass)
             break
         except:
             log.warn("problem assimilating %s (%s), retrying in 10 sec ...",
@@ -299,15 +300,16 @@ class LoggingProcess(multiprocessing.Process):
         return super(LoggingProcess, self).run()
 
 
-def make_instances(names, config, region, key_name, instance_data,
+def make_instances(names, config, region, key_name, ssh_key, instance_data,
                    deploypass, loaned_to, loan_bug):
     """Create instances for each name of names for the given configuration"""
     procs = []
     for name in names:
         p = LoggingProcess(log="{name}.log".format(name=name),
                            target=create_instance,
-                           args=(name, config, region, key_name, instance_data,
-                                 deploypass, loaned_to, loan_bug),
+                           args=(name, config, region, key_name, ssh_key,
+                                 instance_data, deploypass, loaned_to,
+                                 loan_bug),
                            )
         p.start()
         procs.append(p)
@@ -328,6 +330,8 @@ if __name__ == '__main__':
     parser.add_argument("-k", "--secrets", type=argparse.FileType('r'),
                         required=True, help="file where secrets can be found")
     parser.add_argument("-s", "--key-name", help="SSH key name", required=True)
+    parser.add_argument("--ssh-key", required=True,
+                        help="SSH key to be used by Fabric")
     parser.add_argument("-i", "--instance-data", help="instance specific data",
                         type=argparse.FileType('r'), required=True)
     parser.add_argument("--instance_id", help="assimilate existing instance")
@@ -352,6 +356,8 @@ if __name__ == '__main__':
         config = json.load(args.config)[args.region]
     except KeyError:
         parser.error("unknown configuration")
+    if not os.path.exists(args.ssh_key):
+        parser.error("Cannot read %s" % args.ssh_key)
 
     secrets = json.load(args.secrets)
     deploypass = secrets["deploy_password"]
@@ -360,5 +366,7 @@ if __name__ == '__main__':
     if not args.no_verify:
         log.info("Sanity checking DNS entries...")
         verify(args.hosts, config, args.region)
-    make_instances(args.hosts, config, args.region, args.key_name,
-                   instance_data, deploypass, args.loaned_to, args.bug)
+    make_instances(names=args.hosts, config=config, region=args.region,
+                   key_name=args.key_name, ssh_key=args.ssh_key,
+                   instance_data=instance_data, deploypass=deploypass,
+                   loaned_to=args.loaned_to, loan_bug=args.bug)
