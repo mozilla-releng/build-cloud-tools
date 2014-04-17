@@ -19,6 +19,7 @@ tests:
             - cruncher.build.mozilla.org
             - slaveapi1.srv.releng.scl3.mozilla.com
             - slaveapi-dev1.srv.releng.scl3.mozilla.com
+            - 10.22.75.6/31
             - 10.22.252.0/22
             - 10.22.248.0/22
             - dev-master1.build.mozilla.org
@@ -26,6 +27,7 @@ tests:
         - proto: icmp
           ports: [-1]
           hosts:
+            - 10.22.75.6/31
             - 10.22.252.0/22
             - 10.22.248.0/22
             - cruncher.build.mozilla.org
@@ -61,6 +63,7 @@ build:
             - cruncher.build.mozilla.org
             - slaveapi1.srv.releng.scl3.mozilla.com
             - slaveapi-dev1.srv.releng.scl3.mozilla.com
+            - 10.22.75.6/31
             - 10.22.252.0/22
             - 10.22.248.0/22
             - dev-master1.build.mozilla.org
@@ -68,6 +71,7 @@ build:
         - proto: icmp
           ports: [-1]
           hosts:
+            - 10.22.75.6/31
             - 10.22.252.0/22
             - 10.22.248.0/22
             - cruncher.build.mozilla.org
