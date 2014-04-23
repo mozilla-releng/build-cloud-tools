@@ -5,6 +5,7 @@ us-west-1:
             50.18.181.153/32: IGW
             178.236.0.0/21: IGW
             hg.mozilla.org: IGW
+            git.mozilla.org: IGW
             10.130.0.0/16: local
             0.0.0.0/0: VGW
 
@@ -38,6 +39,7 @@ us-west-2:
 
             ftp-ssl.mozilla.org: IGW
             hg.mozilla.org: IGW
+            git.mozilla.org: IGW
             10.132.0.0/16: local
             0.0.0.0/0: VGW
 
@@ -48,6 +50,7 @@ us-west-2:
 
             ftp-ssl.mozilla.org: IGW
             hg.mozilla.org: IGW
+            git.mozilla.org: IGW
             10.132.0.0/16: local
             0.0.0.0/0: VGW
 
@@ -66,6 +69,7 @@ us-west-2:
 
             # Mozilla stuff
             hg.mozilla.org: IGW
+            git.mozilla.org: IGW
             10.132.0.0/16: local
             0.0.0.0/0: VGW
 
@@ -86,6 +90,7 @@ us-east-1:
             carbon.hostedgraphite.com: IGW
 
             hg.mozilla.org: IGW
+            git.mozilla.org: IGW
             ftp-ssl.mozilla.org: IGW
             10.134.0.0/16: local
             0.0.0.0/0: VGW
@@ -96,6 +101,7 @@ us-east-1:
             carbon.hostedgraphite.com: IGW
 
             hg.mozilla.org: IGW
+            git.mozilla.org: IGW
             ftp-ssl.mozilla.org: IGW
             10.134.0.0/16: local
             0.0.0.0/0: VGW
@@ -115,6 +121,7 @@ us-east-1:
 
             # Mozilla stuff
             hg.mozilla.org: IGW
+            git.mozilla.org: IGW
             10.134.0.0/16: local
             0.0.0.0/0: VGW
 
