@@ -1,9 +1,17 @@
 us-west-1:
     default:
         routes:
-            50.18.181.150/32: IGW
-            50.18.181.153/32: IGW
+            # Amazon routes (check via 'whois')
+            50.16.0.0/14: IGW
+            54.230.0.0/15: IGW
+            54.239.0.0/17: IGW
+            54.240.0.0/12: IGW
+            72.21.192.0/19: IGW
+            176.32.96.0/21: IGW
             178.236.0.0/21: IGW
+            205.251.192.0/18: IGW
+            207.171.160.0/19: IGW
+
             hg.mozilla.org: IGW
             git.mozilla.org: IGW
             10.130.0.0/16: local
@@ -24,11 +32,33 @@ us-west-1:
 us-west-2:
     default:
         routes:
+            # Amazon routes (check via 'whois')
+            50.16.0.0/14: IGW
+            54.230.0.0/15: IGW
+            54.239.0.0/17: IGW
+            54.240.0.0/12: IGW
+            72.21.192.0/19: IGW
+            176.32.96.0/21: IGW
+            178.236.0.0/21: IGW
+            205.251.192.0/18: IGW
+            207.171.160.0/19: IGW
+
             10.132.0.0/16: local
             0.0.0.0/0: VGW
 
     masters:
         routes:
+            # Amazon routes (check via 'whois')
+            50.16.0.0/14: IGW
+            54.230.0.0/15: IGW
+            54.239.0.0/17: IGW
+            54.240.0.0/12: IGW
+            72.21.192.0/19: IGW
+            176.32.96.0/21: IGW
+            178.236.0.0/21: IGW
+            205.251.192.0/18: IGW
+            207.171.160.0/19: IGW
+
             10.132.0.0/16: local
             0.0.0.0/0: VGW
 
@@ -45,11 +75,14 @@ us-west-2:
 
     builders:
         routes:
-            # Amazon routes
+            # Amazon routes (check via 'whois')
+            50.16.0.0/14: IGW
+            54.230.0.0/15: IGW
             54.239.0.0/17: IGW
             54.240.0.0/12: IGW
             72.21.192.0/19: IGW
             176.32.96.0/21: IGW
+            178.236.0.0/21: IGW
             205.251.192.0/18: IGW
             207.171.160.0/19: IGW
 
@@ -65,11 +98,14 @@ us-west-2:
             0.0.0.0/0: VGW
     try:
         routes:
-            # Amazon routes
+            # Amazon routes (check via 'whois')
+            50.16.0.0/14: IGW
+            54.230.0.0/15: IGW
             54.239.0.0/17: IGW
             54.240.0.0/12: IGW
             72.21.192.0/19: IGW
             176.32.96.0/21: IGW
+            178.236.0.0/21: IGW
             205.251.192.0/18: IGW
             207.171.160.0/19: IGW
 
@@ -92,6 +128,17 @@ us-east-1:
 
     masters:
         routes:
+            # Amazon routes (check via 'whois')
+            50.16.0.0/14: IGW
+            54.230.0.0/15: IGW
+            54.239.0.0/17: IGW
+            54.240.0.0/12: IGW
+            72.21.192.0/19: IGW
+            176.32.96.0/21: IGW
+            178.236.0.0/21: IGW
+            205.251.192.0/18: IGW
+            207.171.160.0/19: IGW
+
             10.134.0.0/16: local
             0.0.0.0/0: VGW
 
@@ -108,11 +155,14 @@ us-east-1:
 
     builders:
         routes:
-            # Amazon routes
+            # Amazon routes (check via 'whois')
+            50.16.0.0/14: IGW
+            54.230.0.0/15: IGW
             54.239.0.0/17: IGW
             54.240.0.0/12: IGW
             72.21.192.0/19: IGW
             176.32.96.0/21: IGW
+            178.236.0.0/21: IGW
             205.251.192.0/18: IGW
             207.171.160.0/19: IGW
 
@@ -129,11 +179,14 @@ us-east-1:
 
     try:
         routes:
-            # Amazon routes
+            # Amazon routes (check via 'whois')
+            50.16.0.0/14: IGW
+            54.230.0.0/15: IGW
             54.239.0.0/17: IGW
             54.240.0.0/12: IGW
             72.21.192.0/19: IGW
             176.32.96.0/21: IGW
+            178.236.0.0/21: IGW
             205.251.192.0/18: IGW
             207.171.160.0/19: IGW
 
