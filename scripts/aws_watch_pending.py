@@ -479,6 +479,7 @@ def do_request_spot_instance(region, secrets, moz_instance_type, price, ami,
     certs = get_puppet_certs(ip, secrets, cached_cert_dir)
     user_data = """
 FQDN="%(fqdn)s"
+mkdir -p /var/lib/puppet/ssl
 cd /var/lib/puppet/ssl || exit 1
 %(certs)s
 cd -
