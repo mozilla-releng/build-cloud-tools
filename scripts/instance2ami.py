@@ -98,6 +98,7 @@ def instance2ami(ami_name, region, ami_config, ami_config_name,
     # skip loaned instances
     instances = [i for i in instances if not i.tags.get("moz-loaned-to")]
     i = sorted(instances, key=lambda i: i.launch_time)[-1]
+    instance_id = i.id
     log.debug("Selected instance to clone: %s", i)
     v_id = i.block_device_mapping[i.root_device_name].volume_id
     v = conn.get_all_volumes(volume_ids=[v_id])[0]
@@ -209,6 +210,7 @@ def instance2ami(ami_name, region, ami_config, ami_config_name,
             ami = conn.get_image(ami_id)
             ami.add_tag('Name', ami_name)
             ami.add_tag('moz-created', int(time.mktime(time.gmtime())))
+            ami.add_tag('moz-based-on', instance_id)
             for tag, value in moz_type_config["tags"].iteritems():
                 ami.add_tag(tag, value)
             log.info('AMI created')
