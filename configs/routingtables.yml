@@ -66,6 +66,7 @@ us-west-2:
         routes:
             # For graphite
             carbon.hostedgraphite.com: IGW
+            mozilla.carbon.hostedgraphite.com: IGW
 
             ftp-ssl.mozilla.org: IGW
             hg.mozilla.org: IGW
@@ -88,6 +89,7 @@ us-west-2:
 
             # For graphite
             carbon.hostedgraphite.com: IGW
+            mozilla.carbon.hostedgraphite.com: IGW
 
             # Mozilla stuff
             ftp-ssl.mozilla.org: IGW
@@ -111,6 +113,7 @@ us-west-2:
 
             # For graphite
             carbon.hostedgraphite.com: IGW
+            mozilla.carbon.hostedgraphite.com: IGW
 
             # Mozilla stuff
             ftp-ssl.mozilla.org: IGW
@@ -146,6 +149,7 @@ us-east-1:
         routes:
             # For graphite
             carbon.hostedgraphite.com: IGW
+            mozilla.carbon.hostedgraphite.com: IGW
 
             hg.mozilla.org: IGW
             git.mozilla.org: IGW
@@ -168,6 +172,7 @@ us-east-1:
 
             # For graphite
             carbon.hostedgraphite.com: IGW
+            mozilla.carbon.hostedgraphite.com: IGW
 
             # Mozilla stuff
             ftp-ssl.mozilla.org: IGW
@@ -192,6 +197,7 @@ us-east-1:
 
             # For graphite
             carbon.hostedgraphite.com: IGW
+            mozilla.carbon.hostedgraphite.com: IGW
 
             # Mozilla stuff
             ftp-ssl.mozilla.org: IGW
