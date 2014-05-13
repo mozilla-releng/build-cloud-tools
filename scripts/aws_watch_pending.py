@@ -348,7 +348,9 @@ def request_spot_instances(all_instances, moz_instance_type, start_count,
         # Filter out requests for instances that don't exist
         active_requests = [r for r in active_requests if r.instance_id is not None and r.instance_id in acitve_instance_ids]
         log.debug("%i real active spot requests for %s %s", len(active_requests), region, moz_instance_type)
-        active_network_ids[region] = set(r.launch_specification.networkInterfaceId for r in active_requests)
+        active_network_ids[region] = set(r.launch_specification.networkInterfaceId
+                                         for r in active_requests if
+                                         hasattr(r.launch_specification, "networkInterfaceId"))
         active_count = len(active_network_ids[region])
         log.debug("%s: %i active network interfaces for spot requests in %s", moz_instance_type, active_count, region)
         can_be_started = region_limit - active_count
