@@ -8,22 +8,20 @@ from threading import Thread
 from Queue import Queue, Empty
 
 site.addsitedir(os.path.join(os.path.dirname(__file__), ".."))
-from cloudtools.aws import get_vpc, DEFAULT_REGIONS
-from cloudtools.aws.spot import get_spot_instances
+from cloudtools.aws import DEFAULT_REGIONS
+from cloudtools.aws.spot import get_spot_instances, get_spot_request
 
 log = logging.getLogger(__name__)
 
 
 def tag_it(i):
     log.debug("Tagging %s", i)
-    vpc = get_vpc(i.region.name)
-    netif = i.interfaces[0]
-    # network interface needs to be reloaded usin VPC to get the tags
-    interface = vpc.get_all_network_interfaces(
-        filters={"network-interface-id": netif.id})[0]
-    # copy interface tags over
+    req = get_spot_request(i.region.name, i.spot_instance_request_id)
+    if not req:
+        log.error("Cannot find spot request for %s", i)
+        return
     tags = {}
-    for tag_name, tag_value in interface.tags.iteritems():
+    for tag_name, tag_value in req.tags.iteritems():
         if not tag_name in i.tags:
             log.info("Adding '%s' tag with '%s' value to %s", tag_name,
                      tag_value, i)

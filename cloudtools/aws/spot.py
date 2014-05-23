@@ -17,6 +17,17 @@ IGNORABLE_STATUS_CODES = CANCEL_STATUS_CODES + TERMINATED_BY_AWS_STATUS_CODES \
 log = logging.getLogger(__name__)
 
 
+@lru_cache(100)
+def get_spot_request(region, request_id):
+    log.debug("Getting spot request %s in %s", request_id, region)
+    conn = get_aws_connection(region)
+    req = conn.get_all_spot_instance_requests(request_ids=[request_id])
+    if req:
+        return req[0]
+    else:
+        return None
+
+
 def get_spot_instances(region, state="running"):
     log.info("Processing region %s", region)
     conn = get_aws_connection(region)
@@ -32,13 +43,15 @@ def get_active_spot_requests(region):
     """Gets open and active spot requests"""
     log.debug("getting all spot requests for %s", region)
     conn = get_aws_connection(region)
-    spot_requests = conn.get_all_spot_instance_requests(filters={'state': ['open', 'active']})
+    spot_requests = conn.get_all_spot_instance_requests(
+        filters={'state': ['open', 'active']})
     return spot_requests
 
 
 @lru_cache(100)
 def get_spot_requests(region, instance_type, availability_zone):
-    log.debug("getting filtered spot requests for %s (%s)", availability_zone, instance_type)
+    log.debug("getting filtered spot requests for %s (%s)", availability_zone,
+              instance_type)
     all_requests = get_active_spot_requests(region)
     retval = []
     if not all_requests:
