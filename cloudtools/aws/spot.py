@@ -1,6 +1,8 @@
 import logging
 import datetime
 from cloudtools.aws import get_aws_connection, aws_time_to_datetime
+from cloudtools.slavealloc import get_slaves
+from cloudtools.jacuzzi import get_allocated_slaves
 from repoze.lru import lru_cache
 
 CANCEL_STATUS_CODES = ["capacity-oversubscribed", "price-too-low",
@@ -120,3 +122,30 @@ def usable_spot_choice(choice, minutes=15):
     # All good!
     log.debug("Choice %s passes", choice)
     return True
+
+
+_active_req = {}
+
+
+def get_available_spot_slave_name(region, moz_instance_type, slaveset):
+    key = (region, moz_instance_type, slaveset)
+    if key in _active_req:
+        if _active_req[key]:
+            return _active_req[key].pop()
+        else:
+            return None
+
+    all_slaves = get_slaves()
+    active_req = get_active_spot_requests(region)
+    used_names = set(r.tags.get("Name") for r in active_req)
+    avail_names = all_slaves[moz_instance_type][region] - used_names
+    if slaveset:
+        usable = avail_names.intersection(slaveset)
+    else:
+        usable = avail_names - set(get_allocated_slaves(None))
+    if usable:
+        _active_req[key] = usable
+        return _active_req[key].pop()
+    else:
+        _active_req[key] = None
+        return None

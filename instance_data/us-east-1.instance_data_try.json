@@ -2,5 +2,8 @@
   "puppet_masters": ["releng-puppet1.srv.releng.use1.mozilla.com", "releng-puppet2.srv.releng.use1.mozilla.com"],
   "hg_shares": {
     "try": "https://ftp-ssl.mozilla.org/pub/mozilla.org/firefox/bundles/try.hg"
+  },
+  "s3_tarballs": {
+    "/builds/git-shared": {"bucket": "mozilla-releng-tarballs", "key": "git-shared-repo.tar"}
   }
 }

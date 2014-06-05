@@ -1,0 +1,23 @@
+#!/usr/bin/env python
+
+import argparse
+import boto
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-b", "--bucket", required=True,
+                        help="Bucket name")
+    parser.add_argument("-k", "--key", required=True,
+                        help="Key name")
+    parser.add_argument("-o", "--out-file", required=True,
+                        help="File name")
+    args = parser.parse_args()
+
+    conn = boto.connect_s3()
+    bucket = conn.get_bucket(args.bucket)
+    key = bucket.get_key(args.key)
+    key.get_contents_to_filename(args.out_file)
+
+if __name__ == "__main__":
+    main()

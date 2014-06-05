@@ -5,9 +5,7 @@ Watches pending jobs and starts or creates EC2 instances if required
 # lint_ignore=E501,C901
 import re
 import time
-import random
 from collections import defaultdict
-import calendar
 import os
 import logging
 
@@ -23,15 +21,20 @@ from boto.ec2.networkinterface import NetworkInterfaceCollection, \
 from boto.ec2.blockdevicemapping import BlockDeviceMapping, BlockDeviceType
 import sqlalchemy as sa
 from sqlalchemy.engine.reflection import Inspector
-import iso8601
-import requests
 from bid import decide as get_spot_choices
 
 import site
 site.addsitedir(os.path.join(os.path.dirname(__file__), ".."))
 
-from cloudtools.aws import get_aws_connection, INSTANCE_CONFIGS_DIR
-from cloudtools.aws.spot import get_spot_requests_for_moztype, usable_spot_choice
+from cloudtools.aws import get_aws_connection, INSTANCE_CONFIGS_DIR, \
+    aws_get_running_instances, aws_get_all_instances, get_user_data_tmpl, \
+    aws_filter_instances, aws_get_spot_instances, aws_get_ondemand_instances,\
+    aws_get_fresh_instances, aws_get_reservations, aws_filter_reservations
+from cloudtools.aws.spot import get_spot_requests_for_moztype, \
+    usable_spot_choice, get_available_spot_slave_name
+from cloudtools.jacuzzi import get_allocated_slaves, aws_get_slaveset_instances
+from cloudtools.aws.ami import get_ami
+from cloudtools.aws.vpc import get_avail_subnet
 
 log = logging.getLogger()
 
@@ -71,147 +74,9 @@ def find_pending(db):
     return retval
 
 
-_aws_instances_cache = {}
-
-
-def aws_get_all_instances(regions):
-    """
-    Returns a list of all instances in the given regions
-    """
-    log.debug("fetching all instances for %s", regions)
-    retval = []
-    for region in regions:
-        if region in _aws_instances_cache:
-            log.debug("aws_get_all_instances - cache hit for %s", region)
-            retval.extend(_aws_instances_cache[region])
-        else:
-            conn = get_aws_connection(region)
-            reservations = conn.get_all_instances()
-            region_instances = []
-            for r in reservations:
-                region_instances.extend(r.instances)
-            log.debug("aws_get_running_instances - caching %s", region)
-            _aws_instances_cache[region] = region_instances
-            retval.extend(region_instances)
-    return retval
-
-
-def aws_filter_instances(instances, state=None, tags=None):
-    retval = []
-    for i in instances:
-        matched = True
-        if state and i.state != state:
-            matched = False
-            continue
-        if tags:
-            for k, v in tags.items():
-                if i.tags.get(k) != v:
-                    matched = False
-                    continue
-        if i.tags.get("moz-loaned-to"):
-            # Skip loaned instances
-            matched = False
-            continue
-        if matched:
-            retval.append(i)
-    return retval
-
-
-def aws_get_running_instances(instances, moz_instance_type):
-    retval = []
-    for i in instances:
-        if i.state != 'running':
-            continue
-        if i.tags.get('moz-type') != moz_instance_type:
-            continue
-        if i.tags.get('moz-state') != 'ready':
-            continue
-        retval.append(i)
-
-    return retval
-
-
-def aws_get_slaveset_instances(instances, slaveset):
-    if not slaveset:
-        allocated_slaves = get_allocated_slaves(None)
-
-    retval = []
-    if not slaveset:
-        allocated_slaves = get_allocated_slaves(None)
-
-    for i in instances:
-        if slaveset:
-            if i.tags.get('Name') in slaveset:
-                retval.append(i)
-        elif i.tags.get('Name') not in allocated_slaves:
-            retval.append(i)
-
-    return retval
-
-
-def aws_get_spot_instances(instances):
-    return [i for i in instances if i.spot_instance_request_id]
-
-
-def aws_get_ondemand_instances(instances):
-    return [i for i in instances if i.spot_instance_request_id is None]
-
-
-def aws_get_fresh_instances(instances, launched_since):
-    "Returns a list of instances that were launched since `launched_since` (a timestamp)"
-    retval = []
-    for i in instances:
-        d = iso8601.parse_date(i.launch_time)
-        t = calendar.timegm(d.utctimetuple())
-        if t > launched_since:
-            retval.append(i)
-    return retval
-
-
-def aws_get_reservations(regions):
-    """
-    Return a mapping of (availability zone, ec2 instance type) -> count
-    """
-    log.debug("getting reservations for %s", regions)
-    retval = {}
-    for region in regions:
-        conn = get_aws_connection(region)
-        reservations = conn.get_all_reserved_instances(filters={
-            'state': 'active',
-        })
-        for r in reservations:
-            az = r.availability_zone
-            ec2_instance_type = r.instance_type
-            if (az, ec2_instance_type) not in retval:
-                retval[az, ec2_instance_type] = 0
-            retval[az, ec2_instance_type] += r.instance_count
-    return retval
-
-
-def aws_filter_reservations(reservations, running_instances):
-    """
-    Filters reservations by reducing the count for reservations by the number
-    of running instances of the appropriate type. Removes entries for
-    reservations that are fully used.
-
-    Modifies reservations in place
-    """
-    # Subtract running instances from our reservations
-    for i in running_instances:
-        if (i.placement, i.instance_type) in reservations:
-            reservations[i.placement, i.instance_type] -= 1
-    log.debug("available reservations: %s", reservations)
-
-    # Remove reservations that are used up
-    for k, count in reservations.items():
-        if count <= 0:
-            log.debug("all reservations for %s are used; removing", k)
-            del reservations[k]
-
-
 def aws_resume_instances(all_instances, moz_instance_type, start_count,
-                         regions, secrets, region_priorities,
-                         instance_type_changes, dryrun, slaveset):
+                         regions, region_priorities, instance_type_changes,
+                         dryrun, slaveset):
     """Resume up to `start_count` stopped instances of the given type in the
     given regions"""
     # We'll filter by these tags in general
@@ -310,8 +175,8 @@ def aws_resume_instances(all_instances, moz_instance_type, start_count,
 
 
 def request_spot_instances(all_instances, moz_instance_type, start_count,
-                           regions, secrets, region_priorities, spot_config,
-                           dryrun, cached_cert_dir, slaveset):
+                           regions, region_priorities, spot_config, dryrun,
+                           slaveset):
     started = 0
     spot_rules = spot_config.get("rules", {}).get(moz_instance_type)
     if not spot_rules:
@@ -329,7 +194,6 @@ def request_spot_instances(all_instances, moz_instance_type, start_count,
         return 0
 
     to_start = {}
-    active_network_ids = {}
     acitve_instance_ids = set(i.id for i in all_instances)
     for region in regions:
         # Check if spots are enabled in this region for this type
@@ -341,18 +205,12 @@ def request_spot_instances(all_instances, moz_instance_type, start_count,
             continue
 
         # check the limits
-        # Count how many unique network interfaces are active
-        # Sometimes we have multiple requests for the same interface
         active_requests = get_spot_requests_for_moztype(region=region, moz_instance_type=moz_instance_type)
         log.debug("%i active spot requests for %s %s", len(active_requests), region, moz_instance_type)
         # Filter out requests for instances that don't exist
         active_requests = [r for r in active_requests if r.instance_id is not None and r.instance_id in acitve_instance_ids]
         log.debug("%i real active spot requests for %s %s", len(active_requests), region, moz_instance_type)
-        active_network_ids[region] = set(r.launch_specification.networkInterfaceId
-                                         for r in active_requests if
-                                         hasattr(r.launch_specification, "networkInterfaceId"))
-        active_count = len(active_network_ids[region])
-        log.debug("%s: %i active network interfaces for spot requests in %s", moz_instance_type, active_count, region)
+        active_count = len(active_requests)
         can_be_started = region_limit - active_count
         if can_be_started < 1:
             log.debug("Not starting. Active spot request count in %s region "
@@ -383,14 +241,12 @@ def request_spot_instances(all_instances, moz_instance_type, start_count,
         log.debug("Using %s", choice)
         launched = do_request_spot_instances(
             amount=need,
-            region=region, secrets=secrets,
+            region=region,
             moz_instance_type=moz_instance_type,
             ami=to_start[region]["ami"],
             instance_config=instance_config, dryrun=dryrun,
-            cached_cert_dir=cached_cert_dir,
             spot_choice=choice,
             slaveset=slaveset,
-            active_network_ids=active_network_ids[region],
         )
         started += launched
 
@@ -400,43 +256,20 @@ def request_spot_instances(all_instances, moz_instance_type, start_count,
     return started
 
 
-def get_puppet_certs(ip, secrets, cached_cert_dir):
-    """ reuse or generate certificates"""
-    cert_file = os.path.join(cached_cert_dir, ip)
-    if os.path.exists(cert_file):
-        cert = open(cert_file).read()
-        # Make shure that the file is not empty
-        if cert:
-            return cert
-
-    puppet_server = secrets["getcert_server"]
-    url = "https://%s/deploy/getcert.cgi?%s" % (puppet_server, ip)
-    auth = (secrets["deploy_username"], secrets["deploy_password"])
-    req = requests.get(url, auth=auth, verify=False)
-    req.raise_for_status()
-    cert_data = req.content
-    if not cert_data:
-        raise RuntimeError("Cannot retrieve puppet cert")
-    with open(cert_file, "wb") as f:
-        f.write(cert_data)
-    return cert_data
-
-
-def do_request_spot_instances(amount, region, secrets, moz_instance_type, ami,
-                              instance_config, cached_cert_dir, spot_choice,
-                              slaveset, active_network_ids, dryrun):
+def do_request_spot_instances(amount, region, moz_instance_type, ami,
+                              instance_config, spot_choice, slaveset,
+                              dryrun):
     started = 0
     for _ in range(amount):
         try:
             r = do_request_spot_instance(
-                region=region, secrets=secrets,
+                region=region,
                 moz_instance_type=moz_instance_type,
                 price=spot_choice.bid_price,
                 availability_zone=spot_choice.availability_zone,
                 ami=ami, instance_config=instance_config,
-                cached_cert_dir=cached_cert_dir,
                 instance_type=spot_choice.instance_type, slaveset=slaveset,
-                active_network_ids=active_network_ids, dryrun=dryrun)
+                dryrun=dryrun)
             if r:
                 started += 1
         except EC2ResponseError, e:
@@ -449,25 +282,24 @@ def do_request_spot_instances(amount, region, secrets, moz_instance_type, ami,
     return started
 
 
-def do_request_spot_instance(region, secrets, moz_instance_type, price, ami,
-                             instance_config, cached_cert_dir, instance_type,
-                             availability_zone, slaveset, active_network_ids, dryrun):
+def do_request_spot_instance(region, moz_instance_type, price, ami,
+                             instance_config, instance_type, availability_zone,
+                             slaveset, dryrun):
+    name = get_available_spot_slave_name(region, moz_instance_type, slaveset)
+    if not name:
+        log.warn("No slave name available for %s, %s, %s" % (
+            region, moz_instance_type, slaveset))
+        return False
+
     conn = get_aws_connection(region)
-    interface = get_available_interface(
-        conn=conn, moz_instance_type=moz_instance_type,
-        availability_zone=availability_zone,
-        slaveset=slaveset,
-        active_network_ids=active_network_ids)
-    if not interface:
-        log.debug("No free network interfaces left in %s" % region)
+    subnet_id = get_avail_subnet(region, instance_config[region]["subnet_ids"],
+                                 availability_zone)
+    if not subnet_id:
+        log.debug("No free IP available for %s in %s", moz_instance_type,
+                  availability_zone)
         return False
 
-    # TODO: check DNS
-    fqdn = interface.tags.get("FQDN")
-    if not fqdn:
-        log.warn("interface %s has no FQDN", interface)
-        return False
-
+    fqdn = "{}.{}".format(name, instance_config[region]["domain"])
     log.debug("Spot request for %s (%s)", fqdn, price)
 
     if dryrun:
@@ -475,17 +307,15 @@ def do_request_spot_instance(region, secrets, moz_instance_type, price, ami,
         return True
 
     spec = NetworkInterfaceSpecification(
-        network_interface_id=interface.id)
+        associate_public_ip_address=True, subnet_id=subnet_id,
+        groups=instance_config[region].get("security_group_ids"))
     nc = NetworkInterfaceCollection(spec)
-    ip = interface.private_ip_address
-    certs = get_puppet_certs(ip, secrets, cached_cert_dir)
-    user_data = """
-FQDN="%(fqdn)s"
-mkdir -p /var/lib/puppet/ssl
-cd /var/lib/puppet/ssl || exit 1
-%(certs)s
-cd -
-""" % dict(fqdn=fqdn, certs=certs)
+
+    user_data = get_user_data_tmpl(moz_instance_type)
+    if user_data:
+        user_data = user_data.format(fqdn=fqdn,
+                                     moz_instance_type=moz_instance_type,
+                                     is_spot=True)
 
     bdm = BlockDeviceMapping()
     for device, device_info in instance_config[region]['device_map'].items():
@@ -503,11 +333,6 @@ cd -
                 assert ami_size <= device_info['size'], \
                     "Instance root device size cannot be smaller than AMI " \
                     "root device"
-                if device_info['size'] > ami_size:
-                    # needs resizing
-                    user_data += """
-/sbin/resize2fs {dev} || true
- """.format(dev=device_info['instance_dev'])
         if device_info.get("delete_on_termination") is not False:
             bd.delete_on_termination = True
         if device_info.get("ephemeral_name"):
@@ -534,7 +359,8 @@ cd -
     for i in range(max_tries):
         try:
             sir[0].add_tag("moz-type", moz_instance_type)
-            sir[0].add_tag("Name", interface.tags.get("Name"))
+            # Name will be used to determine available slave names
+            sir[0].add_tag("Name", name)
             sir[0].add_tag("FQDN", fqdn)
             return True
         except EC2ResponseError, e:
@@ -555,88 +381,9 @@ cd -
                     continue
             raise
 
-_cached_interfaces = {}
 
-
-def get_available_interface(conn, moz_instance_type, availability_zone, slaveset, active_network_ids):
-    global _cached_interfaces
-    if not _cached_interfaces.get(availability_zone):
-        _cached_interfaces[availability_zone] = {}
-    if _cached_interfaces[availability_zone].get(moz_instance_type) is None:
-        filters = {
-            "status": "available",
-            "tag:moz-type": moz_instance_type,
-            "availability-zone": availability_zone,
-        }
-        avail_ifs = conn.get_all_network_interfaces(filters=filters)
-        if avail_ifs:
-            random.shuffle(avail_ifs)
-        _cached_interfaces[availability_zone][moz_instance_type] = avail_ifs
-
-    log.debug("%s interfaces in %s",
-              len(_cached_interfaces[availability_zone][moz_instance_type]),
-              availability_zone)
-    if _cached_interfaces[availability_zone][moz_instance_type]:
-        # Find one in our slaveset
-        if slaveset:
-            for i in _cached_interfaces[availability_zone][moz_instance_type]:
-                if i.id in active_network_ids:
-                    log.debug("skipping %s since it's active", i.id)
-                    continue
-                if i.tags.get("FQDN").split(".")[0] in slaveset:
-                    _cached_interfaces[availability_zone][moz_instance_type].remove(i)
-                    log.debug("using %s", i.tags.get("FQDN"))
-                    return i
-        else:
-            allocated_slaves = get_allocated_slaves(None)
-            for i in _cached_interfaces[availability_zone][moz_instance_type]:
-                if i.id in active_network_ids:
-                    log.debug("skipping %s since it's active", i.id)
-                if i.tags.get("FQDN").split(".")[0] not in allocated_slaves:
-                    _cached_interfaces[availability_zone][moz_instance_type].remove(i)
-                    log.debug("using %s", i.tags.get("FQDN"))
-                    return i
-    return None
-
-
-def get_ami(region, moz_instance_type):
-    conn = get_aws_connection(region)
-    avail_amis = conn.get_all_images(
-        owners=["self"],
-        filters={"tag:moz-type": moz_instance_type, "state": "available"})
-    last_ami = sorted(avail_amis,
-                      key=lambda ami: ami.tags.get("moz-created"))[-1]
-    return last_ami
-
-
-JACUZZI_BASE_URL = "http://jacuzzi-allocator.pub.build.mozilla.org/v1"
-
-
-_jacuzzi_allocated_cache = {}
-
-
-def get_allocated_slaves(buildername):
-    if buildername in _jacuzzi_allocated_cache:
-        return _jacuzzi_allocated_cache[buildername]
-
-    if buildername is None:
-        log.debug("getting set of all allocated slaves")
-        r = requests.get("{0}/allocated/all".format(JACUZZI_BASE_URL))
-        _jacuzzi_allocated_cache[buildername] = frozenset(r.json()['machines'])
-        return _jacuzzi_allocated_cache[buildername]
-
-    log.debug("getting slaves allocated to %s", buildername)
-    r = requests.get("{0}/builders/{1}".format(JACUZZI_BASE_URL, buildername))
-    # Handle 404 specially
-    if r.status_code == 404:
-        _jacuzzi_allocated_cache[buildername] = None
-        return None
-    _jacuzzi_allocated_cache[buildername] = frozenset(r.json()['machines'])
-    return _jacuzzi_allocated_cache[buildername]
-
-
-def aws_watch_pending(dburl, regions, secrets, builder_map, region_priorities,
-                      spot_config, ondemand_config, dryrun, cached_cert_dir,
+def aws_watch_pending(dburl, regions, builder_map, region_priorities,
+                      spot_config, ondemand_config, dryrun,
                       instance_type_changes):
     # First find pending jobs in the db
     db = sa.create_engine(dburl)
@@ -730,10 +477,8 @@ def aws_watch_pending(dburl, regions, secrets, builder_map, region_priorities,
         started = request_spot_instances(
             all_instances,
             moz_instance_type=moz_instance_type, start_count=count,
-            regions=regions, secrets=secrets,
-            region_priorities=region_priorities, spot_config=spot_config,
-            dryrun=dryrun, cached_cert_dir=cached_cert_dir,
-            slaveset=slaveset)
+            regions=regions, region_priorities=region_priorities,
+            spot_config=spot_config, dryrun=dryrun, slaveset=slaveset)
         count -= started
         log.info("%s - started %i spot instances for slaveset %s; need %i",
                  moz_instance_type, started, slaveset, count)
@@ -761,7 +506,7 @@ def aws_watch_pending(dburl, regions, secrets, builder_map, region_priorities,
         # Check for stopped instances in the given regions and start them if
         # there are any
         started = aws_resume_instances(all_instances, moz_instance_type, count,
-                                       regions, secrets, region_priorities,
+                                       regions, region_priorities,
                                        instance_type_changes, dryrun, slaveset)
         count -= started
         log.info("%s - started %i instances for slaveset %s; need %i",
@@ -779,8 +524,6 @@ if __name__ == '__main__':
     parser.add_argument("-v", "--verbose", action="store_const",
                         dest="loglevel", const=logging.DEBUG,
                         default=logging.INFO)
-    parser.add_argument("--cached-cert-dir", default="certs",
-                        help="Directory for cached puppet certificates")
     parser.add_argument("-n", "--dryrun", dest="dryrun", action="store_true",
                         help="don't actually do anything")
     parser.add_argument("-l", "--logfile", dest="logfile",
@@ -811,13 +554,11 @@ if __name__ == '__main__':
     aws_watch_pending(
         dburl=secrets['db'],
         regions=args.regions,
-        secrets=secrets,
         builder_map=config['buildermap'],
         region_priorities=config['region_priorities'],
         dryrun=args.dryrun,
         spot_config=config.get("spot"),
         ondemand_config=config.get("ondemand"),
-        cached_cert_dir=args.cached_cert_dir,
         instance_type_changes=config.get("instance_type_changes", {})
     )
     log.debug("done")

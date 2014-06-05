@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from boto.ec2.blockdevicemapping import BlockDeviceMapping, BlockDeviceType
-from fabric.api import run, put, env, lcd
+from fabric.api import run, put, lcd
 import json
 import time
 import logging
@@ -11,6 +11,7 @@ import site
 site.addsitedir(os.path.join(os.path.dirname(__file__), ".."))
 from cloudtools.aws import get_aws_connection, AMI_CONFIGS_DIR, wait_for_status
 from cloudtools.aws.instance import run_instance
+from cloudtools.fabric import setup_fabric_env
 
 log = logging.getLogger()
 
@@ -26,10 +27,7 @@ def manage_service(service, target, state, distro="centos"):
 
 def create_ami(host_instance, options, config):
     connection = host_instance.connection
-    env.host_string = host_instance.public_dns_name
-    env.user = 'root'
-    env.abort_on_prompts = True
-    env.disable_known_hosts = True
+    setup_fabric_env(host_string=host_instance.public_dns_name)
 
     target_name = options.config
     virtualization_type = config.get("virtualization_type")

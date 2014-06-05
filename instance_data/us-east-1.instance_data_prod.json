@@ -3,5 +3,8 @@
   "hg_shares": {
     "mozilla-central": "https://ftp-ssl.mozilla.org/pub/mozilla.org/firefox/bundles/mozilla-central.hg",
     "integration/mozilla-inbound": "https://ftp-ssl.mozilla.org/pub/mozilla.org/firefox/bundles/mozilla-inbound.hg"
+  },
+  "s3_tarballs": {
+    "/builds/git-shared": {"bucket": "mozilla-releng-tarballs", "key": "git-shared-repo.tar"}
   }
 }

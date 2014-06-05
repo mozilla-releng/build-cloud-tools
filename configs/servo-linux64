@@ -7,6 +7,7 @@
         "subnet_ids": ["subnet-bef6fdd2", "subnet-64f5fe08"],
         "security_group_ids": [],
         "instance_type": "m3.xlarge",
+        "distro": "centos",
         "device_map": {
             "/dev/sda1": {
                 "size": 80,
