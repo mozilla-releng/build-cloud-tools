@@ -124,28 +124,30 @@ def usable_spot_choice(choice, minutes=15):
     return True
 
 
-_active_req = {}
+_avail_slave_names = {}
 
 
 def get_available_spot_slave_name(region, moz_instance_type, slaveset):
-    key = (region, moz_instance_type, slaveset)
-    if key in _active_req:
-        if _active_req[key]:
-            return _active_req[key].pop()
-        else:
+    key = (region, moz_instance_type)
+    if key in _avail_slave_names:
+        # cached entry
+        if not _avail_slave_names[key]:
             return None
 
-    all_slaves = get_slaves()
-    active_req = get_active_spot_requests(region)
-    used_names = set(r.tags.get("Name") for r in active_req)
-    avail_names = all_slaves[moz_instance_type][region] - used_names
-    if slaveset:
-        usable = avail_names.intersection(slaveset)
+        if slaveset:
+            usable = _avail_slave_names[key].intersection(slaveset)
+        else:
+            usable = _avail_slave_names[key] - set(get_allocated_slaves(None))
+        if not usable:
+            return None
+        name = usable.pop()
+        _avail_slave_names[key].discard(name)
+        return name
     else:
-        usable = avail_names - set(get_allocated_slaves(None))
-    if usable:
-        _active_req[key] = usable
-        return _active_req[key].pop()
-    else:
-        _active_req[key] = None
-        return None
+        # populate cache and call again
+        all_slaves = get_slaves()
+        active_req = get_active_spot_requests(region)
+        used_names = set(r.tags.get("Name") for r in active_req)
+        _avail_slave_names[key] = all_slaves[moz_instance_type][region] - used_names
+        return get_available_spot_slave_name(region, moz_instance_type,
+                                             slaveset)
