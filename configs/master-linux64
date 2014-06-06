@@ -23,20 +23,6 @@
                 "skip_resize": true
             }
         },
-        "lvm": {
-            "pvcreate": "/dev/xvdf",
-            "vgcreate": {
-                "instances_storage": "/dev/xvdf"
-            },
-            "lvcreate": {
-                "builds": {
-                    "vg": "instances_storage",
-                    "params": "-l 100%FREE",
-                    "format_as": "ext4",
-                    "mount_point": "/mnt/instance_storage"
-                }
-            }
-        },
         "tags": {
             "moz-type": "buildbot-master"
         }
@@ -62,20 +48,6 @@
                 "instance_dev": "/dev/xvdf",
                 "delete_on_termination": false,
                 "skip_resize": true
-            }
-        },
-        "lvm": {
-            "pvcreate": "/dev/xvdf",
-            "vgcreate": {
-                "instances_storage": "/dev/xvdf"
-            },
-            "lvcreate": {
-                "builds": {
-                    "vg": "instances_storage",
-                    "params": "-l 100%FREE",
-                    "format_as": "ext4",
-                    "mount_point": "/mnt/instance_storage"
-                }
             }
         },
         "tags": {

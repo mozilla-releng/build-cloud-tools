@@ -129,7 +129,7 @@ def assimilate(instance, config, ssh_key, instance_data, deploypass,
         put('%s/releng-public.repo' % AMI_CONFIGS_DIR,
             '/etc/yum.repos.d/releng-public.repo')
         run('yum clean all')
-        run('yum install -q -y lvm-init puppet cloud-init')
+        run('yum install -q -y puppet cloud-init')
 
     run("wget -O /root/puppetize.sh https://hg.mozilla.org/build/puppet/raw-file/production/modules/puppet/files/puppetize.sh")
     run("chmod 755 /root/puppetize.sh")
