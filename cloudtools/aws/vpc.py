@@ -1,5 +1,4 @@
 import logging
-import random
 from IPy import IP
 from . import get_vpc
 
@@ -31,8 +30,9 @@ def get_avail_subnet(region, subnet_ids, availability_zone):
     subnets = vpc.get_all_subnets(subnet_ids=subnet_ids)
     subnets = [s for s in subnets if s.available_ip_address_count > 0 and
                s.availability_zone == availability_zone]
+    subnets.sort(key=lambda s: s.available_ip_address_count)
     if not subnets:
         log.debug("No free IP available in %s for subnets %s",
                   availability_zone, subnet_ids)
-        return []
-    return random.choice(subnets).id
+        return None
+    return subnets[-1].id
