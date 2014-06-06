@@ -117,10 +117,7 @@ def aws_get_all_instances(regions):
             retval.extend(_aws_instances_cache[region])
         else:
             conn = get_aws_connection(region)
-            reservations = conn.get_all_instances()
-            region_instances = []
-            for r in reservations:
-                region_instances.extend(r.instances)
+            region_instances = conn.get_only_instances()
             log.debug("aws_get_running_instances - caching %s", region)
             _aws_instances_cache[region] = region_instances
             retval.extend(region_instances)
@@ -177,44 +174,3 @@ def aws_get_fresh_instances(instances, launched_since):
         if t > launched_since:
             retval.append(i)
     return retval
-
-
-def aws_get_reservations(regions):
-    """
-    Return a mapping of (availability zone, ec2 instance type) -> count
-    """
-    log.debug("getting reservations for %s", regions)
-    retval = {}
-    for region in regions:
-        conn = get_aws_connection(region)
-        reservations = conn.get_all_reserved_instances(filters={
-            'state': 'active',
-        })
-        for r in reservations:
-            az = r.availability_zone
-            ec2_instance_type = r.instance_type
-            if (az, ec2_instance_type) not in retval:
-                retval[az, ec2_instance_type] = 0
-            retval[az, ec2_instance_type] += r.instance_count
-    return retval
-
-
-def aws_filter_reservations(reservations, running_instances):
-    """
-    Filters reservations by reducing the count for reservations by the number
-    of running instances of the appropriate type. Removes entries for
-    reservations that are fully used.
-
-    Modifies reservations in place
-    """
-    # Subtract running instances from our reservations
-    for i in running_instances:
-        if (i.placement, i.instance_type) in reservations:
-            reservations[i.placement, i.instance_type] -= 1
-    log.debug("available reservations: %s", reservations)
-
-    # Remove reservations that are used up
-    for k, count in reservations.items():
-        if count <= 0:
-            log.debug("all reservations for %s are used; removing", k)
-            del reservations[k]

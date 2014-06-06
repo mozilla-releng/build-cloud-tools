@@ -2,6 +2,7 @@
 """
 Watches running EC2 instances and shuts them down when idle
 """
+# lint_ignore=E501,C901
 import re
 import time
 import calendar
@@ -48,17 +49,16 @@ def stop(i):
 
 def get_buildbot_instances(conn, moz_types):
     # Look for running `moz_types` instances with moz-state=ready
-    reservations = conn.get_all_instances(filters={
+    instances = conn.get_only_instances(filters={
         'tag:moz-state': 'ready',
         'instance-state-name': 'running',
     })
 
     retval = []
-    for r in reservations:
-        for i in r.instances:
-            if i.tags.get("moz-type") in moz_types and \
-                    not i.tags.get("moz-loaned-to"):
-                retval.append(i)
+    for i in instances:
+        if i.tags.get("moz-type") in moz_types and \
+                not i.tags.get("moz-loaned-to"):
+            retval.append(i)
 
     return retval
 

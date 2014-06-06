@@ -29,7 +29,7 @@ site.addsitedir(os.path.join(os.path.dirname(__file__), ".."))
 from cloudtools.aws import get_aws_connection, INSTANCE_CONFIGS_DIR, \
     aws_get_running_instances, aws_get_all_instances, get_user_data_tmpl, \
     aws_filter_instances, aws_get_spot_instances, aws_get_ondemand_instances,\
-    aws_get_fresh_instances, aws_get_reservations, aws_filter_reservations
+    aws_get_fresh_instances
 from cloudtools.aws.spot import get_spot_requests_for_moztype, \
     usable_spot_choice, get_available_spot_slave_name
 from cloudtools.jacuzzi import get_allocated_slaves, aws_get_slaveset_instances
@@ -99,18 +99,6 @@ def aws_resume_instances(all_instances, moz_instance_type, start_count,
         key=_instance_sort_key)))
     log.debug("stopped_instances: %s", stopped_instances)
 
-    # Get our current reservations
-    reservations = aws_get_reservations(regions)
-    log.debug("current reservations: %s", reservations)
-
-    # Get our currently running instances
-    running_instances = aws_filter_instances(all_instances, state='running')
-
-    # Filter the reservations
-    aws_filter_reservations(reservations, running_instances)
-    log.debug("filtered reservations: %s", reservations)
-
-    # List of (instance, is_reserved) tuples
     to_start = []
 
     log.debug("filtering by slaveset %s", slaveset)
@@ -123,30 +111,17 @@ def aws_resume_instances(all_instances, moz_instance_type, start_count,
         allocated_slaves = get_allocated_slaves(None)
         stopped_instances = filter(lambda i: i.tags.get('Name') not in allocated_slaves, stopped_instances)
 
-    # While we still have reservations, start instances that can use those
-    # reservations first
-    for i in stopped_instances[:]:
-        k = (i.placement, i.instance_type)
-        if k not in reservations:
-            continue
-        stopped_instances.remove(i)
-        to_start.append((i, True))
-        reservations[k] -= 1
-        if reservations[k] <= 0:
-            del reservations[k]
-
     # Add the rest of the stopped instances
-    to_start.extend((i, False) for i in stopped_instances)
+    to_start.extend(stopped_instances)
 
     # Limit ourselves to start only start_count instances
     log.debug("starting up to %i instances", start_count)
     log.debug("to_start: %s", to_start)
 
     started = 0
-    for i, is_reserved in to_start:
-        r = "reserved instance" if is_reserved else "instance"
+    for i in to_start:
         if not dryrun:
-            log.debug("%s - %s - starting %s", i.placement, i.tags['Name'], r)
+            log.debug("%s - %s - starting", i.placement, i.tags['Name'])
             try:
                 # Check if the instance type needs to be changed. See
                 # watch_pending.cfg.example's instance_type_changes entry.
@@ -164,8 +139,7 @@ def aws_resume_instances(all_instances, moz_instance_type, start_count,
                 log.debug("Cannot start %s", i.tags['Name'], exc_info=True)
                 log.warning("Cannot start %s", i.tags['Name'])
         else:
-            log.info("%s - %s - would start %s", i.placement, i.tags['Name'],
-                     r)
+            log.info("%s - %s - would start", i.placement, i.tags['Name'])
             started += 1
         if started >= start_count:
             log.debug("Started %s instaces, breaking early", started)
