@@ -125,10 +125,10 @@ if __name__ == '__main__':
 
     if not args.regions:
         args.regions = DEFAULT_REGIONS
+
     for region in args.regions:
         conn = get_aws_connection(region)
-        res = conn.get_all_instances()
-        instances = reduce(lambda a, b: a + b, [r.instances for r in res])
+        instances = conn.get_only_instances()
         for i in instances:
             name = i.tags.get('Name', '')
             instance_id = i.id
