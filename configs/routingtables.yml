@@ -64,6 +64,17 @@ us-west-2:
 
     testers:
         routes:
+            # Amazon routes (check via 'whois')
+            50.16.0.0/14: IGW
+            54.230.0.0/15: IGW
+            54.239.0.0/17: IGW
+            54.240.0.0/12: IGW
+            72.21.192.0/19: IGW
+            176.32.96.0/21: IGW
+            178.236.0.0/21: IGW
+            205.251.192.0/18: IGW
+            207.171.160.0/19: IGW
+
             # For graphite
             carbon.hostedgraphite.com: IGW
             mozilla.carbon.hostedgraphite.com: IGW
@@ -147,6 +158,17 @@ us-east-1:
 
     testers:
         routes:
+            # Amazon routes (check via 'whois')
+            50.16.0.0/14: IGW
+            54.230.0.0/15: IGW
+            54.239.0.0/17: IGW
+            54.240.0.0/12: IGW
+            72.21.192.0/19: IGW
+            176.32.96.0/21: IGW
+            178.236.0.0/21: IGW
+            205.251.192.0/18: IGW
+            207.171.160.0/19: IGW
+
             # For graphite
             carbon.hostedgraphite.com: IGW
             mozilla.carbon.hostedgraphite.com: IGW
