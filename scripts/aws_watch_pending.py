@@ -21,7 +21,6 @@ from boto.ec2.networkinterface import NetworkInterfaceCollection, \
 from boto.ec2.blockdevicemapping import BlockDeviceMapping, BlockDeviceType
 import sqlalchemy as sa
 from sqlalchemy.engine.reflection import Inspector
-from bid import decide as get_spot_choices
 
 import site
 site.addsitedir(os.path.join(os.path.dirname(__file__), ".."))
@@ -31,7 +30,7 @@ from cloudtools.aws import get_aws_connection, INSTANCE_CONFIGS_DIR, \
     aws_filter_instances, aws_get_spot_instances, aws_get_ondemand_instances,\
     aws_get_fresh_instances
 from cloudtools.aws.spot import get_spot_requests_for_moztype, \
-    usable_spot_choice, get_available_spot_slave_name
+    usable_spot_choice, get_available_spot_slave_name, get_spot_choices
 from cloudtools.jacuzzi import get_allocated_slaves, aws_get_slaveset_instances
 from cloudtools.aws.ami import get_ami
 from cloudtools.aws.vpc import get_avail_subnet
