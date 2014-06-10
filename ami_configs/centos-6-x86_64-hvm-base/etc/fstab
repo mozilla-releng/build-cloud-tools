@@ -1,4 +1,4 @@
-LABEL=@ROOT_DEV_LABEL@   /         @FS_TYPE@   defaults,noatime,nodiratime,data=writeback        1 1
+LABEL=@ROOT_DEV_LABEL@   /         @FS_TYPE@   defaults,noatime,nodiratime,data=writeback,barrier=0        1 1
 none       /proc     proc    defaults        0 0
 none       /sys      sysfs   defaults        0 0
 none       /dev/pts  devpts  gid=5,mode=620  0 0
