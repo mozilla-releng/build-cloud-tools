@@ -68,10 +68,12 @@ def create_ami(host_instance, options, config):
         # first primary device name.
         mount_dev = "%s1" % mount_dev
         run('parted -s %s -- mklabel msdos' % int_dev_name)
-        run('parted -s -a optimal %s -- mkpart primary ext2 0 -1s' % int_dev_name)
+        run('parted -s -a optimal %s -- mkpart primary ext2 0 -1s' %
+            int_dev_name)
         run('parted -s %s -- set 1 boot on' % int_dev_name)
-    run('/sbin/mkfs.{fs_type} {dev}'.format(
-        fs_type=config['target']['fs_type'], dev=mount_dev))
+    run('/sbin/mkfs.{fs_type} {args} {dev}'.format(
+        fs_type=config['target']['fs_type'],
+        args=config['target'].get("mkfs_args", ""), dev=mount_dev))
     run('/sbin/e2label {dev} {label}'.format(
         dev=mount_dev, label=config['target']['e2_label']))
     run('mount {dev} {mount_point}'.format(dev=mount_dev,
@@ -95,7 +97,7 @@ def create_ami(host_instance, options, config):
         run('chroot %s apt-get update' % mount_point)
         run('DEBIAN_FRONTEND=text chroot {mnt} apt-get install -y '
             'ubuntu-desktop openssh-server makedev curl grub {kernel}'.format(
-            mnt=mount_point, kernel=config['kernel_package']))
+                mnt=mount_point, kernel=config['kernel_package']))
         run('rm -f %s/usr/sbin/policy-rc.d' % mount_point)
         run('umount %s/dev' % mount_point)
         run('chroot %s ln -s /sbin/MAKEDEV /dev/' % mount_point)

@@ -9,6 +9,7 @@
         "target": {
             "size": 8,
             "fs_type": "ext4",
+            "mkfs_args": "-O ^has_journal",
             "e2_label": "cloudimg-rootfs",
             "aws_dev_name": "/dev/sdh",
             "int_dev_name": "/dev/xvdh",
@@ -25,6 +26,7 @@
         "target": {
             "size": 8,
             "fs_type": "ext4",
+            "mkfs_args": "-O ^has_journal",
             "e2_label": "cloudimg-rootfs",
             "aws_dev_name": "/dev/sdh",
             "int_dev_name": "/dev/xvdh",
