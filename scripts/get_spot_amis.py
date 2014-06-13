@@ -30,4 +30,5 @@ if __name__ == '__main__':
     for region in regions:
         for moz_instance_type in moz_instance_types:
             ami = get_ami(region=region, moz_instance_type=moz_instance_type)
-            print "%s, %s: %s" % (moz_instance_type, region, ami.id)
+            print "%s, %s: %s (%s)" % (moz_instance_type, region, ami.id,
+                                       ami.tags.get("Name"))
