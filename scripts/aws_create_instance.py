@@ -158,6 +158,8 @@ def assimilate(instance, config, ssh_key, instance_data, deploypass,
     if instance_data.get("s3_tarballs"):
         unpack_tarballs(instance_data["s3_tarballs"])
 
+    run("sync")
+    run("sync")
     if reboot:
         log.info("Rebooting %s...", hostname)
         run("reboot")
