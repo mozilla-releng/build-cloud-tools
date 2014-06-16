@@ -90,7 +90,7 @@ def copy_ami(source_ami, region_to_copy):
             log.info('AMI created')
             log.info('ID: {id}, name: {name}'.format(id=new_ami.id,
                                                      name=new_ami.name))
-            break
+            return new_ami
         except:
             log.info('Wating for AMI')
             time.sleep(10)
