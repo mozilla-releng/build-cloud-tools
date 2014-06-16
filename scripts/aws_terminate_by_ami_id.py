@@ -42,7 +42,8 @@ def main():
         if instances:
             instances_to_kill.extend(instances)
     if instances_to_kill:
-        log.info("Preparing to terminate the following instances:")
+        log.info("Preparing to terminate the following %s instances:",
+                 len(instances_to_kill))
         for i in instances_to_kill:
             log.info("%s (%s)", i.id, i.tags.get("Name"))
         yesno = raw_input("Are you sure you want to kill these? ^ y/N >")
