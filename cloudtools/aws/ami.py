@@ -117,9 +117,9 @@ def delete_old_amis(region, tags, keep_last):
         for a in amis_to_delete:
             snap_id = a.block_device_mapping[a.root_device_name].snapshot_id
             snap = conn.get_all_snapshots(snapshot_ids=[snap_id])[0]
-            log.warn("Deleting %s" % a)
+            log.warn("Deleting %s (%s)", a, a.tags.get("Name"))
             a.deregister()
-            log.warn("Deleting %s" % snap)
+            log.warn("Deleting %s (%s)", snap, snap.description)
             snap.delete()
 
 
