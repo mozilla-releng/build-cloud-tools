@@ -22,7 +22,7 @@ from cloudtools.aws import AMI_CONFIGS_DIR, get_aws_connection, get_vpc, \
     name_available, wait_for_status
 from cloudtools.dns import get_ip, get_ptr
 from cloudtools.aws.vpc import get_subnet_id, ip_available
-from cloudtools.aws.ami import ami_cleanup, volume_to_ami
+from cloudtools.aws.ami import ami_cleanup, volume_to_ami, copy_ami, get_ami
 from cloudtools.fabric import setup_fabric_env
 
 log = logging.getLogger(__name__)
@@ -402,7 +402,8 @@ if __name__ == '__main__':
                         help="Generate AMI and terminate the instance")
     parser.add_argument("--ignore-subnet-check", action="store_true",
                         help="Do not check subnet IDs")
-
+    parser.add_argument("-t", "--copy-to-region", action="append", default=[],
+                        dest="copy_to_regions", help="Regions to copy AMI to")
     args = parser.parse_args()
 
     logging.basicConfig(format="%(asctime)s - %(levelname)s - %(message)s")
@@ -431,3 +432,9 @@ if __name__ == '__main__':
                    loaned_to=args.loaned_to, loan_bug=args.bug,
                    create_ami=args.create_ami,
                    ignore_subnet_check=args.ignore_subnet_check)
+    for r in args.copy_to_regions:
+        ami = get_ami(region=args.region,
+                      moz_instance_type=config["instance_type"])
+        log.info("Copying %s (%s) to %s", ami.id, ami.tags.get("Name"), r)
+        new_ami = copy_ami(ami, r)
+        log.info("New AMI created. AMI ID: %s", new_ami.id)
