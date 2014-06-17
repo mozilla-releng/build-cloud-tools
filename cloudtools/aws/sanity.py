@@ -1,24 +1,30 @@
 """aws_slave module"""
 
+import os
 import json
 import time
 import logging
 import urllib2
 import socket
 import calendar
+import datetime
+from cloudtools.aws import parse_aws_time
 
-LOG = logging.getLogger(__name__)
-LOG.setLevel(logging.INFO)
+log = logging.getLogger(__name__)
+
 BUILDAPI_URL_JSON = "http://buildapi.pvt.build.mozilla.org/buildapi/recent/{slave_name}?format=json"
 BUILDAPI_URL = "http://buildapi.pvt.build.mozilla.org/buildapi/recent/{slave_name}"
 
+SLAVE_TAGS = ('try-linux64', 'tst-linux32', 'tst-linux64', 'bld-linux64')
 
 KNOWN_TYPES = ('puppetmaster', 'buildbot-master', 'dev-linux64', 'infra',
                'bld-linux64', 'try-linux64', 'tst-linux32', 'tst-linux64',
-               'tst-win64', 'dev', 'servo-linux64', 'packager', 'vcssync',)
+               'tst-win64', 'dev', 'servo-linux64', 'packager', 'vcssync',
+               "servo-puppet1", "signing")
 
 EXPECTED_MAX_UPTIME = {
     "puppetmaster": "meh",
+    "servo-puppet1": "meh",
     "buildbot-master": "meh",
     "dev": "meh",
     "infra": "meh",
@@ -34,6 +40,7 @@ EXPECTED_MAX_UPTIME = {
 
 EXPECTED_MAX_DOWNTIME = {
     "puppetmaster": 0,
+    "servo-puppet1": 0,
     "buildbot-master": 0,
     "dev": 0,
     "infra": 0,
@@ -73,13 +80,14 @@ def launch_time_to_epoch(launch_time):
 
 class AWSInstance(object):
     """AWS AWSInstance"""
-    def __init__(self, instance):
+    def __init__(self, instance, events_dir=None):
         self.instance = instance
         self.now = time.time()
         self.timeout = None
         self.last_job_endtime = None
-        self.max_downtime = self._get_timeout(EXPECTED_MAX_UPTIME)
-        self.max_uptime = self._get_timeout(EXPECTED_MAX_DOWNTIME)
+        self.max_downtime = self._get_timeout(EXPECTED_MAX_DOWNTIME)
+        self.max_uptime = self._get_timeout(EXPECTED_MAX_UPTIME)
+        self.events_dir = events_dir
 
     def _get_tag(self, tag_name, default=None):
         """returns tag_name tag from instance tags"""
@@ -91,9 +99,13 @@ class AWSInstance(object):
         default_timeout = timeouts['default']
         instance_type = self.get_instance_type()
         timeout = timeouts.get(instance_type, default_timeout)
-        if not timeout is 'meh':
-            # timeout h -> s
-            self.timeout = timeout * 3600
+        if timeout == "meh":
+            # set the timeout in the future...
+            self.timeout = self.now + 3600
+            log.debug('{0}: timeout = {1}'.format(self.get_id(), self.timeout))
+        else:
+            self.timeout = int(timeout) * 3600
+            log.debug('{0}: timeout = {1}'.format(self.get_id(), self.timeout))
         return self.timeout
 
     def _get_bug_string(self):
@@ -146,9 +158,32 @@ class AWSInstance(object):
         return region.name
 
     def is_long_running(self):
-        """returns True is this instance is running for a long time
-        this method must be implemented in subclasses"""
-        return
+        """returns True is this instance is running for a long time"""
+        if not self.is_running():
+            return False
+        if self.is_loaned():
+            return False
+        my_uptime =  self._get_uptime_timestamp()
+        return my_uptime > self.max_uptime
+
+    def is_long_stopped(self):
+        """returns True is this instance is running for a long time"""
+        if self.is_running():
+            return False
+        if self.is_loaned():
+            return False
+        # get the uptime and assume it has been always down...
+        my_downtime =  self._get_uptime_timestamp()
+        if self.events_dir:
+            # ... unless we have the local logs
+            my_downtime = self.get_stop_time_from_logs()
+        return my_downtime > self.max_downtime
+
+    def is_lazy(self):
+        """returns True if this instance is on line for a while and it's not
+           getting any jobs. It makes sense only if this machine is a slave.
+           (must be implemented in the Slave class)"""
+        return False
 
     def is_running(self):
         """returns True if instance is running"""
@@ -159,23 +194,22 @@ class AWSInstance(object):
         return self._get_state() == 'stopped'
 
     def is_loaned(self):
-        """returns True if the slave is loaned"""
+        """returns True if the instance is loaned"""
         return self._get_tag("moz-loaned-to")
 
-    def is_stale(self):
-        """returns True if a running instance is running for a longer time than
-           expected (EXPECTED_MAX_UPTIME); for stopped instances, returns True
-           if the instance is stopped for more than EXPECTED_MAX_DOWNTIME
-           Loaned instances and moz-type with timeout == meh cannot be stale"""
-        if self.is_loaned():
-            # ignore loaned
-            return False
-        timeout = self._get_timeout(EXPECTED_MAX_UPTIME)
-        if self.is_stopped():
-            timeout = self._get_timeout(EXPECTED_MAX_DOWNTIME)
-        if timeout == 'meh':
-            return False
-        return (self._get_uptime_timestamp() > timeout)
+    def bad_type(self):
+        """returns True if the instance type is not in KNOWN_TYPES"""
+        bad_type = False
+        if not self._get_moz_type() in KNOWN_TYPES:
+            bad_type = True
+        return bad_type
+
+    def bad_state(self):
+        """returns True if the instance type is not in KNOWN_TYPES"""
+        bad_state = False
+        if self._get_moz_state() != 'ready':
+            bad_state = True
+        return bad_state
 
     def loaned_message(self):
         """if the machine is loaned, returns the following message:
@@ -208,12 +242,17 @@ class AWSInstance(object):
            instance_name (instance id, region) down for X hours"""
         if not self.is_stopped():
             return ""
-        return "{0} down for {1}".format(self.__repr__(), self.get_uptime())
+        stop_time = self.get_stop_time_from_logs()
+        if not stop_time:
+            stop_time = self.get_uptime()
+        else:
+            stop_time = timedelta_to_time_string(stop_time)
+        return "{0} down for {1}".format(self.__repr__(), stop_time)
 
     def running_message(self):
         """if the instance is running, it returns the following string:
            instance_name (instance id, region) up for X hours"""
-        if self.is_stopped():
+        if not self.is_running():
             return ""
         return "{0} up for {1}".format(self.__repr__(), self.get_uptime())
 
@@ -221,21 +260,80 @@ class AWSInstance(object):
         """returns the following message:
            Unknown state REASON
            where REASON is the content of moz-state tag
-           it returns an empty sting is moz-state is 'ready'"""
-        moz_state = self._get_moz_state()
-        if moz_state == 'ready':
-            moz_state = ""
-        return moz_state
+           it returns an empty string is moz-state is 'ready'"""
+        return "{0} ({1}, {2}) Unknown state: '{3}'".format(
+            self.get_name(), self.get_id(), self.get_region(),
+            self._get_moz_state())
 
     def unknown_type_message(self):
         """returns the following message:
            Unknown type TYPE
            where TYPE is the content of moz-type tag
            it returns an empty sting is moz-state is 'ready'"""
-        moz_type = self._get_moz_type()
-        if moz_type in KNOWN_TYPES:
-            moz_type = ""
-        return moz_type
+        return "{0} ({1}, {2}) Unknown type: '{2}'".format(
+            self.get_name(), self.get_id(), self.get_region(),
+            self._get_moz_type())
+
+    def longrunning_message(self):
+        """returns the running_message and appends (no info from buildapi)"""
+        message = self.running_message()
+        return " ".join([message, "(no info from buildapi)"])
+
+
+    def _event_log_file(self, event):
+        """returns the json file from the event directory"""
+        if not self.events_dir:
+            return
+        instance_json = os.path.join(self.events_dir, event, self.get_id())
+        if os.path.exists(instance_json):
+            return instance_json
+        return
+
+    def _get_stop_log(self):
+        """gets the cloudtrail log file about the last stop event for the
+           current instance"""
+        return self._event_log_file('StopInstances')
+
+    def _get_start_log(self):
+        """gets the cloudtrail log file about the last start event for the
+           current instance"""
+        # currently start events are not processed, so it always returns None
+        return self._event_log_file('StartInstances')
+
+    def _get_terminate_log(self):
+        """gets the cloudtrail log file about the last terminate event for the
+           current instance"""
+        # currently start events are not processed, so it always returns None
+        return self._event_log_file('TerminateInstances')
+
+    def _get_time_from_json(self, json_file):
+        """reads a json log and returns the eventTime"""
+        try:
+            with open(json_file) as json_f:
+                data = json.loads(json_f.read())
+                event = parse_aws_time(data['eventTime'])
+                now = time.time()
+                tdelta = (now - event)/3600
+                return tdelta
+        except TypeError:
+            # json_file is None; aws_sanity_checker has no events-dir set
+            pass
+        except IOError:
+            # file does not exist
+            pass
+        except ValueError:
+            # bad json filex
+            log.debug('JSON cannot load %s', json_file)
+
+    def get_stop_time_from_logs(self):
+        """time in hours since the last stop event. Returns None if the event
+           does not exist"""
+        stop_time = self._get_time_from_json(self._get_stop_log())
+        if stop_time:
+            # stop time could be None, when there are no stop events
+            # stop time is in seconds, self.max_downtime in hours
+            stop_time = stop_time * 3600
+        return stop_time
 
     def __repr__(self):
         # returns:
@@ -256,7 +354,7 @@ class Slave(AWSInstance):
             last_job = timedelta_to_time_string(delta)
         return last_job
 
-    def get_last_job_endtime(self, timeout=60):
+    def get_last_job_endtime(self, timeout=5):
         """gets the last endtime from buildapi"""
         # discard tmp and None instances as they are not on buildapi
         if self.get_name in ['tmp', None]:
@@ -271,23 +369,25 @@ class Slave(AWSInstance):
             data = json.load(json_data)
             try:
                 endtime = max([job['endtime'] for job in data])
-                LOG.debug("max endtime: {endtime}".format(endtime=endtime))
+                log.debug("{instance}: max endtime: {endtime}".format(
+                    instance=self.get_id(), endtime=endtime))
             except TypeError:
                 # somehow endtime is not set
                 # ignore and use None
-                pass
+                log.debug("{instance}: endtime is not set".format(
+                    instance=self.get_id()))
             except ValueError:
-                # no jobs completed
-                # ignore
-                pass
+                # no jobs completed, ignore
+                log.debug("{instance}: no jobs completed".format(
+                    instance=self.get_id()))
         except urllib2.HTTPError as error:
-            LOG.debug('http error {0}, url: {1}'.format(error.code, url))
+            log.debug('http error {0}, url: {1}'.format(error.code, url))
         except urllib2.URLError as error:
             # in python < 2.7 this exception intercepts timeouts
-            LOG.debug('url: {1} - error {1}'.format(url, error.reason))
+            log.debug('url: {0} - error {1}'.format(url, error.reason))
         # in python > 2.7, timeout is a socket.timeout exception
         except socket.timeout as error:
-            LOG.debug('connection timed out, url: {0}'.format(url))
+            log.debug('connection timed out, url: {0}'.format(url))
         self.last_job_endtime = endtime
         return self.last_job_endtime
 
@@ -299,17 +399,22 @@ class Slave(AWSInstance):
         """returns buildapi's json url"""
         return BUILDAPI_URL_JSON.format(slave_name=self.get_name())
 
-    def is_long_running(self):
-        """A slave is long running if it's running and the last job
-           ended long time ago, more than expected uptime
-           returns a tuple with Name, timeout, and timeout
-           (in human readable format)"""
+    def is_lazy(self):
+        """Checks if this instance is online for more than EXPECTED_MAX_UPTIME,
+           and it's not taking jobs"""
         if not self.is_running():
             return False
+
+        # get all the machines running for more than expected
+        if not super(Slave, self).is_long_running():
+            return False
+
         delta = self.now - self.get_last_job_endtime()
-        if delta > self.timeout:
-            return True
-        return False
+        if delta < self.max_uptime:
+            # this instance got a job recently
+            return False
+        # no recent jobs, this machine is long running
+        return True
 
     def longrunning_message(self):
         """if the slave is long runnring, it returns the following string:
@@ -319,3 +424,11 @@ class Slave(AWSInstance):
             message = "{0} ({1} since last build)".format(
                 message, self.when_last_job_ended())
         return message
+
+
+def aws_instance_factory(instance, events_dir):
+    aws_instance = AWSInstance(instance)
+    # is aws_instance a slave ?
+    if aws_instance.get_instance_type() in SLAVE_TAGS:
+        aws_instance = Slave(instance, events_dir)
+    return aws_instance

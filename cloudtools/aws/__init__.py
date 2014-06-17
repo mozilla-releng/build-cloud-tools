@@ -5,6 +5,7 @@ import calendar
 import iso8601
 from boto.ec2 import connect_to_region
 from boto.vpc import VPCConnection
+from boto.s3.connection import S3Connection
 from repoze.lru import lru_cache
 from fabric.api import run
 
@@ -18,6 +19,12 @@ DEFAULT_REGIONS = ['us-east-1', 'us-west-2']
 def get_aws_connection(region):
     """Connect to an EC2 region. Caches connection objects"""
     return connect_to_region(region)
+
+
+@lru_cache(10)
+def get_s3_connection():
+    """Connect to S3. Caches connection objects"""
+    return S3Connection()
 
 
 @lru_cache(10)
