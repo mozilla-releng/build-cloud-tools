@@ -434,7 +434,7 @@ if __name__ == '__main__':
                    ignore_subnet_check=args.ignore_subnet_check)
     for r in args.copy_to_regions:
         ami = get_ami(region=args.region,
-                      moz_instance_type=config["instance_type"])
+                      moz_instance_type=config["type"])
         log.info("Copying %s (%s) to %s", ami.id, ami.tags.get("Name"), r)
         new_ami = copy_ami(ami, r)
         log.info("New AMI created. AMI ID: %s", new_ami.id)
