@@ -70,10 +70,12 @@ def volume_to_ami(volume, ami_name, arch, virtualization_type,
                 ami.add_tag(tag, value)
             log.info('AMI created')
             log.info('ID: {id}, name: {name}'.format(id=ami.id, name=ami.name))
-            return ami
+            break
         except:
             log.info('Wating for AMI')
             time.sleep(10)
+    wait_for_status(ami, "state", "available", "update")
+    return ami
 
 
 def copy_ami(source_ami, region_to_copy):
@@ -94,8 +96,8 @@ def copy_ami(source_ami, region_to_copy):
         except:
             log.info('Wating for AMI')
             time.sleep(10)
-    wait_for_status(new_ami, "state", "available", "update")
-    return new_ami
+        else:
+            return new_ami
 
 
 def get_spot_amis(region, tags, name_glob="spot-*"):
