@@ -90,12 +90,12 @@ def copy_ami(source_ami, region_to_copy):
             log.info('AMI created')
             log.info('ID: {id}, name: {name}'.format(id=new_ami.id,
                                                      name=new_ami.name))
-            return new_ami
+            break
         except:
             log.info('Wating for AMI')
             time.sleep(10)
-        else:
-            return new_ami
+    wait_for_status(new_ami, "state", "available", "update")
+    return new_ami
 
 
 def get_spot_amis(region, tags, name_glob="spot-*"):
