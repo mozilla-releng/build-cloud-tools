@@ -96,8 +96,7 @@ def copy_ami(source_ami, region_to_copy):
         except:
             log.info('Wating for AMI')
             time.sleep(10)
-        else:
-            return new_ami
+    return new_ami
 
 
 def get_spot_amis(region, tags, name_glob="spot-*"):
