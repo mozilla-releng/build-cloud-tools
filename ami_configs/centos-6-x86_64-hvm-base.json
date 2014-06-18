@@ -6,9 +6,8 @@
         "distro": "centos",
         "virtualization_type": "hvm",
         "target": {
-            "size": 150,
+            "size": 80,
             "fs_type": "ext4",
-            "mkfs_args": "-O ^has_journal",
             "e2_label": "root_dev",
             "aws_dev_name": "/dev/sdh",
             "int_dev_name": "/dev/xvdh",
@@ -27,9 +26,8 @@
         "distro": "centos",
         "virtualization_type": "hvm",
         "target": {
-            "size": 150,
+            "size": 80,
             "fs_type": "ext4",
-            "mkfs_args": "-O ^has_journal",
             "e2_label": "root_dev",
             "aws_dev_name": "/dev/sdh",
             "int_dev_name": "/dev/xvdh",
