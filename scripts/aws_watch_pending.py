@@ -40,6 +40,7 @@ log = logging.getLogger()
 # Number of seconds from an instance's launch time for it to be considered
 # 'fresh'
 FRESH_INSTANCE_DELAY = 20 * 60
+FRESH_INSTANCE_DELAY_JACUZZI = 10 * 60
 
 
 def find_pending(db):
@@ -408,15 +409,23 @@ def aws_watch_pending(dburl, regions, builder_map, region_priorities,
                 running = aws_get_ondemand_instances(running)
 
             # Get instances launched recently
-            fresh = aws_get_fresh_instances(running, time.time() - FRESH_INSTANCE_DELAY)
+            if slaveset:
+                # jaccuzied slaves, use shorter delay
+                fresh = aws_get_fresh_instances(running, time.time() - FRESH_INSTANCE_DELAY_JACUZZI)
+            else:
+                fresh = aws_get_fresh_instances(running, time.time() - FRESH_INSTANCE_DELAY)
             log.info("%i running for %s %s %s (%i fresh)", len(running), create_type, moz_instance_type, slaveset, len(fresh))
             # TODO: This logic is probably too simple
             # Reduce the number of required slaves by the number of freshly
             # started instaces, plus 10% of those that have been running a
             # while
             num_fresh = len(fresh)
-            num_old = len(running) - num_fresh
-            delta = num_fresh + (num_old / 10)
+            # reduce number of required slaves by number of fresh instances
+            delta = num_fresh
+            if not slaveset:
+                # if not in jacuzzi, reduce by 10% of already running instances
+                num_old = len(running) - num_fresh
+                delta += num_old / 10
             log.info("reducing required count for %s %s %s by %i (%i running; need %i)", create_type, moz_instance_type, slaveset, delta, len(running), count)
             d[moz_instance_type, slaveset] = max(0, count - delta)
             if d[moz_instance_type, slaveset] == 0:
