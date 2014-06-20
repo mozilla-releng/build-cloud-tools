@@ -9,3 +9,4 @@ disable_root: false
 ssh_pwauth: true
 moz_instance_type: {moz_instance_type}
 is_spot: {is_spot}
+mounts: false
