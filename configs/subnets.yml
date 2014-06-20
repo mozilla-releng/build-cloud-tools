@@ -16,7 +16,19 @@ us-west-2:
             name: try
             routing_table: try
 
-        10.132.68.0/24:
+        10.132.68.0/26:
+            name: bb
+            routing_table: masters
+
+        10.132.68.64/26:
+            name: bb
+            routing_table: masters
+
+        10.132.68.128/26:
+            name: bb
+            routing_table: masters
+
+        10.132.68.192/26:
             name: bb
             routing_table: masters
 
@@ -50,9 +62,22 @@ us-east-1:
             name: try
             routing_table: try
 
-        10.134.68.0/24:
+        10.134.68.0/26:
             name: bb
             routing_table: masters
+
+        10.134.68.64/26:
+            name: bb
+            routing_table: masters
+
+        10.134.68.128/26:
+            name: bb
+            routing_table: masters
+
+        10.134.68.192/26:
+            name: bb
+            routing_table: masters
+
 
         10.134.156.0/22:
             name: test
