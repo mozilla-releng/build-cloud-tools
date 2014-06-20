@@ -16,6 +16,10 @@ us-west-2:
             name: try
             routing_table: try
 
+        10.132.68.0/24:
+            name: bb
+            routing_table: masters
+
         10.132.156.0/22:
             name: test
             routing_table: testers
@@ -45,6 +49,10 @@ us-east-1:
         10.134.64.0/22:
             name: try
             routing_table: try
+
+        10.134.68.0/24:
+            name: bb
+            routing_table: masters
 
         10.134.156.0/22:
             name: test
