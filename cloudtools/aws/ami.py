@@ -129,6 +129,7 @@ def get_ami(region, moz_instance_type):
     avail_amis = conn.get_all_images(
         owners=["self"],
         filters={"tag:moz-type": moz_instance_type, "state": "available"})
-    last_ami = sorted(avail_amis,
-                      key=lambda ami: ami.tags.get("moz-created"))[-1]
+    # If creation dates are equal, use AMI IDs to sort
+    last_ami = sorted(
+        avail_amis, key=lambda ami: (ami.tags.get("moz-created"), ami.id))[-1]
     return last_ami
