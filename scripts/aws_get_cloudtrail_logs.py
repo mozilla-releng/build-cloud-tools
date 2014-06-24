@@ -61,7 +61,7 @@ def write_to_disk(cache_dir, key):
     # it works only on unix systems
     signal.signal(signal.SIGALRM, _timeout)
     if not os.path.exists(dst):
-        log.info('downloading: {0}'.format(key.name))
+        log.debug('downloading: {0}'.format(key.name))
         signal.alarm(GET_CONTENTS_TO_FILENAME_TIMEOUT)
         try:
             key.get_contents_to_filename(dst)
@@ -95,7 +95,7 @@ if __name__ == '__main__':
     bucket = conn.get_bucket(args.s3_bucket)
 
     prefixes = []
-    log.info("finding all AWSLog keys")
+    log.debug("finding all AWSLog keys")
     for region in DEFAULT_REGIONS:
         for day in days_to_consider():
             prefixes.append("{0}/{1}/{2}".format(args.s3_base_prefix, region,
