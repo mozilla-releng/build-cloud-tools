@@ -80,8 +80,7 @@ def get_ssh_client(name, ip, credentials):
             except Exception:
                 pass
 
-    log.warning("Couldn't log into %s at %s with any known passwords",
-                name, ip)
+    log.debug("Couldn't log into %s at %s with any known passwords", name, ip)
     return None
 
 
@@ -217,7 +216,7 @@ def aws_safe_stop_instance(i, impaired_ids, credentials, masters_json,
             if time.time() - launch_time > 60 * 10:
                 stopped = True
                 if not dryrun:
-                    log.warning(
+                    log.debug(
                         "%s - shut down an instance with impaired status", name)
                     stop(i)
                 else:
