@@ -261,7 +261,7 @@ def do_request_spot_instance(region, moz_instance_type, price, ami,
                              slaveset, dryrun):
     name = get_available_spot_slave_name(region, moz_instance_type, slaveset)
     if not name:
-        log.warn("No slave name available for %s, %s, %s" % (
+        log.debug("No slave name available for %s, %s, %s" % (
             region, moz_instance_type, slaveset))
         return False
 
@@ -416,7 +416,7 @@ def aws_watch_pending(dburl, regions, builder_map, region_priorities,
                 fresh = aws_get_fresh_instances(running, time.time() - FRESH_INSTANCE_DELAY_JACUZZI)
             else:
                 fresh = aws_get_fresh_instances(running, time.time() - FRESH_INSTANCE_DELAY)
-            log.info("%i running for %s %s %s (%i fresh)", len(running), create_type, moz_instance_type, slaveset, len(fresh))
+            log.debug("%i running for %s %s %s (%i fresh)", len(running), create_type, moz_instance_type, slaveset, len(fresh))
             # TODO: This logic is probably too simple
             # Reduce the number of required slaves by the number of freshly
             # started instaces, plus 10% of those that have been running a
@@ -428,16 +428,16 @@ def aws_watch_pending(dburl, regions, builder_map, region_priorities,
                 # if not in jacuzzi, reduce by 10% of already running instances
                 num_old = len(running) - num_fresh
                 delta += num_old / 10
-            log.info("reducing required count for %s %s %s by %i (%i running; need %i)", create_type, moz_instance_type, slaveset, delta, len(running), count)
+            log.debug("reducing required count for %s %s %s by %i (%i running; need %i)", create_type, moz_instance_type, slaveset, delta, len(running), count)
             d[moz_instance_type, slaveset] = max(0, count - delta)
             if d[moz_instance_type, slaveset] == 0:
-                log.info("removing requirement for %s %s %s", create_type, moz_instance_type, slaveset)
+                log.debug("removing requirement for %s %s %s", create_type, moz_instance_type, slaveset)
                 to_delete.add((moz_instance_type, slaveset))
 
             # If slaveset is not None, and all our slaves are running, we should
             # remove it from the set of things to try and start instances for
             if slaveset and set(i.tags.get('Name') for i in running) == slaveset:
-                log.info("removing %s %s since all the slaves are running", moz_instance_type, slaveset)
+                log.debug("removing %s %s since all the slaves are running", moz_instance_type, slaveset)
                 to_delete.add((moz_instance_type, slaveset))
 
         for moz_instance_type, slaveset in to_delete:
@@ -453,7 +453,7 @@ def aws_watch_pending(dburl, regions, builder_map, region_priorities,
             log.debug("%i %s spot instances running globally", n, moz_instance_type)
             if global_limit and n + count > global_limit:
                 new_count = max(0, global_limit - n)
-                log.info("decreasing requested number of %s from %i to %i (%i out of %i running)", moz_instance_type, count, new_count, n, global_limit)
+                log.debug("decreasing requested number of %s from %i to %i (%i out of %i running)", moz_instance_type, count, new_count, n, global_limit)
                 count = new_count
                 if count <= 0:
                     continue
@@ -464,8 +464,9 @@ def aws_watch_pending(dburl, regions, builder_map, region_priorities,
             regions=regions, region_priorities=region_priorities,
             spot_config=spot_config, dryrun=dryrun, slaveset=slaveset)
         count -= started
-        log.info("%s - started %i spot instances for slaveset %s; need %i",
-                 moz_instance_type, started, slaveset, count)
+        if count > 0:
+            log.info("%s - started %i spot instances for slaveset %s; need %i",
+                     moz_instance_type, started, slaveset, count)
 
         # Add leftover to ondemand
         to_create_ondemand[moz_instance_type, slaveset] += count
@@ -480,7 +481,7 @@ def aws_watch_pending(dburl, regions, builder_map, region_priorities,
             log.debug("%i %s ondemand instances running globally", n, moz_instance_type)
             if global_limit and n + count > global_limit:
                 new_count = max(0, global_limit - n)
-                log.info("decreasing requested number of %s from %i to %i (%i out of %i running)", moz_instance_type, count, new_count, n, global_limit)
+                log.debug("decreasing requested number of %s from %i to %i (%i out of %i running)", moz_instance_type, count, new_count, n, global_limit)
                 count = new_count
                 if count <= 0:
                     continue
@@ -493,8 +494,9 @@ def aws_watch_pending(dburl, regions, builder_map, region_priorities,
                                        regions, region_priorities,
                                        instance_type_changes, dryrun, slaveset)
         count -= started
-        log.info("%s - started %i instances for slaveset %s; need %i",
-                 moz_instance_type, started, slaveset, count)
+        if count:
+            log.info("%s - started %i instances for slaveset %s; need %i",
+                     moz_instance_type, started, slaveset, count)
 
 if __name__ == '__main__':
     import argparse
