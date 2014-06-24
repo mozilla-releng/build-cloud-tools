@@ -32,7 +32,7 @@ def process_cloudtrail(discard_bad_logs, events_dir, filename):
         data = get_data_from_gz_file(filename)
         data = json.loads(data)
     except (ValueError, IOError):
-        log.error('cannot decode JSON from %s', filename)
+        log.debug('cannot decode JSON from %s', filename)
         if discard_bad_logs:
             log.debug('%s is not valid, deleting it', filename)
             os.remove(filename)
@@ -110,7 +110,7 @@ if __name__ == '__main__':
     prefixes = []
     # cloudtrails
     # get all the available cloudtrail files
-    logging.info("processing cloudtrail files")
+    logging.debug("processing cloudtrail files")
     cloudtrail_files = []
     for dirpath, dirnames, filenames in os.walk(args.cloudtrail_dir):
         for log_file in filenames:
