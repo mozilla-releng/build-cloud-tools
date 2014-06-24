@@ -27,7 +27,7 @@ def get_data_from_gz_file(filename):
         with gzip.open(filename, 'rb') as f:
             return f.read()
     except IOError:
-        log.error('%s is not a valid gz file', filename)
+        log.debug('%s is not a valid gz file', filename)
         raise
 
 
