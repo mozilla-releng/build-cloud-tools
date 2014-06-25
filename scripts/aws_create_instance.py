@@ -19,7 +19,7 @@ from boto.ec2.networkinterface import NetworkInterfaceSpecification, \
 
 site.addsitedir(os.path.join(os.path.dirname(__file__), ".."))
 from cloudtools.aws import AMI_CONFIGS_DIR, get_aws_connection, get_vpc, \
-    name_available, wait_for_status
+    name_available, wait_for_status, get_user_data_tmpl
 from cloudtools.dns import get_ip, get_ptr
 from cloudtools.aws.vpc import get_subnet_id, ip_available
 from cloudtools.aws.ami import ami_cleanup, volume_to_ami, copy_ami, get_ami
@@ -261,6 +261,9 @@ def create_instance(name, config, region, key_name, ssh_key, instance_data,
         try:
             if 'user_data_file' in config:
                 user_data = open(config['user_data_file']).read()
+            else:
+                user_data = get_user_data_tmpl(config['type'])
+            if user_data:
                 user_data = user_data.format(
                     puppet_server=instance_data.get('default_puppet_server'),
                     fqdn=instance_data['hostname'],
@@ -268,10 +271,9 @@ def create_instance(name, config, region, key_name, ssh_key, instance_data,
                     domain=instance_data['domain'],
                     dns_search_domain=config.get('dns_search_domain'),
                     password=deploypass,
-                    moz_instance_type=config['instance_type'],
+                    moz_instance_type=config['type'],
+                    is_spot=False
                 )
-            else:
-                user_data = None
 
             reservation = conn.run_instances(
                 image_id=config['ami'],
