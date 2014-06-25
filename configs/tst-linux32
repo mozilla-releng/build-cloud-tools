@@ -17,7 +17,6 @@
         "device_map": {
             "/dev/sda1": {
                 "size": 15,
-                "volume_type": "gp2",
                 "instance_dev": "/dev/xvda1"
             }
         },
@@ -41,7 +40,6 @@
         "device_map": {
             "/dev/sda1": {
                 "size": 15,
-                "volume_type": "gp2",
                 "instance_dev": "/dev/xvda1"
             }
         },
