@@ -199,7 +199,7 @@ def unpack_tarballs(tarballs):
 
 def create_instance(name, config, region, key_name, ssh_key, instance_data,
                     deploypass, loaned_to, loan_bug, create_ami,
-                    ignore_subnet_check):
+                    ignore_subnet_check, max_attempts):
     """Creates an AMI instance with the given name and config. The config must
     specify things like ami id."""
     conn = get_aws_connection(region)
@@ -257,7 +257,8 @@ def create_instance(name, config, region, key_name, ssh_key, instance_data,
     )
     interfaces = NetworkInterfaceCollection(interface)
 
-    while True:
+    keep_going, attempt = True, 1
+    while keep_going:
         try:
             if 'user_data_file' in config:
                 user_data = open(config['user_data_file']).read()
@@ -290,6 +291,9 @@ def create_instance(name, config, region, key_name, ssh_key, instance_data,
         except boto.exception.BotoServerError:
             log.exception("Cannot start an instance")
         time.sleep(10)
+        if max_attempts:
+            attempt += 1
+            keep_going = max_attempts >= attempt
 
     instance = reservation.instances[0]
     log.info("instance %s created, waiting to come up", instance)
@@ -307,7 +311,9 @@ def create_instance(name, config, region, key_name, ssh_key, instance_data,
 
     log.info("assimilating %s", instance)
     instance.add_tag('moz-state', 'pending')
-    while True:
+
+    keep_going, attempt = True, 1
+    while keep_going:
         try:
             # Don't reboot if need to create ami
             reboot = not create_ami
@@ -320,6 +326,10 @@ def create_instance(name, config, region, key_name, ssh_key, instance_data,
                      "10 sec ...", instance_data['hostname'], instance.id,
                      instance.private_ip_address, exc_info=True)
             time.sleep(10)
+        if max_attempts:
+            attempt += 1
+            keep_going = max_attempts >= attempt
+
     instance.add_tag('moz-state', 'ready')
     if create_ami:
         ami_name = "spot-%s-%s" % (
@@ -358,7 +368,7 @@ class LoggingProcess(multiprocessing.Process):
 
 def make_instances(names, config, region, key_name, ssh_key, instance_data,
                    deploypass, loaned_to, loan_bug, create_ami,
-                   ignore_subnet_check):
+                   ignore_subnet_check, max_attempts):
     """Create instances for each name of names for the given configuration"""
     procs = []
     for name in names:
@@ -366,7 +376,8 @@ def make_instances(names, config, region, key_name, ssh_key, instance_data,
                            target=create_instance,
                            args=(name, config, region, key_name, ssh_key,
                                  instance_data, deploypass, loaned_to,
-                                 loan_bug, create_ami, ignore_subnet_check),
+                                 loan_bug, create_ami, ignore_subnet_check,
+                                 max_attempts),
                            )
         p.start()
         procs.append(p)
@@ -391,7 +402,6 @@ if __name__ == '__main__':
                         help="SSH key to be used by Fabric")
     parser.add_argument("-i", "--instance-data", help="instance specific data",
                         type=argparse.FileType('r'), required=True)
-    parser.add_argument("--instance_id", help="assimilate existing instance")
     parser.add_argument("--no-verify", action="store_true",
                         help="Skip DNS related checks")
     parser.add_argument("-v", "--verbose", action="store_true",
@@ -406,6 +416,8 @@ if __name__ == '__main__':
                         help="Do not check subnet IDs")
     parser.add_argument("-t", "--copy-to-region", action="append", default=[],
                         dest="copy_to_regions", help="Regions to copy AMI to")
+    parser.add_argument("--max-attempts",
+                        help="The number of attempts to try after each failure")
     args = parser.parse_args()
 
     logging.basicConfig(format="%(asctime)s - %(levelname)s - %(message)s")
@@ -433,7 +445,8 @@ if __name__ == '__main__':
                    instance_data=instance_data, deploypass=deploypass,
                    loaned_to=args.loaned_to, loan_bug=args.bug,
                    create_ami=args.create_ami,
-                   ignore_subnet_check=args.ignore_subnet_check)
+                   ignore_subnet_check=args.ignore_subnet_check,
+                   max_attempts=args.max_attempts)
     for r in args.copy_to_regions:
         ami = get_ami(region=args.region,
                       moz_instance_type=config["type"])
