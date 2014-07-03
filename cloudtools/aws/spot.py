@@ -262,8 +262,14 @@ def get_spot_choices(connections, rules, product_description, start_time=None,
         instance_type = rule["instance_type"]
         bid_price = rule["bid_price"]
         performance_constant = rule["performance_constant"]
+        ignored_availability_zones = rule.get("ignored_azs", [])
         for region, region_prices in prices.iteritems():
             for az, price in region_prices.get(instance_type, {}).iteritems():
+                if az in ignored_availability_zones:
+                    log.debug("Ignoring AZ %s for %s becuase it is listed in "
+                              " ignored_azs: %s", az, instance_type,
+                              ignored_availability_zones)
+                    continue
                 if price > bid_price:
                     log.debug("%s (in %s) too expensive for %s", price, az,
                               instance_type)
