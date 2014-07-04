@@ -25,7 +25,7 @@ if __name__ == '__main__':
         regions = DEFAULT_REGIONS
     if not moz_instance_types:
         moz_instance_types = ["bld-linux64", "try-linux64", "tst-linux64",
-                              "tst-linux32"]
+                              "tst-linux32", "tst-emulator64"]
 
     for region in regions:
         for moz_instance_type in moz_instance_types:

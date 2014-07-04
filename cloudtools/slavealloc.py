@@ -72,8 +72,18 @@ def slave_moz_type(slave):
        slave.get("environment") == "prod" and \
        slave.get("distro") == "ubuntu64" and \
        slave.get("purpose") == "tests" and \
+       slave.get("speed") == "m1.medium" and \
        slave.get("trustlevel") == "try":
         return "tst-linux64"
+    
+    # tst-emulator64
+    if slave.get("bitlength") == "64" and \
+       slave.get("environment") == "prod" and \
+       slave.get("distro") == "ubuntu64" and \
+       slave.get("purpose") == "tests" and \
+       slave.get("speed") == "c3.xlarge" and \
+       slave.get("trustlevel") == "try":
+        return "tst-emulator64"
 
     return None
 

@@ -15,12 +15,12 @@ log = logging.getLogger(__name__)
 BUILDAPI_URL_JSON = "http://buildapi.pvt.build.mozilla.org/buildapi/recent/{slave_name}?format=json"
 BUILDAPI_URL = "http://buildapi.pvt.build.mozilla.org/buildapi/recent/{slave_name}"
 
-SLAVE_TAGS = ('try-linux64', 'tst-linux32', 'tst-linux64', 'bld-linux64')
+SLAVE_TAGS = ('try-linux64', 'tst-linux32', 'tst-linux64', 'tst-emulator64', 'bld-linux64')
 
 KNOWN_TYPES = ('puppetmaster', 'buildbot-master', 'dev-linux64', 'infra',
                'bld-linux64', 'try-linux64', 'tst-linux32', 'tst-linux64',
-               'tst-win64', 'dev', 'servo-linux64', 'packager', 'vcssync',
-               "servo-puppet1", "signing")
+               'tst-emulator64', 'tst-win64', 'dev', 'servo-linux64', 'packager',
+               'vcssync', "servo-puppet1", "signing")
 
 EXPECTED_MAX_UPTIME = {
     "puppetmaster": "meh",
@@ -34,6 +34,7 @@ EXPECTED_MAX_UPTIME = {
     "try-linux64": 12,
     "tst-linux32": 12,
     "tst-linux64": 12,
+    "tst-emulator64": 12,
     "servo-linux64": 8,
     "default": 4
 }
@@ -50,6 +51,7 @@ EXPECTED_MAX_DOWNTIME = {
     "try-linux64": 72,
     "tst-linux32": 72,
     "tst-linux64": 72,
+    "tst-emulator64": 72,
     "servo-linux64": 72,
     "packager": "meh",
     "default": 24
