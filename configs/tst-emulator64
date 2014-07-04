@@ -1,0 +1,75 @@
+{
+    "hostname": "tst-emulator64-ec2-%03d",
+    "us-east-1": {
+        "type": "tst-emulator64",
+        "domain": "test.releng.use1.mozilla.com",
+        "ami": "ami-e48e1e8d",
+        "subnet_ids": ["subnet-ae35ccc4", "subnet-8f32cbe5", "subnet-ff3542d7",
+                       "subnet-b8643190", "subnet-fb97bc8f", "subnet-844b7ec2",
+                       "subnet-ed35cc87", "subnet-5cd0d828", "subnet-7ca5f03a"],
+        "security_group_ids": ["sg-f0f1239f"],
+        "instance_type": "c3.xlarge",
+        "distro": "ubuntu",
+        "ssh_key": "aws-releng",
+        "use_public_ip": true,
+        "instance_profile_name": "tst-emulator64",
+        "device_map": {
+            "/dev/sda1": {
+                "size": 20,
+                "volume_type": "gp2",
+                "instance_dev": "/dev/xvda1"
+            },
+            "/dev/sdb": {
+                "ephemeral_name": "ephemeral0",
+                "instance_dev": "/dev/xvdb",
+                "skip_resize": true,
+                "delete_on_termination": false
+            },
+            "/dev/sdc": {
+                "ephemeral_name": "ephemeral1",
+                "instance_dev": "/dev/xvdc",
+                "skip_resize": true,
+                "delete_on_termination": false
+            }
+        },
+        "tags": {
+            "moz-type": "tst-emulator64"
+        }
+    },
+    "us-west-2": {
+        "type": "tst-emulator64",
+        "domain": "test.releng.usw2.mozilla.com",
+        "ami": "ami-e00a80d0",
+        "subnet_ids": ["subnet-be89a2ca", "subnet-e4464a90", "subnet-d6cba8bf",
+                       "subnet-aecba8c7", "subnet-56082710", "subnet-a4cba8cd",
+                        "subnet-737f9216", "subnet-ec464a98"],
+        "security_group_ids": ["sg-8b9f7ce4"],
+        "instance_type": "c3.xlarge",
+        "distro": "ubuntu",
+        "ssh_key": "aws-releng",
+        "use_public_ip": true,
+        "instance_profile_name": "tst-emulator64",
+        "device_map": {
+            "/dev/sda1": {
+                "size": 20,
+                "volume_type": "gp2",
+                "instance_dev": "/dev/xvda1"
+            },
+            "/dev/sdb": {
+                "ephemeral_name": "ephemeral0",
+                "instance_dev": "/dev/xvdb",
+                "skip_resize": true,
+                "delete_on_termination": false
+            },
+            "/dev/sdc": {
+                "ephemeral_name": "ephemeral1",
+                "instance_dev": "/dev/xvdc",
+                "skip_resize": true,
+                "delete_on_termination": false
+            }
+        },
+        "tags": {
+            "moz-type": "tst-emulator64"
+        }
+    }
+}
