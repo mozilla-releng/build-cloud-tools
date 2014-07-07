@@ -43,7 +43,8 @@ def delete_obsolete_logs(root_dir, reference_dir):
             full_path = os.path.join(root_dir, directory)
             if full_path < reference_dir:
                 # current directory is < than reference dir
-                log.info("deleting obsolete cloudtrail file: %s" % (full_path))
+                log.debug("deleting obsolete cloudtrail file: %s",
+                          full_path)
                 shutil.rmtree(full_path)
     except OSError:
         # root dir does not exist, nothing to delete here
