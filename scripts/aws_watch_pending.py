@@ -464,9 +464,8 @@ def aws_watch_pending(dburl, regions, builder_map, region_priorities,
             regions=regions, region_priorities=region_priorities,
             spot_config=spot_config, dryrun=dryrun, slaveset=slaveset)
         count -= started
-        if count > 0:
-            log.info("%s - started %i spot instances for slaveset %s; need %i",
-                     moz_instance_type, started, slaveset, count)
+        log.info("%s - started %i spot instances for slaveset %s; need %i",
+                 moz_instance_type, started, slaveset, count)
 
         # Add leftover to ondemand
         to_create_ondemand[moz_instance_type, slaveset] += count
@@ -494,9 +493,8 @@ def aws_watch_pending(dburl, regions, builder_map, region_priorities,
                                        regions, region_priorities,
                                        instance_type_changes, dryrun, slaveset)
         count -= started
-        if count:
-            log.info("%s - started %i instances for slaveset %s; need %i",
-                     moz_instance_type, started, slaveset, count)
+        log.info("%s - started %i instances for slaveset %s; need %i",
+                 moz_instance_type, started, slaveset, count)
 
 if __name__ == '__main__':
     import argparse
