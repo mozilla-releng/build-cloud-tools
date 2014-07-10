@@ -6,7 +6,7 @@
         "distro": "centos",
         "virtualization_type": "hvm",
         "target": {
-            "size": 80,
+            "size": 35,
             "fs_type": "ext4",
             "e2_label": "root_dev",
             "aws_dev_name": "/dev/sdh",
@@ -26,7 +26,7 @@
         "distro": "centos",
         "virtualization_type": "hvm",
         "target": {
-            "size": 80,
+            "size": 35,
             "fs_type": "ext4",
             "e2_label": "root_dev",
             "aws_dev_name": "/dev/sdh",
