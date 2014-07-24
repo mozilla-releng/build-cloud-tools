@@ -96,6 +96,7 @@ secedit /import /cfg userpolicy.inf /db userpolicy.sdb
 secedit /configure /db userpolicy.sdb
 Remove-Item userpolicy.inf
 Remove-Item userpolicy.sdb
+wmic path Win32_UserAccount where Name='cltbld' set PasswordExpires=false
 Log "Done"
 
 # Enable the Desktop Experience! Ooooh
