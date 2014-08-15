@@ -246,6 +246,8 @@ def do_request_spot_instances(amount, region, moz_instance_type, ami,
                 dryrun=dryrun)
             if r:
                 started += 1
+            else:
+                return started
         except EC2ResponseError, e:
             if e.code == "MaxSpotInstanceCountExceeded":
                 log.warn("MaxSpotInstanceCountExceeded in %s; giving up", region)
