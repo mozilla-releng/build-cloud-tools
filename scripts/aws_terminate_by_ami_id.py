@@ -62,7 +62,7 @@ def main():
         log.warn("Starting...")
         for i in instances_to_kill:
             log.warn("Terminating %s...", i)
-            # i.terminate()
+            i.terminate()
             log.warn("Done.")
 
 if __name__ == '__main__':
