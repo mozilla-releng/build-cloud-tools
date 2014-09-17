@@ -62,15 +62,25 @@ def create_ami(host_instance, options, config):
         run('which MAKEDEV >/dev/null || yum install -y MAKEDEV')
     # Step 1: prepare target FS
     run('mkdir -p %s' % mount_point)
+    boot_mount_dev = None
     if virtualization_type == "hvm":
         # HVM based instances use EBS disks as raw disks. They are have to be
         # partitioned first. Additionally ,"1" should the appended to get the
         # first primary device name.
-        mount_dev = "%s1" % mount_dev
         run('parted -s %s -- mklabel msdos' % int_dev_name)
-        run('parted -s -a optimal %s -- mkpart primary ext2 0 -1s' %
+        # /boot uses 64M
+        run('parted -s -a optimal %s -- mkpart primary ext2 0 64' % int_dev_name)
+        # / uses the rest
+        run('parted -s -a optimal %s -- mkpart primary ext2 64 -1s' %
             int_dev_name)
         run('parted -s %s -- set 1 boot on' % int_dev_name)
+        run('parted -s %s -- set 2 lvm on' % int_dev_name)
+        run("mkfs.ext2 %s1" % int_dev_name)
+        run("pvcreate %s2" % int_dev_name)
+        run("vgcreate cloud_root %s2" % int_dev_name)
+        run("lvcreate -n lv_root -l 100%FREE cloud_root")
+        mount_dev = "/dev/cloud_root/lv_root"
+        boot_mount_dev = "%s1" % int_dev_name
     run('/sbin/mkfs.{fs_type} {args} {dev}'.format(
         fs_type=config['target']['fs_type'],
         args=config['target'].get("mkfs_args", ""), dev=mount_dev))
@@ -78,11 +88,13 @@ def create_ami(host_instance, options, config):
         dev=mount_dev, label=config['target']['e2_label']))
     run('mount {dev} {mount_point}'.format(dev=mount_dev,
                                            mount_point=mount_point))
-    run('mkdir {0}/dev {0}/proc {0}/etc'.format(mount_point))
+    run('mkdir {0}/dev {0}/proc {0}/etc {0}/boot'.format(mount_point))
     if config.get('distro') not in ('debian', 'ubuntu'):
         run('mount -t proc proc %s/proc' % mount_point)
         run('for i in console null zero ; '
             'do /sbin/MAKEDEV -d %s/dev -x $i ; done' % mount_point)
+    if boot_mount_dev:
+        run('mount {} {}/boot'.format(boot_mount_dev, mount_point))
 
     # Step 2: install base system
     if config.get('distro') in ('debian', 'ubuntu'):
@@ -177,9 +189,10 @@ def create_ami(host_instance, options, config):
         manage_service("rc.local", mount_point, "on")
 
     run('umount %s/proc || :' % mount_point)
+    run('umount %s/boot || :' % mount_point)
     run('umount %s' % mount_point)
 
-    v.detach()
+    v.detach(force=True)
     wait_for_status(v, "status", "available", "update")
 
     # Step 5: Create a snapshot
