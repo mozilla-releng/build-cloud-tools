@@ -17,18 +17,6 @@
                 "delete_on_termination": true,
                 "skip_resize": true,
                 "instance_dev": "/dev/xvda1"
-            },
-            "/dev/sdb": {
-                "ephemeral_name": "ephemeral0",
-                "instance_dev": "/dev/xvdb",
-                "skip_resize": true,
-                "delete_on_termination": false
-            },
-            "/dev/sdc": {
-                "ephemeral_name": "ephemeral1",
-                "instance_dev": "/dev/xvdc",
-                "skip_resize": true,
-                "delete_on_termination": false
             }
         }
     },
@@ -49,32 +37,6 @@
                 "delete_on_termination": true,
                 "skip_resize": true,
                 "instance_dev": "/dev/xvda1"
-            },
-            "/dev/sdb": {
-                "ephemeral_name": "ephemeral0",
-                "instance_dev": "/dev/xvdb",
-                "skip_resize": true,
-                "delete_on_termination": false
-            },
-            "/dev/sdc": {
-                "ephemeral_name": "ephemeral1",
-                "instance_dev": "/dev/xvdc",
-                "skip_resize": true,
-                "delete_on_termination": false
-            }
-        },
-        "lvm": {
-            "pvcreate": "/dev/xvdb /dev/xvdc",
-            "vgcreate": {
-                "instances_storage": "/dev/xvdb /dev/xvdc"
-            },
-            "lvcreate": {
-                "builds": {
-                    "vg": "instances_storage",
-                    "params": "-l 100%FREE",
-                    "format_as": "ext4",
-                    "mount_point": "/builds"
-                }
             }
         }
     }
