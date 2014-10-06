@@ -18,7 +18,7 @@ gpgcheck=0
 
 [epel]
 name=epel
-baseurl=http://puppetagain.pub.build.mozilla.org/data/repos/yum/mirrors/epel/6/2014-05-06/$basearch
+baseurl=http://puppetagain.pub.build.mozilla.org/data/repos/yum/mirrors/epel/6/latest/$basearch
 enabled=1
 gpgcheck=0
 
