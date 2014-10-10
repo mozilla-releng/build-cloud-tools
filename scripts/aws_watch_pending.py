@@ -295,6 +295,11 @@ def do_request_spot_instance(region, moz_instance_type, price, ami,
 
     bdm = BlockDeviceMapping()
     for device, device_info in instance_config[region]['device_map'].items():
+        if ami.root_device_type == "instance-store" and \
+                not device_info.get("ephemeral_name"):
+            # EBS is not supported by S3-backed AMIs at request time
+            # EBS volumes can be attached when an instance is running
+            continue
         bd = BlockDeviceType()
         if device_info.get('size'):
             bd.size = device_info['size']
