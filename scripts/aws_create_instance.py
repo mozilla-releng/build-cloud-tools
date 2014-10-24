@@ -189,10 +189,8 @@ def unpack_tarballs(tarballs):
         bucket, key = info["bucket"], info["key"]
         sudo("mkdir -p {d}".format(d=dest_dir), user="cltbld")
         with cd(dest_dir):
-            sudo("python /tmp/s3-get -b {bucket} -k {key} -o {key}".format(
+            sudo("python /tmp/s3-get -b {bucket} -k {key} -o - | tar xf -".format(
                  bucket=bucket, key=key), user="cltbld")
-            sudo("tar xf {key}".format(key=key), user="cltbld")
-            sudo("rm -f {key}".format(key=key), user="cltbld")
     run("rm -f /tmp/s3-get")
     log.info("Unpacking tarballs finished")
 

@@ -2,6 +2,7 @@
 
 import argparse
 import boto
+import sys
 
 
 def main():
@@ -17,7 +18,10 @@ def main():
     conn = boto.connect_s3()
     bucket = conn.get_bucket(args.bucket)
     key = bucket.get_key(args.key)
-    key.get_contents_to_filename(args.out_file)
+    if args.out_file == "-":
+        key.get_contents_to_file(sys.stdout)
+    else:
+        key.get_contents_to_filename(args.out_file)
 
 if __name__ == "__main__":
     main()
