@@ -5,6 +5,6 @@
   },
   "s3_tarballs": {
     "/builds/git-shared": {"bucket": "mozilla-releng-tarballs", "key": "git-shared-repo.tar"},
-    "/builds/hg-shared/try": {"bucket": "mozilla-releng-tarballs", "key": "mozilla-central.tar"}
+    "/builds/hg-shared/try": {"bucket": "mozilla-releng-tarballs", "key": "try.tar"}
   }
 }
