@@ -1,0 +1,8 @@
+ubuntu-desktop
+openssh-server
+makedev
+curl
+grub-pc
+grub-legacy-ec2
+lvm2
+linux-image-generic

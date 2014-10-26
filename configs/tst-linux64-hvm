@@ -1,0 +1,53 @@
+{
+    "hostname": "tst-linux64-ec2-%03d",
+    "us-east-1": {
+        "type": "tst-linux64",
+        "domain": "test.releng.use1.mozilla.com",
+        "ami": "ami-6262e30a",
+        "subnet_ids": ["subnet-ae35ccc4", "subnet-8f32cbe5", "subnet-ff3542d7",
+                       "subnet-b8643190", "subnet-fb97bc8f", "subnet-844b7ec2",
+                       "subnet-ed35cc87", "subnet-5cd0d828", "subnet-7ca5f03a"],
+        "security_group_ids": ["sg-f0f1239f"],
+        "instance_type": "g2.2xlarge",
+        "distro": "ubuntu",
+        "ssh_key": "aws-releng",
+        "use_public_ip": true,
+        "instance_profile_name": "tst-linux64",
+        "device_map": {
+            "/dev/sda1": {
+                "delete_on_termination": true,
+                "skip_resize": true,
+                "volume_type": "gp2",
+                "instance_dev": "/dev/xvda1"
+            }
+        },
+        "tags": {
+            "moz-type": "tst-linux64"
+        }
+    },
+    "us-west-2": {
+        "type": "tst-linux64",
+        "domain": "test.releng.usw2.mozilla.com",
+        "ami": "ami-a7dd9397",
+        "subnet_ids": ["subnet-be89a2ca", "subnet-e4464a90", "subnet-d6cba8bf",
+                       "subnet-aecba8c7", "subnet-56082710", "subnet-a4cba8cd",
+                        "subnet-737f9216", "subnet-ec464a98"],
+        "security_group_ids": ["sg-8b9f7ce4"],
+        "instance_type": "g2.2xlarge",
+        "distro": "ubuntu",
+        "ssh_key": "aws-releng",
+        "use_public_ip": true,
+        "instance_profile_name": "tst-linux64",
+        "device_map": {
+            "/dev/sda1": {
+                "delete_on_termination": true,
+                "skip_resize": true,
+                "volume_type": "gp2",
+                "instance_dev": "/dev/xvda1"
+            }
+        },
+        "tags": {
+            "moz-type": "tst-linux64"
+        }
+    }
+}

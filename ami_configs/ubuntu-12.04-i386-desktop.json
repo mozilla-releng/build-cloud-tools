@@ -1,11 +1,9 @@
 {
     "us-east-1": {
-        "ami": "ami-3b4ff252",
+        "ami": "ami-2acc7a42",
         "instance_type": "m1.medium",
         "arch": "i386",
         "distro": "ubuntu",
-        "kernel_package": "linux-image-generic-pae",
-        "kernel_version": "3.2.0-23-generic-pae",
         "target": {
             "size": 8,
             "fs_type": "ext4",
@@ -17,12 +15,10 @@
         }
     },
     "us-west-2": {
-        "ami": "ami-8c109ebc",
+        "ami": "ami-1b47052b",
         "instance_type": "m1.medium",
         "arch": "i386",
         "distro": "ubuntu",
-        "kernel_package": "linux-image-generic-pae",
-        "kernel_version": "3.2.0-23-generic-pae",
         "target": {
             "size": 8,
             "fs_type": "ext4",

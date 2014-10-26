@@ -25,6 +25,29 @@ def manage_service(service, target, state, distro="centos"):
                                                         state))
 
 
+def read_packages(packages_file):
+    with open(packages_file) as f:
+        packages = " ".join(line.strip() for line in f.readlines())
+
+    return packages
+
+
+def install_packages(packages_file, distro, chroot=None):
+    if distro not in ("debian", "ubuntu"):
+        raise NotImplementedError
+    packages = read_packages(packages_file)
+    if chroot:
+        chroot_prefix = "chroot {} ".format(chroot)
+    else:
+        chroot_prefix = ""
+
+    if distro in ("debian", "ubuntu"):
+        run("{}apt-get update".format(chroot_prefix))
+        run("DEBIAN_FRONTEND=noninteractive {}apt-get install -y "
+            "--force-yes {}".format(chroot_prefix, packages))
+        run("{}apt-get clean".format(chroot_prefix))
+
+
 def create_ami(host_instance, options, config):
     connection = host_instance.connection
     setup_fabric_env(host_string=host_instance.public_dns_name)
@@ -63,13 +86,17 @@ def create_ami(host_instance, options, config):
     # Step 1: prepare target FS
     run('mkdir -p %s' % mount_point)
     boot_mount_dev = None
+    host_packages_file = os.path.join(config_dir, "host_packages")
+    packages_file = os.path.join(config_dir, "packages")
+    if os.path.exists(host_packages_file):
+        install_packages(host_packages_file, config.get('distro'))
     if virtualization_type == "hvm":
         # HVM based instances use EBS disks as raw disks. They are have to be
         # partitioned first. Additionally ,"1" should the appended to get the
         # first primary device name.
         run('parted -s %s -- mklabel msdos' % int_dev_name)
         # /boot uses 64M
-        run('parted -s -a optimal %s -- mkpart primary ext2 0 64' % int_dev_name)
+        run('parted -s -a optimal %s -- mkpart primary ext2 64s 64' % int_dev_name)
         # / uses the rest
         run('parted -s -a optimal %s -- mkpart primary ext2 64 -1s' %
             int_dev_name)
@@ -88,7 +115,8 @@ def create_ami(host_instance, options, config):
         dev=mount_dev, label=config['target']['e2_label']))
     run('mount {dev} {mount_point}'.format(dev=mount_dev,
                                            mount_point=mount_point))
-    run('mkdir {0}/dev {0}/proc {0}/etc {0}/boot'.format(mount_point))
+    run('mkdir {0}/dev {0}/proc {0}/etc {0}/boot {0}/sys'.format(mount_point))
+    run('mount -t sysfs sys %s/sys' % mount_point)
     if config.get('distro') not in ('debian', 'ubuntu'):
         run('mount -t proc proc %s/proc' % mount_point)
         run('for i in console null zero ; '
@@ -98,24 +126,16 @@ def create_ami(host_instance, options, config):
 
     # Step 2: install base system
     if config.get('distro') in ('debian', 'ubuntu'):
-        run('apt-get update')
-        run('which debootstrap >/dev/null || apt-get install -y debootstrap')
         run('debootstrap precise %s http://puppetagain.pub.build.mozilla.org/data/repos/apt/ubuntu/' % mount_point)
         run('chroot %s mount -t proc none /proc' % mount_point)
         run('mount -o bind /dev %s/dev' % mount_point)
-        put('%s/releng-public.list' % AMI_CONFIGS_DIR, '%s/etc/apt/sources.list' % mount_point)
+        put('%s/releng-public.list' % AMI_CONFIGS_DIR,
+            '%s/etc/apt/sources.list' % mount_point)
         with lcd(config_dir):
-            put('usr/sbin/policy-rc.d', '%s/usr/sbin/' % mount_point, mirror_local_mode=True)
-        run('chroot %s apt-get update' % mount_point)
-        run('DEBIAN_FRONTEND=text chroot {mnt} apt-get install -y '
-            'ubuntu-desktop openssh-server makedev curl grub {kernel}'.format(
-                mnt=mount_point, kernel=config['kernel_package']))
-        run('rm -f %s/usr/sbin/policy-rc.d' % mount_point)
-        run('umount %s/dev' % mount_point)
-        run('chroot %s ln -s /sbin/MAKEDEV /dev/' % mount_point)
-        for dev in ('zero', 'null', 'console', 'generic'):
-            run('chroot %s sh -c "cd /dev && ./MAKEDEV %s"' % (mount_point, dev))
-        run('chroot %s apt-get clean' % mount_point)
+            put('usr/sbin/policy-rc.d', '%s/usr/sbin/' % mount_point,
+                mirror_local_mode=True)
+        install_packages(packages_file, config.get('distro'),
+                         chroot=mount_point)
     else:
         with lcd(config_dir):
             put('etc/yum-local.cfg', '%s/etc/yum-local.cfg' % mount_point)
@@ -137,7 +157,7 @@ def create_ami(host_instance, options, config):
                   'etc/sysconfig/network-scripts/ifcfg-eth0',
                   'etc/init.d/rc.local', 'boot/grub/device.map',
                   'etc/network/interfaces', 'boot/grub/menu.lst',
-                  'boot/grub/grub.conf'):
+                  'etc/default/grub', 'boot/grub/grub.conf'):
             if os.path.exists(os.path.join(config_dir, f)):
                 put(f, '%s/%s' % (mount_point, f), mirror_local_mode=True)
             else:
@@ -149,10 +169,15 @@ def create_ami(host_instance, options, config):
                                  fs=config['target']['fs_type'],
                                  mnt=mount_point))
     if config.get('distro') in ('debian', 'ubuntu'):
-        # sanity check
-        run('ls -l %s/boot/vmlinuz-%s' % (mount_point, config['kernel_version']))
-        run('sed -i s/@VERSION@/%s/g %s/boot/grub/menu.lst' %
-            (config['kernel_version'], mount_point))
+        if virtualization_type == "hvm":
+            run("chroot {mnt} grub-install {int_dev_name}".format(
+                mnt=mount_point, int_dev_name=int_dev_name))
+            run("chroot {mnt} update-grub".format(mnt=mount_point))
+        else:
+            run("chroot {mnt} update-grub -y".format(mnt=mount_point))
+            run("sed  -i 's/^# groot.*/# groot=(hd0)/g' "
+                "{mnt}/boot/grub/menu.lst".format(mnt=mount_point))
+            run("chroot {mnt} update-grub".format(mnt=mount_point))
     else:
         run('ln -s grub.conf %s/boot/grub/menu.lst' % mount_point)
         run('ln -s ../boot/grub/grub.conf %s/etc/grub.conf' % mount_point)
@@ -188,6 +213,13 @@ def create_ami(host_instance, options, config):
         manage_service("network", mount_point, "on")
         manage_service("rc.local", mount_point, "on")
 
+    run('umount %s/dev || :' % mount_point)
+    if config.get("distro") == "ubuntu":
+        run('rm -f %s/usr/sbin/policy-rc.d' % mount_point)
+        run('chroot %s ln -s /sbin/MAKEDEV /dev/' % mount_point)
+        for dev in ('zero', 'null', 'console', 'generic'):
+            run('chroot %s sh -c "cd /dev && ./MAKEDEV %s"' % (mount_point, dev))
+    run('umount %s/sys || :' % mount_point)
     run('umount %s/proc || :' % mount_point)
     run('umount %s/boot || :' % mount_point)
     run('umount %s' % mount_point)

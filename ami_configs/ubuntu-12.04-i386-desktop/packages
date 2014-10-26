@@ -1,0 +1,6 @@
+ubuntu-desktop
+openssh-server
+makedev
+curl
+grub
+linux-image-generic-pae

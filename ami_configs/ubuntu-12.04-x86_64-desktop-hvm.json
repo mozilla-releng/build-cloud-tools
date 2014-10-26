@@ -1,11 +1,12 @@
 {
     "us-east-1": {
-        "ami": "ami-2ccc7a44",
-        "instance_type": "c1.xlarge",
+        "ami": "ami-3ccc7a54",
+        "instance_type": "c3.xlarge",
         "arch": "x86_64",
         "distro": "ubuntu",
+        "virtualization_type": "hvm",
         "target": {
-            "size": 8,
+            "size": 20,
             "fs_type": "ext4",
             "mkfs_args": "-O ^has_journal",
             "e2_label": "cloudimg-rootfs",
@@ -15,12 +16,13 @@
         }
     },
     "us-west-2": {
-        "ami": "ami-1d47052d",
-        "instance_type": "c1.xlarge",
+        "ami": "ami-09470539",
+        "instance_type": "c3.xlarge",
         "arch": "x86_64",
         "distro": "ubuntu",
+        "virtualization_type": "hvm",
         "target": {
-            "size": 8,
+            "size": 20,
             "fs_type": "ext4",
             "mkfs_args": "-O ^has_journal",
             "e2_label": "cloudimg-rootfs",

@@ -1,7 +1,0 @@
-default=0
-timeout=0
-hiddenmenu
-title default kernel
-root (hd0)
-kernel /boot/vmlinuz-@VERSION@ ro root=LABEL=cloudimg-rootfs
-initrd /boot/initrd.img-@VERSION@
