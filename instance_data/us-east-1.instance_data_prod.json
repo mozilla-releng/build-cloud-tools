@@ -2,6 +2,6 @@
   "puppet_masters": ["releng-puppet1.srv.releng.use1.mozilla.com", "releng-puppet2.srv.releng.use1.mozilla.com"],
   "s3_tarballs": {
     "/builds/git-shared": {"bucket": "mozilla-releng-tarballs", "key": "git-shared-repo.tar"},
-    "/builds/hg-shared/integration/mozilla-inbound": {"bucket": "mozilla-releng-tarballs", "key": "mozilla-inbound.tar"}
+    "/builds/hg-shared/integration/mozilla-inbound/.hg": {"bucket": "mozilla-releng-tarballs", "key": "mozilla-inbound.tar"}
   }
 }
