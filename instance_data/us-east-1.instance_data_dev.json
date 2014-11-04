@@ -1,5 +1,5 @@
 {
   "buildslave_password": "pass",
   "buildbot_master": "10.12.48.14:1313",
-  "puppet_masters": ["releng-puppet1.srv.releng.use1.mozilla.com", "releng-puppet2.srv.releng.use1.mozilla.com"]
+  "puppet_masters": ["releng-puppet1.srv.releng.scl3.mozilla.com", "releng-puppet2.srv.releng.scl3.mozilla.com"]
 }
