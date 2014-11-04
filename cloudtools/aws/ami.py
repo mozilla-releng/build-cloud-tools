@@ -24,7 +24,7 @@ def ami_cleanup(mount_point, distro, remove_extra=None):
         put("%s/fake_puppet.sh" % AMI_CONFIGS_DIR,
             "usr/sbin/fake_puppet.sh", mirror_local_mode=True)
         # TODO: remove the following code when runner is deployed
-        run("wget -O etc/check_ami.py https://raw.githubusercontent.com/catlee/runner/master/example-tasks.d/0-check_ami.py")
+        run("wget -O etc/check_ami.py https://raw.githubusercontent.com/mozilla/build-runner/master/example-tasks.d/0-check_ami.py")
         run("chmod 755 etc/check_ami.py")
         run("echo '#!/bin/sh' > usr/sbin/fake_puppet.sh")
         run("echo python /etc/check_ami.py >> usr/sbin/fake_puppet.sh")
