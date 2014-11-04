@@ -284,6 +284,7 @@ def do_request_spot_instance(region, moz_instance_type, price, ami,
 
     spec = NetworkInterfaceSpecification(
         associate_public_ip_address=True, subnet_id=subnet_id,
+        delete_on_termination=True,
         groups=instance_config[region].get("security_group_ids"))
     nc = NetworkInterfaceCollection(spec)
 
