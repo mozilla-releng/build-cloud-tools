@@ -16,27 +16,19 @@ tests:
         - proto: tcp
           ports: [22, 5900]
           hosts:
+            # admin1a/b
+            - 10.22.75.6/31
+            # mozilla VPN
+            - 10.22.240.0/20
             - cruncher.build.mozilla.org
             - slaveapi1.srv.releng.scl3.mozilla.com
             - slaveapi-dev1.srv.releng.scl3.mozilla.com
-            - 10.22.75.6/31
-            - 10.22.252.0/22
-            - 10.22.248.0/22
             - dev-master1.build.mozilla.org
             - aws-manager1.srv.releng.scl3.mozilla.com
         - proto: icmp
           ports: [-1]
           hosts:
-            - 10.22.75.6/31
-            - 10.22.252.0/22
-            - 10.22.248.0/22
-            - cruncher.build.mozilla.org
-            - slaveapi1.srv.releng.scl3.mozilla.com
-            - slaveapi-dev1.srv.releng.scl3.mozilla.com
-            - dev-master1.build.mozilla.org
-            - aws-manager1.srv.releng.scl3.mozilla.com
-
-
+            - 0.0.0.0/0
     outbound:
         - proto: -1
           hosts:
@@ -60,31 +52,24 @@ build:
         - proto: tcp
           ports: [22, 5900]
           hosts:
+            # admin1a/b
+            - 10.22.75.6/31
+            # mozilla VPN
+            - 10.22.240.0/20
             - cruncher.build.mozilla.org
             - slaveapi1.srv.releng.scl3.mozilla.com
             - slaveapi-dev1.srv.releng.scl3.mozilla.com
-            - 10.22.75.6/31
-            - 10.22.252.0/22
-            - 10.22.248.0/22
             - dev-master1.build.mozilla.org
             - aws-manager1.srv.releng.scl3.mozilla.com
         - proto: icmp
           ports: [-1]
           hosts:
-            - 10.22.75.6/31
-            - 10.22.252.0/22
-            - 10.22.248.0/22
-            - cruncher.build.mozilla.org
-            - slaveapi1.srv.releng.scl3.mozilla.com
-            - slaveapi-dev1.srv.releng.scl3.mozilla.com
-            - dev-master1.build.mozilla.org
-            - aws-manager1.srv.releng.scl3.mozilla.com
-
-
+            - 0.0.0.0/0
     outbound:
         - proto: -1
           hosts:
             - 0.0.0.0/0
+
 try:
     description: security group for try build slaves
     regions:
@@ -103,27 +88,123 @@ try:
         - proto: tcp
           ports: [22, 5900]
           hosts:
+            # admin1a/b
+            - 10.22.75.6/31
+            # mozilla VPN
+            - 10.22.240.0/20
             - cruncher.build.mozilla.org
             - slaveapi1.srv.releng.scl3.mozilla.com
             - slaveapi-dev1.srv.releng.scl3.mozilla.com
-            - 10.22.75.6/31
-            - 10.22.252.0/22
-            - 10.22.248.0/22
             - dev-master1.build.mozilla.org
             - aws-manager1.srv.releng.scl3.mozilla.com
         - proto: icmp
           ports: [-1]
           hosts:
-            - 10.22.75.6/31
-            - 10.22.252.0/22
-            - 10.22.248.0/22
-            - cruncher.build.mozilla.org
-            - slaveapi1.srv.releng.scl3.mozilla.com
-            - slaveapi-dev1.srv.releng.scl3.mozilla.com
-            - dev-master1.build.mozilla.org
-            - aws-manager1.srv.releng.scl3.mozilla.com
+            - 0.0.0.0/0
+    outbound:
+        - proto: -1
+          hosts:
+            - 0.0.0.0/0
 
+buildbot-master:
+    description: security group for buildbot masters
+    regions:
+        us-west-1: vpc-7a7dd613
+        us-west-2: vpc-cd63f2a4
+        us-east-1: vpc-b42100df
+    inbound:
+        - proto: tcp
+          ports: [9301,8001,9302,8202,5666,22,9101,8101,9001,9201]
+          hosts:
+            - 0.0.0.0/0
+        - proto: icmp
+          ports: [-1]
+          hosts:
+            - 0.0.0.0/0
+    outbound:
+        - proto: -1
+          hosts:
+            - 0.0.0.0/0
 
+servo-buildbot-master:
+    description: security group for servo buildbot masters
+    regions:
+        us-west-1: vpc-7a7dd613
+        us-west-2: vpc-cd63f2a4
+        us-east-1: vpc-b42100df
+    inbound:
+        - proto: tcp
+          ports: [9301,8001,9302,8202,5666,22,9101,8101,9001,9201]
+          hosts:
+            - 0.0.0.0/0
+        - proto: icmp
+          ports: [-1]
+          hosts:
+            - 0.0.0.0/0
+    outbound:
+        - proto: -1
+          hosts:
+            - 0.0.0.0/0
+
+puppet-master:
+    description: security group for puppet masters
+    regions:
+        us-west-1: vpc-7a7dd613
+        us-west-2: vpc-cd63f2a4
+        us-east-1: vpc-b42100df
+    inbound:
+        - proto: tcp
+          ports: [8140,5666,22,80,443]
+          hosts:
+            - 0.0.0.0/0
+        - proto: icmp
+          ports: [-1]
+          hosts:
+            - 0.0.0.0/0
+    outbound:
+        - proto: -1
+          hosts:
+            - 0.0.0.0/0
+
+blobber:
+    description: security group for blobber service
+    regions:
+        us-west-1: vpc-7a7dd613
+        us-west-2: vpc-cd63f2a4
+        us-east-1: vpc-b42100df
+    inbound:
+        - proto: tcp
+          ports: [22]
+          hosts:
+            - 0.0.0.0/0
+        - proto: tcp
+          ports: [80,443]
+          hosts:
+            - 10.0.0.0/8
+        - proto: icmp
+          ports: [-1]
+          hosts:
+            - 0.0.0.0/0
+    outbound:
+        - proto: -1
+          hosts:
+            - 0.0.0.0/0
+
+nagios:
+    description: security group for nagios servers
+    regions:
+        us-west-1: vpc-7a7dd613
+        us-west-2: vpc-cd63f2a4
+        us-east-1: vpc-b42100df
+    inbound:
+        - proto: tcp
+          ports: [22,80,443]
+          hosts:
+            - 0.0.0.0/0
+        - proto: icmp
+          ports: [-1]
+          hosts:
+            - 0.0.0.0/0
     outbound:
         - proto: -1
           hosts:
