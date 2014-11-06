@@ -1,3 +1,1 @@
-{
-  "puppet_masters": ["releng-puppet1.srv.releng.usw2.mozilla.com", "releng-puppet2.srv.releng.usw2.mozilla.com"]
-}
+us-east-1.instance_data_tests.json

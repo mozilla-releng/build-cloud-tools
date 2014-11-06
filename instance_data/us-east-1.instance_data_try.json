@@ -4,7 +4,8 @@
     "try": "https://ftp-ssl.mozilla.org/pub/mozilla.org/firefox/bundles/try.hg"
   },
   "s3_tarballs": {
-    "/builds/git-shared": {"bucket": "mozilla-releng-tarballs", "key": "git-shared-repo.tar"},
-    "/builds/hg-shared/try/.hg": {"bucket": "mozilla-releng-tarballs", "key": "try.tar"}
+    "/builds/git-shared/repo": {"bucket": "mozilla-releng-tarballs-use1", "key": "git-shared-repo.tar"},
+    "/builds/hg-shared/integration/gaia-central/.hg": {"bucket": "mozilla-releng-tarballs-use1", "key": "gaia-central.tar"},
+    "/builds/hg-shared/try/.hg": {"bucket": "mozilla-releng-tarballs-use1", "key": "try.tar"}
   }
 }

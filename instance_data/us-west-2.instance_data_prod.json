@@ -1,7 +1,1 @@
-{
-  "puppet_masters": ["releng-puppet1.srv.releng.usw2.mozilla.com", "releng-puppet2.srv.releng.usw2.mozilla.com"],
-  "s3_tarballs": {
-    "/builds/git-shared": {"bucket": "mozilla-releng-tarballs", "key": "git-shared-repo.tar"},
-    "/builds/hg-shared/integration/mozilla-inbound/.hg": {"bucket": "mozilla-releng-tarballs", "key": "mozilla-inbound.tar"}
-  }
-}
+us-east-1.instance_data_prod.json
