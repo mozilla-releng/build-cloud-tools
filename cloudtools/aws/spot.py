@@ -1,9 +1,9 @@
 import logging
 from datetime import datetime, timedelta
-from cloudtools.aws import get_aws_connection, aws_time_to_datetime
-from cloudtools.slavealloc import get_slaves
-from cloudtools.jacuzzi import get_allocated_slaves
 from repoze.lru import lru_cache
+from . import get_aws_connection, aws_time_to_datetime
+from ..slavealloc import get_classified_slaves
+from ..jacuzzi import get_allocated_slaves
 
 CANCEL_STATUS_CODES = ["capacity-oversubscribed", "price-too-low",
                        "capacity-not-available"]
@@ -128,8 +128,9 @@ def usable_spot_choice(choice, minutes=15):
 _avail_slave_names = {}
 
 
-def get_available_spot_slave_name(region, moz_instance_type, slaveset):
-    key = (region, moz_instance_type)
+def get_available_slave_name(region, moz_instance_type, slaveset, is_spot,
+                             all_instances):
+    key = (region, moz_instance_type, is_spot)
     if key in _avail_slave_names:
         # cached entry
         if not _avail_slave_names[key]:
@@ -146,13 +147,16 @@ def get_available_spot_slave_name(region, moz_instance_type, slaveset):
         return name
     else:
         # populate cache and call again
-        all_slaves = get_slaves()
-        active_req = get_active_spot_requests(region)
-        used_names = set(r.tags.get("Name") for r in active_req)
-        _avail_slave_names[key] = all_slaves[moz_instance_type][region] - \
+        all_slave_names = get_classified_slaves(is_spot)
+        all_used_names = set(i.tags.get("Name") for i in all_instances)
+        # used_spot_names contains pending too
+        used_spot_names = set(r.tags.get("Name") for r in
+                              get_active_spot_requests(region))
+        used_names = all_used_names.union(used_spot_names)
+        _avail_slave_names[key] = all_slave_names[moz_instance_type][region] -\
             used_names
-        return get_available_spot_slave_name(region, moz_instance_type,
-                                             slaveset)
+        return get_available_slave_name(region, moz_instance_type, slaveset,
+                                        is_spot, all_instances)
 
 
 def get_current_spot_prices(connection, product_description, start_time=None,

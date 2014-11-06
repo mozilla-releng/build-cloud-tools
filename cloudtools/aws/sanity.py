@@ -7,7 +7,7 @@ import logging
 import urllib2
 import socket
 import calendar
-import datetime
+from datetime import timedelta
 from cloudtools.aws import parse_aws_time
 
 log = logging.getLogger(__name__)
@@ -61,7 +61,6 @@ EXPECTED_MAX_DOWNTIME = {
 def timedelta_to_time_string(timeout):
     """converts a time delta in seconds to Xd, Yh, Zm.
     If days == 0 it returns Yh, Zm"""
-    from datetime import timedelta
     if timeout == 'meh':
         return 'N/A'
     time_d = timedelta(seconds=timeout)

@@ -271,7 +271,6 @@ def create_instance(name, config, region, key_name, ssh_key, instance_data,
                     dns_search_domain=config.get('dns_search_domain'),
                     password=deploypass,
                     moz_instance_type=config['type'],
-                    is_spot=False
                 )
 
             reservation = conn.run_instances(

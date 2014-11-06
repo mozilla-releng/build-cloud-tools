@@ -75,15 +75,5 @@
             "try-linux64": 200
             }
         }
-    },
-    "instance_type_changes": {
-        "us-east-1": {
-            "bld-linux64": "m3.xlarge",
-            "try-linux64": "m3.xlarge"
-        },
-        "us-west-2": {
-            "bld-linux64": "m3.xlarge",
-            "try-linux64": "m3.xlarge"
-        }
     }
 }

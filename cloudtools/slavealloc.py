@@ -16,12 +16,12 @@ log = logging.getLogger(__name__)
 
 
 @lru_cache(10)
-def get_slaves():
+def get_classified_slaves(is_spot=True):
     js = get_slaves_json(SLAVES_JSON_URL, CACHE_FILE)
-    spot_slaves = [s for s in js if is_spot(s) and is_enabled(s)]
+    slaves = [s for s in js if is_spot_slave(s) is is_spot and is_enabled(s)]
     # 2D dict: x[moz_type][region] = ["slave1", "slave2"]
     classified_slaves = defaultdict(lambda: defaultdict(set))
-    for s in spot_slaves:
+    for s in slaves:
         moz_type = slave_moz_type(s)
         region = slave_region(s)
         name = s.get("name")
@@ -34,7 +34,7 @@ def slave_region(slave):
     return slave.get("datacenter")
 
 
-def is_spot(slave):
+def is_spot_slave(slave):
     return "-spot-" in slave.get("name", "")
 
 
@@ -75,7 +75,7 @@ def slave_moz_type(slave):
        slave.get("speed") == "m1.medium" and \
        slave.get("trustlevel") == "try":
         return "tst-linux64"
-    
+
     # tst-emulator64
     if slave.get("bitlength") == "64" and \
        slave.get("environment") == "prod" and \

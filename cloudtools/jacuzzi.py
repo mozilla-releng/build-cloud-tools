@@ -26,10 +26,7 @@ def get_allocated_slaves(buildername):
     return _jacuzzi_allocated_cache[buildername]
 
 
-def aws_get_slaveset_instances(instances, slaveset):
-    if not slaveset:
-        allocated_slaves = get_allocated_slaves(None)
-
+def filter_instances_by_slaveset(instances, slaveset):
     retval = []
     if not slaveset:
         allocated_slaves = get_allocated_slaves(None)
