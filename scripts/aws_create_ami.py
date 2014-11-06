@@ -47,6 +47,21 @@ def install_packages(packages_file, distro, chroot=None):
             "--force-yes {}".format(chroot_prefix, packages))
         run("{}apt-get clean".format(chroot_prefix))
 
+def sync(src, dst):
+    for local_directory, _, files in os.walk(src, followlinks=True):
+        directory = os.path.relpath(local_directory, src)
+        if directory == '.':
+            directory = ''
+
+        remote_directory = os.path.join(dst, directory)
+        if directory != '':
+            run('mkdir -p %s' % remote_directory)
+
+        for f in files:
+            local_file = os.path.join(local_directory, f)
+            remote_file = os.path.join(remote_directory, f)
+            put(local_file, remote_file, mirror_local_mode=True)
+
 
 def create_ami(host_instance, options, config):
     connection = host_instance.connection
@@ -151,17 +166,13 @@ def create_ami(host_instance, options, config):
 
     # Step 3: upload custom configuration files
     run('chroot %s mkdir -p /boot/grub' % mount_point)
-    with lcd(config_dir):
-        for f in ('etc/rc.local', 'etc/fstab', 'etc/hosts',
-                  'etc/sysconfig/network',
-                  'etc/sysconfig/network-scripts/ifcfg-eth0',
-                  'etc/init.d/rc.local', 'boot/grub/device.map',
-                  'etc/network/interfaces', 'boot/grub/menu.lst',
-                  'etc/default/grub', 'boot/grub/grub.conf'):
-            if os.path.exists(os.path.join(config_dir, f)):
-                put(f, '%s/%s' % (mount_point, f), mirror_local_mode=True)
-            else:
-                log.warn("Skipping %s", f)
+    for directory in ('boot', 'etc', 'usr'):
+        local_directory = os.path.join(config_dir, directory)
+        remote_directory = os.path.join(mount_point, directory)
+        if not os.path.exists(local_directory):
+            pass
+
+        sync(local_directory, remote_directory)
 
     # Step 4: tune configs
     run('sed -i -e s/@ROOT_DEV_LABEL@/{label}/g -e s/@FS_TYPE@/{fs}/g '
