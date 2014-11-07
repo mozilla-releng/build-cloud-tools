@@ -10,14 +10,10 @@ class GraphiteLogger(object):
 
     def __init__(self):
         self._data = {}
+        self._servers = []
 
-    def connect(self, host, port):
-        try:
-            log.debug("Connecting to graphite at %s:%s", host, port)
-            self._sock = socket.create_connection((host, port), timeout=10)
-        except Exception:
-            log.exception("Couldn't connect to graphite at %s:%s", host, port)
-            log.warn("Ignoring all grapite submissions!")
+    def add_destination(self, host, port, prefix):
+        self._servers.append((host, port, prefix))
 
     @staticmethod
     def _generate_line(prefix, name, value, timestamp):
@@ -45,17 +41,23 @@ class GraphiteLogger(object):
             data.append(self._generate_line(prefix, name, value, timestamp))
         return "".join(data)
 
-    def sendall(self, prefix):
-        data = self.generate_data(prefix)
-        if data:
-            log.debug("Graphite send: \n%s", data)
-            if self._sock:
-                self._sock.sendall(data)
-            else:
-                log.warn("Not sending to graphite")
-            self._data = {}
-        else:
+    def sendall(self):
+        if not self._data:
             log.warning("Nothing to submit to graphite")
+            return
+
+        for host, port, prefix in self._servers:
+            data = self.generate_data(prefix)
+            log.debug("Graphite send: \n%s", data)
+            try:
+                log.debug("Connecting to graphite at %s:%s", host, port)
+                sock = socket.create_connection((host, port), timeout=10)
+                sock.sendall(data)
+            except Exception:
+                log.exception("Couldn't send graphite data to %s:%s", host,
+                              port)
+                log.warn("Ignoring all grapite submissions!")
+        self._data = {}
 
 _graphite_logger = GraphiteLogger()
 

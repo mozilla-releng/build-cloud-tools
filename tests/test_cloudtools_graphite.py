@@ -59,3 +59,52 @@ class TestGraphiteLogger(unittest.TestCase):
         gl.add("name", 44, collect=True)
         gl.add("name", 55.66, 2222, collect=True)
         self.assertDictEqual(gl._data, {"name": (99.66, 2222)})
+
+    def test_add_destination(self):
+        gl = get_graphite_logger()
+        gl.add_destination("host0", 888, "prefix0")
+        gl.add_destination("host9", 999, "prefix9")
+        self.assertEqual(gl._servers,
+                         [("host0", 888, "prefix0"),
+                          ("host9", 999, "prefix9")])
+
+    def test_single_server(self):
+        gl = get_graphite_logger()
+        gl.add("name", 44)
+        gl.add_destination("host1", 1111, "prefix1")
+        with mock.patch("socket.create_connection") as conn:
+            gl.sendall()
+            expected_calls = [
+                mock.call(("host1", 1111), timeout=10),
+            ]
+            conn.assert_has_calls(expected_calls)
+
+    def test_multiple_servers(self):
+        gl = get_graphite_logger()
+        gl.add_destination("host1", 1111, "prefix1")
+        gl.add_destination("host2", 2222, "prefix2")
+        gl.add("name", 44)
+        with mock.patch("socket.create_connection") as conn:
+            gl.sendall()
+            expected_calls = [
+                mock.call(("host1", 1111), timeout=10),
+                mock.call(("host2", 2222), timeout=10),
+            ]
+            conn.assert_has_calls(expected_calls, any_order=True)
+
+    def test_multiple_servers_sendall(self):
+        gl = get_graphite_logger()
+        gl.add_destination("host1", 1111, "prefix1")
+        gl.add_destination("host2", 2222, "prefix2")
+        with mock.patch("time.time") as m_time:
+            m_time.return_value = 9999
+            gl.add("name", 44)
+        with mock.patch("socket.create_connection") as conn:
+            sock = mock.MagicMock()
+            conn.return_value = sock
+            gl.sendall()
+            expected_calls = [
+                mock.call("prefix1.name 44 9999\n"),
+                mock.call("prefix2.name 44 9999\n"),
+            ]
+            sock.sendall.assert_has_calls(expected_calls)

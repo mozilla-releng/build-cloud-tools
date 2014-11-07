@@ -483,9 +483,19 @@ if __name__ == '__main__':
         spot_config=config.get("spot"),
         ondemand_config=config.get("ondemand"),
     )
-    if config.get("graphite_host") and config.get("graphite_port"):
-        gr_log.connect(host=config.get("graphite_host"),
-                       port=config.get("graphite_port"))
-        gr_log.sendall(prefix=config.get("graphite_prefix",
-                                         "aws_watch_pending"))
+
+    if all([config.get("graphite_host"), config.get("graphite_port"),
+            config.get("graphite_prefix")]):
+        gr_log.add_destination(
+            host=config["graphite_host"], port=config["graphite_port"],
+            prefix=config["graphite_prefix"])
+
+    for entry in secrets.get("graphite_hosts", []):
+        host = entry.get("host")
+        port = entry.get("port")
+        prefix = entry.get("prefix")
+        if all([host, port, prefix]):
+            gr_log.add_destination(host, port, prefix)
+
+    gr_log.sendall()
     log.debug("done")
