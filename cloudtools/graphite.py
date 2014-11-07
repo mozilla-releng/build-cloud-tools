@@ -73,7 +73,7 @@ def generate_instance_stats(instances):
         template_values = dict(
             region=i.region.name,
             moz_instance_type=i.tags.get("moz-type", "none"),
-            instance_type=i.instance_type,
+            instance_type=i.instance_type.replace(".", "-"),
             life_cycle_type="spot" if i.spot_instance_request_id else
             "ondemand",
             virtualization=i.virtualization_type,

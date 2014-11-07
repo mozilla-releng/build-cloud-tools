@@ -241,7 +241,7 @@ def do_request_instance(region, moz_instance_type, price, ami, instance_config,
         template_values = dict(
             region=region,
             moz_instance_type=moz_instance_type,
-            instance_type=instance_type,
+            instance_type=instance_type.replace(".", "-"),
             life_cycle_type="spot" if is_spot else "ondemand",
             virtualization=ami.virtualization_type,
             root_device_type=ami.root_device_type,
