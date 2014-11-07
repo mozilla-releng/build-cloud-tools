@@ -33,20 +33,6 @@ STOP_THRESHOLD_MINS_SPOT = 45
 STOP_THRESHOLD_MINS_ONDEMAND = 30
 
 
-def stop(i):
-    """Stop or destroy an instances depending on its type. Spot instances do
-    not support stop() method."""
-
-    name = i.tags.get("Name")
-    # on-demand instances don't have instanceLifecycle attribute
-    if hasattr(i, "instanceLifecycle") and i.instanceLifecycle == "spot":
-        log.debug("Terminating %s (%s)", name, i)
-        i.terminate()
-    else:
-        log.debug("Stopping %s (%s)", name, i)
-        i.stop()
-
-
 def get_buildbot_instances(conn, moz_types):
     # Look for running `moz_types` instances with moz-state=ready
     instances = conn.get_only_instances(filters={
@@ -218,7 +204,7 @@ def aws_safe_stop_instance(i, impaired_ids, credentials, masters_json,
                 if not dryrun:
                     log.debug(
                         "%s - shut down an instance with impaired status", name)
-                    stop(i)
+                    i.terminate()
                 else:
                     log.debug("%s - would have stopped", name)
         return stopped
@@ -244,7 +230,7 @@ def aws_safe_stop_instance(i, impaired_ids, credentials, masters_json,
         if not dryrun:
             log.debug("%s - stopping instance (launched %s)", name,
                       i.launch_time)
-            stop(i)
+            i.terminate()
         else:
             log.debug("%s - would have stopped", name)
         return stopped
@@ -264,7 +250,7 @@ def aws_safe_stop_instance(i, impaired_ids, credentials, masters_json,
             graceful_shutdown(name, ip, ssh_client, masters_json)
             # Stop the instance
             log.debug("%s - stopping instance", name)
-            stop(i)
+            i.terminate()
             stopped = True
 
     # If the machine is idle for more than 5 minutes, shut it down
@@ -277,7 +263,7 @@ def aws_safe_stop_instance(i, impaired_ids, credentials, masters_json,
             # Check if we've exited right away
             if get_last_activity(name, ssh_client) == "stopped":
                 log.debug("%s - stopping instance", name)
-                stop(i)
+                i.terminate()
                 stopped = True
             else:
                 log.debug(
