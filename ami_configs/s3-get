@@ -15,7 +15,7 @@ def main():
                         help="File name")
     args = parser.parse_args()
 
-    conn = boto.connect_s3()
+    conn = boto.connect_s3(anon=True)
     bucket = conn.get_bucket(args.bucket)
     key = bucket.get_key(args.key)
     if args.out_file == "-":
