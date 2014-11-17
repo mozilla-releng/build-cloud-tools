@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import boto.ec2
+import re
 import yaml
 import dns.resolver
 
@@ -37,6 +38,7 @@ def resolve_host(hostname):
     return ips
 
 
+port_re = re.compile(r'^(\d+)-(\d+)$')
 def make_rules_for_def(rule):
     """Returns a set of rules for a given config definition. A rule is a
     (proto, from_port, to_port, hosts) tuple
@@ -44,9 +46,16 @@ def make_rules_for_def(rule):
     retval = []
     proto = str(rule['proto'])
     if 'ports' in rule:
-        ports = [str(p) for p in rule['ports']]
+        ports = []
+        for p in rule['ports']:
+            p = str(p)
+            mo = port_re.match(p)
+            if mo:
+                ports.append(tuple(mo.groups()))
+            else:
+                ports.append((p, p))
     else:
-        ports = [None]
+        ports = [(None,None)]
     hosts = rule['hosts']
     # Resolve the hostnames
     log.debug("%s %s %s", proto, ports, hosts)
@@ -59,8 +68,8 @@ def make_rules_for_def(rule):
                 hosts.append("%s/32" % ip)
     log.debug("%s %s %s", proto, ports, hosts)
 
-    for port in ports:
-        retval.append((proto, port, port, set(hosts)))
+    for from_port, to_port in ports:
+        retval.append((proto, from_port, to_port, set(hosts)))
     return retval
 
 
