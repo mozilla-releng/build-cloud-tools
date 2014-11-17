@@ -175,7 +175,7 @@ def sync_security_group(remote_sg, sg_config, prompt):
                               (remote_sg.name, rule_key, old_hosts)) != 'y':
                 continue
             log.info("%s - removing rule for %s to %s", remote_sg.name,
-                     rule_key, new_hosts)
+                     rule_key, old_hosts)
             remove_hosts(remote_sg, rule_key, old_hosts)
     apply_to_object(remote_sg, sg_config.get("apply-to", {}).get("instances"),
                     remote_sg.connection.get_only_instances,
