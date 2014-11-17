@@ -97,7 +97,6 @@ def rules_from_sg(sg):
                           rule.to_port), set()).update(set(g.cidr_ip for g in
                                                            rule.grants if g.cidr_ip))
 
-    print rules
     return rules
 
 
