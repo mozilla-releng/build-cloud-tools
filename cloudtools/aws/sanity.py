@@ -19,12 +19,11 @@ SLAVE_TAGS = ('try-linux64', 'tst-linux32', 'tst-linux64', 'tst-emulator64', 'bl
 
 KNOWN_TYPES = ('puppetmaster', 'buildbot-master', 'dev-linux64', 'infra',
                'bld-linux64', 'try-linux64', 'tst-linux32', 'tst-linux64',
-               'tst-emulator64', 'tst-win64', 'dev', 'servo-linux64', 'packager',
-               'vcssync', "servo-puppet1", "signing")
+               'tst-emulator64', 'tst-win64', 'dev', 'packager',
+               'vcssync', "signing")
 
 EXPECTED_MAX_UPTIME = {
     "puppetmaster": "meh",
-    "servo-puppet1": "meh",
     "buildbot-master": "meh",
     "dev": "meh",
     "infra": "meh",
@@ -35,13 +34,11 @@ EXPECTED_MAX_UPTIME = {
     "tst-linux32": 12,
     "tst-linux64": 12,
     "tst-emulator64": 12,
-    "servo-linux64": 8,
     "default": 4
 }
 
 EXPECTED_MAX_DOWNTIME = {
     "puppetmaster": 0,
-    "servo-puppet1": 0,
     "buildbot-master": 0,
     "dev": 0,
     "infra": 0,
@@ -52,7 +49,6 @@ EXPECTED_MAX_DOWNTIME = {
     "tst-linux32": 72,
     "tst-linux64": 72,
     "tst-emulator64": 72,
-    "servo-linux64": 72,
     "packager": "meh",
     "default": 24
 }

@@ -126,26 +126,6 @@ buildbot-master:
           hosts:
             - 0.0.0.0/0
 
-servo-buildbot-master:
-    description: security group for servo buildbot masters
-    regions:
-        us-west-1: vpc-7a7dd613
-        us-west-2: vpc-cd63f2a4
-        us-east-1: vpc-b42100df
-    inbound:
-        - proto: tcp
-          ports: [9301,8001,9302,8202,5666,22,9101,8101,9001,9201]
-          hosts:
-            - 0.0.0.0/0
-        - proto: icmp
-          ports: [-1]
-          hosts:
-            - 0.0.0.0/0
-    outbound:
-        - proto: -1
-          hosts:
-            - 0.0.0.0/0
-
 puppet-master:
     description: security group for puppet masters
     regions:
