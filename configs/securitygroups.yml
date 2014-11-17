@@ -1,3 +1,19 @@
+# Macros that can be included below; see yaml_includes.py
+includes:
+
+    # ping is allowed from anywhere in just about every SG
+    global-ping:
+        proto: icmp
+        ports: [-1]
+        hosts:
+          - 0.0.0.0/0
+
+    # most outgoing flows are completely open
+    global-any:
+        proto: -1
+        hosts:
+          - 0.0.0.0/0
+
 tests:
     description: security group for test slaves
     regions:
@@ -25,14 +41,9 @@ tests:
             - slaveapi-dev1.srv.releng.scl3.mozilla.com
             - dev-master1.build.mozilla.org
             - aws-manager1.srv.releng.scl3.mozilla.com
-        - proto: icmp
-          ports: [-1]
-          hosts:
-            - 0.0.0.0/0
+        - include: global-ping
     outbound:
-        - proto: -1
-          hosts:
-            - 0.0.0.0/0
+        - include: global-any
 
 build:
     description: security group for build slaves
@@ -61,14 +72,9 @@ build:
             - slaveapi-dev1.srv.releng.scl3.mozilla.com
             - dev-master1.build.mozilla.org
             - aws-manager1.srv.releng.scl3.mozilla.com
-        - proto: icmp
-          ports: [-1]
-          hosts:
-            - 0.0.0.0/0
+        - include: global-ping
     outbound:
-        - proto: -1
-          hosts:
-            - 0.0.0.0/0
+        - include: global-any
 
 try:
     description: security group for try build slaves
@@ -97,14 +103,9 @@ try:
             - slaveapi-dev1.srv.releng.scl3.mozilla.com
             - dev-master1.build.mozilla.org
             - aws-manager1.srv.releng.scl3.mozilla.com
-        - proto: icmp
-          ports: [-1]
-          hosts:
-            - 0.0.0.0/0
+        - include: global-ping
     outbound:
-        - proto: -1
-          hosts:
-            - 0.0.0.0/0
+        - include: global-any
 
 buildbot-master:
     description: security group for buildbot masters
@@ -117,14 +118,9 @@ buildbot-master:
           ports: [9301,8001,9302,8201,8202,5666,22,9101,8101,9001,9201]
           hosts:
             - 0.0.0.0/0
-        - proto: icmp
-          ports: [-1]
-          hosts:
-            - 0.0.0.0/0
+        - include: global-ping
     outbound:
-        - proto: -1
-          hosts:
-            - 0.0.0.0/0
+        - include: global-any
 
 puppet-master:
     description: security group for puppet masters
@@ -137,14 +133,9 @@ puppet-master:
           ports: [8140,5666,22,80,443]
           hosts:
             - 0.0.0.0/0
-        - proto: icmp
-          ports: [-1]
-          hosts:
-            - 0.0.0.0/0
+        - include: global-ping
     outbound:
-        - proto: -1
-          hosts:
-            - 0.0.0.0/0
+        - include: global-any
 
 blobber:
     description: security group for blobber service
@@ -161,14 +152,9 @@ blobber:
           ports: [80,443]
           hosts:
             - 10.0.0.0/8
-        - proto: icmp
-          ports: [-1]
-          hosts:
-            - 0.0.0.0/0
+        - include: global-ping
     outbound:
-        - proto: -1
-          hosts:
-            - 0.0.0.0/0
+        - include: global-any
 
 nagios:
     description: security group for nagios servers
@@ -181,11 +167,6 @@ nagios:
           ports: [22,80,443]
           hosts:
             - 0.0.0.0/0
-        - proto: icmp
-          ports: [-1]
-          hosts:
-            - 0.0.0.0/0
+        - include: global-ping
     outbound:
-        - proto: -1
-          hosts:
-            - 0.0.0.0/0
+        - include: global-any

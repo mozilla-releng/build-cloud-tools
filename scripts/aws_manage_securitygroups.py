@@ -3,6 +3,7 @@ import boto.ec2
 import re
 import yaml
 import dns.resolver
+import yaml_includes
 
 import logging
 log = logging.getLogger(__name__)
@@ -13,7 +14,7 @@ def get_connection(region):
 
 
 def load_config(filename):
-    return yaml.load(open(filename))
+    return yaml_includes.process_includes(yaml.load(open(filename)))
 
 
 def get_remote_sg_by_name(groups, name):
