@@ -64,7 +64,7 @@ if __name__ == '__main__':
                         help="optional list of regions")
     parser.add_argument("-q", "--quiet", action="store_true",
                         help="Supress logging messages")
-    parser.add_argument("-j", "--concurrency", type=int, default=8)
+    parser.add_argument("-j", "--concurrency", type=int, default=4)
 
     args = parser.parse_args()
 
