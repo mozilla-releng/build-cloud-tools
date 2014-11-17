@@ -82,14 +82,22 @@ def make_rules(sg_config):
 def rules_from_sg(sg):
     rules = {}
     for rule in sg.rules:
+        # ignore non-cidr grants (to other sg's)
+        cidr_grants = set(g.cidr_ip for g in rule.grants if g.cidr_ip)
+        if not cidr_grants:
+            continue
         rules.setdefault(('inbound', rule.ip_protocol, rule.from_port,
-                          rule.to_port), set()).update(set(g.cidr_ip for g in
-                                                           rule.grants))
+                          rule.to_port), set()).update(cidr_grants)
     for rule in sg.rules_egress:
+        # ignore non-cidr grants (to other sg's)
+        cidr_grants = set(g.cidr_ip for g in rule.grants if g.cidr_ip)
+        if not cidr_grants:
+            continue
         rules.setdefault(('outbound', rule.ip_protocol, rule.from_port,
                           rule.to_port), set()).update(set(g.cidr_ip for g in
-                                                           rule.grants))
+                                                           rule.grants if g.cidr_ip))
 
+    print rules
     return rules
 
 
