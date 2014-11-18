@@ -18,17 +18,26 @@ IGNORABLE_STATUS_CODES = CANCEL_STATUS_CODES + TERMINATED_BY_AWS_STATUS_CODES \
 
 log = logging.getLogger(__name__)
 _spot_cache = {}
+_spot_requests = {}
 
 
-@lru_cache(100)
-def get_spot_request(region, request_id):
-    log.debug("Getting spot request %s in %s", request_id, region)
+def populate_spot_requests_cache(region, request_ids=None):
+    log.debug("Caching spot requests in %s", region)
+    kwargs = {}
+    if request_ids:
+        kwargs["request_ids"] = request_ids
     conn = get_aws_connection(region)
-    req = conn.get_all_spot_instance_requests(request_ids=[request_id])
-    if req:
-        return req[0]
-    else:
-        return None
+    reqs = conn.get_all_spot_instance_requests(**kwargs)
+    print reqs
+    for req in conn.get_all_spot_instance_requests(**kwargs):
+        _spot_requests[region, req.id] = req
+
+
+def get_spot_request(region, request_id):
+    if (region, request_id) in _spot_requests:
+        return _spot_requests[region, request_id]
+    populate_spot_requests_cache(region)
+    return _spot_requests.get((region, request_id))
 
 
 def get_spot_instances(region, state="running"):
@@ -39,6 +48,40 @@ def get_spot_instances(region, state="running"):
         'instance-state-name': state,
     }
     return conn.get_only_instances(filters=filters)
+
+
+def get_instances_to_tag(region):
+    rv = []
+    log.debug("Getting all spot instances in %s...", region)
+    all_spot_instances = get_spot_instances(region)
+    log.debug("Total %s instances found", len(all_spot_instances))
+    for i in all_spot_instances:
+        name = i.tags.get('Name')
+        fqdn = i.tags.get('FQDN')
+        moz_type = i.tags.get('moz-type')
+        moz_state = i.tags.get('moz-state')
+        # If one of the tags is unset/empty
+        if not all([name, fqdn, moz_type, moz_state]):
+            log.debug("Adding %s in %s to queue", i, region)
+            rv.append(i)
+    log.debug("Done with %s", region)
+    return rv
+
+
+def copy_spot_request_tags(i):
+    log.debug("Tagging %s", i)
+    req = get_spot_request(i.region.name, i.spot_instance_request_id)
+    if not req:
+        log.error("Cannot find spot request for %s", i)
+        return
+    tags = {}
+    for tag_name, tag_value in req.tags.iteritems():
+        if tag_name not in i.tags:
+            log.info("Adding '%s' tag with '%s' value to %s", tag_name,
+                     tag_value, i)
+            tags[tag_name] = tag_value
+    tags["moz-state"] = "ready"
+    i.connection.create_tags([i.id], tags)
 
 
 @lru_cache(10)
