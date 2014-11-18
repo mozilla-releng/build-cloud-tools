@@ -36,7 +36,7 @@ includes:
         proto: udp
         ports: [161]
         hosts:
-          - observium1.private.scl3.mozilla.com
+          - observium2.private.scl3.mozilla.com
 
     # infra puppetizes hosts by SSHing to them from the master
     infra-puppetize:
