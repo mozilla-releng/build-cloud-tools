@@ -5,6 +5,10 @@ import yaml
 import dns.resolver
 import yaml_includes
 
+# see http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/VPC_Appendix_Limits.html
+# note that "Rules" in that document actually refers to grants
+MAX_GRANTS_PER_SG = 50
+
 import logging
 log = logging.getLogger(__name__)
 
@@ -226,6 +230,18 @@ def main():
         security_groups_by_region[region] = all_groups
 
     prompt = True
+
+    # look for too-big security groups
+    ok =  True
+    for sg_name, sg_config in sg_defs.iteritems():
+        rules = make_rules(sg_config)
+        total_grants = sum([len(hosts) for hosts in rules.itervalues()])
+        if total_grants > MAX_GRANTS_PER_SG:
+            log.warning("Group %s has %d rules, more than the allowed %d",
+                        sg_name, total_grants, MAX_GRANTS_PER_SG)
+            ok = False
+    if not ok:
+        exit(1)
 
     # Now compare vs. our configs
     for sg_name, sg_config in sg_defs.items():
