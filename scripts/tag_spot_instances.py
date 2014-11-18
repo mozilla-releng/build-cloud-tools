@@ -28,6 +28,7 @@ if __name__ == '__main__':
         log.setLevel(logging.DEBUG)
     else:
         log.setLevel(logging.ERROR)
+        logging.getLogger("boto").setLevel(logging.CRITICAL)
 
     if not args.regions:
         args.regions = DEFAULT_REGIONS
