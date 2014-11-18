@@ -1,5 +1,6 @@
 import unittest
 import mock
+import boto
 import cloudtools.aws.spot
 
 
@@ -18,6 +19,22 @@ class TestPopulateSpotCache(unittest.TestCase):
             conn.assert_has_calls(
                 [mock.call().get_all_spot_instance_requests(
                     request_ids=[1, 2])])
+
+    @mock.patch("cloudtools.aws.spot.get_aws_connection")
+    def test_invalid_request_id(self, conn):
+        req = mock.Mock()
+        req.id = "id-1"
+        conn.return_value.get_all_spot_instance_requests.side_effect = \
+            [boto.exception.EC2ResponseError("404", "reason"), [req]]
+        cloudtools.aws.spot.populate_spot_requests_cache("r-1", ["id-1"])
+        expected_calls = [
+            mock.call(request_ids=["id-1"]),
+            mock.call()
+        ]
+        conn.return_value.get_all_spot_instance_requests.assert_has_called(
+            expected_calls)
+        self.assertDictEqual({("r-1", "id-1"): req},
+                             cloudtools.aws.spot._spot_requests)
 
 
 class TestGetSpotRequest(unittest.TestCase):

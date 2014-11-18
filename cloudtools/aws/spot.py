@@ -1,4 +1,5 @@
 import logging
+import boto
 from datetime import datetime, timedelta
 from repoze.lru import lru_cache
 from . import get_aws_connection, aws_time_to_datetime
@@ -27,9 +28,12 @@ def populate_spot_requests_cache(region, request_ids=None):
     if request_ids:
         kwargs["request_ids"] = request_ids
     conn = get_aws_connection(region)
-    reqs = conn.get_all_spot_instance_requests(**kwargs)
-    print reqs
-    for req in conn.get_all_spot_instance_requests(**kwargs):
+    try:
+        reqs = conn.get_all_spot_instance_requests(**kwargs)
+    except boto.exception.EC2ResponseError, e:
+        log.debug("Some of the requests not found, requesting all")
+        reqs = conn.get_all_spot_instance_requests()
+    for req in reqs:
         _spot_requests[region, req.id] = req
 
 
@@ -72,7 +76,7 @@ def copy_spot_request_tags(i):
     log.debug("Tagging %s", i)
     req = get_spot_request(i.region.name, i.spot_instance_request_id)
     if not req:
-        log.error("Cannot find spot request for %s", i)
+        log.debug("Cannot find spot request for %s", i)
         return
     tags = {}
     for tag_name, tag_value in req.tags.iteritems():
