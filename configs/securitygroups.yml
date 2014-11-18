@@ -51,8 +51,7 @@ includes:
           ports: [22]
           hosts:
             - cruncher.build.mozilla.org
-            - slaveapi1.srv.releng.scl3.mozilla.com
-            - slaveapi-dev1.srv.releng.scl3.mozilla.com
+            - {include: slaveapi-servers}
             - dev-master1.build.mozilla.org
             - aws-manager1.srv.releng.scl3.mozilla.com
         - include: admin-access
@@ -63,7 +62,10 @@ includes:
     slave-vlan-outbound:
         - include: global-any
 
-    # some useful network aliases:
+    # host set aliases:
+    slaveapi-servers: 10.26.48.16/31
+
+    # network aliases:
     build-scl3: 10.26.52.0/22
     test-scl3: 10.26.56.0/22
     try-scl3: 10.26.88.0/21
@@ -75,10 +77,12 @@ includes:
     test-usw2: 10.132.56.0/22
     test2-usw2: 10.132.156.0/22
     try-usw2: 10.132.64.0/22
+    srv-usw2: 10.132.48.0/24
     build-use1: 10.134.52.0/22
     test-use1: 10.134.56.0/22
     test2-use1: 10.134.156.0/22
     try-use1: 10.134.64.0/22
+    srv-use1: 10.134.48.0/24
     slave-vlans:
       - {include: build-scl3}
       - {include: test-scl3}
@@ -99,6 +103,7 @@ includes:
     # and port aliases
     buildbot-http-portrange: 8000-8999
     buildbot-rpc-portrange: 9000-9999
+    buildbot-http-and-rpc-portrange: 8000-9999
 
 tests:
     description: security group for test slaves
@@ -168,66 +173,19 @@ buildbot-master:
         - proto: tcp
           ports:
             - 22  # ssh
-            - {include: buildbot-rpc-portrange}
-            - {include: buildbot-http-portrange}
+            - {include: buildbot-http-and-rpc-portrange}
           hosts:
             - 10.26.68.0/24  # bb.releng.scl3
             - 10.132.68.0/24  # bb.releng.usw2
             - 10.134.68.0/24  # bb.releng.use1
-            # all individual masters (not in the BB VLANs)
-            - buildbot-master01.srv.releng.use1.mozilla.com
-            - buildbot-master02.srv.releng.use1.mozilla.com
-            - buildbot-master03.srv.releng.use1.mozilla.com
-            - buildbot-master04.srv.releng.usw2.mozilla.com
-            - buildbot-master05.srv.releng.usw2.mozilla.com
-            - buildbot-master06.srv.releng.usw2.mozilla.com
-            - buildbot-master51.srv.releng.use1.mozilla.com
-            - buildbot-master52.srv.releng.use1.mozilla.com
-            - buildbot-master53.srv.releng.usw2.mozilla.com
-            - buildbot-master54.srv.releng.usw2.mozilla.com
-            - buildbot-master66.srv.releng.usw2.mozilla.com
-            - buildbot-master67.srv.releng.use1.mozilla.com
-            - buildbot-master68.srv.releng.usw2.mozilla.com
-            - buildbot-master69.srv.releng.use1.mozilla.com
-            - buildbot-master70.srv.releng.use1.mozilla.com
-            - buildbot-master71.srv.releng.use1.mozilla.com
-            - buildbot-master72.srv.releng.usw2.mozilla.com
-            - buildbot-master73.srv.releng.usw2.mozilla.com
-            - buildbot-master74.srv.releng.usw2.mozilla.com
-            - buildbot-master75.srv.releng.use1.mozilla.com
-            - buildbot-master76.srv.releng.use1.mozilla.com
-            - buildbot-master77.srv.releng.use1.mozilla.com
-            - buildbot-master78.srv.releng.usw2.mozilla.com
-            - buildbot-master79.srv.releng.usw2.mozilla.com
-            - buildbot-master81.srv.releng.scl3.mozilla.com
-            - buildbot-master82.srv.releng.scl3.mozilla.com
-            - buildbot-master83.srv.releng.scl3.mozilla.com
-            - buildbot-master84.srv.releng.scl3.mozilla.com
-            - buildbot-master85.srv.releng.scl3.mozilla.com
-            - buildbot-master86.srv.releng.scl3.mozilla.com
-            - buildbot-master87.srv.releng.scl3.mozilla.com
-            - buildbot-master89.srv.releng.scl3.mozilla.com
-            - buildbot-master91.srv.releng.usw2.mozilla.com
-            - buildbot-master94.srv.releng.use1.mozilla.com
-            - buildbot-master100.srv.releng.scl3.mozilla.com
-            - buildbot-master101.srv.releng.scl3.mozilla.com
-            - buildbot-master102.srv.releng.scl3.mozilla.com
-            - buildbot-master103.srv.releng.scl3.mozilla.com
-            - buildbot-master104.srv.releng.scl3.mozilla.com
-            - buildbot-master105.srv.releng.scl3.mozilla.com
-            - buildbot-master106.srv.releng.scl3.mozilla.com
-            - buildbot-master107.srv.releng.scl3.mozilla.com
-            - buildbot-master108.srv.releng.scl3.mozilla.com
-            - buildbot-master109.srv.releng.scl3.mozilla.com
-            - buildbot-master110.srv.releng.scl3.mozilla.com
-            - buildbot-master111.srv.releng.scl3.mozilla.com
-            - buildbot-master112.srv.releng.scl3.mozilla.com
-            - buildbot-master113.srv.releng.use1.mozilla.com
-            - buildbot-master114.srv.releng.use1.mozilla.com
-            - buildbot-master115.srv.releng.usw2.mozilla.com
-            - buildbot-master116.srv.releng.usw2.mozilla.com
-            # and cruncher, for the utility of it..
-            - cruncher.build.mozilla.org
+            # we'd prefer to list individual masters here, as the srv VLAN contains
+            # lots of hosts that should not have access to the masters.  But AWS
+            # can't handle that.  So we enumerate VLANs instead.
+            - 10.132.48.0/24  # srv.releng.usw2
+            - 10.134.48.0/24  # srv.releng.use1
+            - 10.26.48.0/22  # srv.releng.scle
+            # ..which includes cruncher, but listed here to be explicit:
+            #- cruncher.build.mozilla.org
 
         # traffic from buildslaves
         - proto: tcp
@@ -235,14 +193,14 @@ buildbot-master:
             - {include: buildbot-rpc-portrange}
           hosts: {include: slave-vlans}
 
-        # ssh access from some automation hosts
-        - proto: tcp
-          ports: [22]
-          hosts:
-            - slaveapi1.srv.releng.scl3.mozilla.com
-            - slaveapi-dev1.srv.releng.scl3.mozilla.com
-            - dev-master1.build.mozilla.org
-            - aws-manager1.srv.releng.scl3.mozilla.com
+        # ssh access from some automation hosts; this is included in the blanket
+        # allow from srv above, so is commented out to keep us under 50 grants
+#        - proto: tcp
+#          ports: [22]
+#          hosts:
+#            - {include: slaveapi-servers}
+#            - dev-master1.build.mozilla.org
+#            - aws-manager1.srv.releng.scl3.mozilla.com
 
         # buildbot-http from aws-manager1
         - proto: tcp
