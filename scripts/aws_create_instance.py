@@ -153,10 +153,12 @@ def assimilate(instance, config, ssh_key, instance_data, deploypass,
         sudo("/tools/buildbot/bin/buildslave create-slave /builds/slave "
              "{buildbot_master} {name} "
              "{buildslave_password}".format(**instance_data), user="cltbld")
-    if instance_data.get("hg_shares"):
-        unbundle_hg(instance_data['hg_shares'])
+    if instance_data.get("hg_bundles"):
+        unbundle_hg(instance_data['hg_bundles'])
     if instance_data.get("s3_tarballs"):
         unpack_tarballs(instance_data["s3_tarballs"])
+    if instance_data.get("hg_repos"):
+        share_repos(instance_data["hg_repos"])
 
     run("sync")
     run("sync")
@@ -165,10 +167,10 @@ def assimilate(instance, config, ssh_key, instance_data, deploypass,
         run("reboot")
 
 
-def unbundle_hg(hg_shares):
-    log.info("Cloning HG repos")
+def unbundle_hg(hg_bundles):
+    log.info("Cloning HG bundles")
     hg = "/tools/python27-mercurial/bin/hg"
-    for share, bundle in hg_shares.iteritems():
+    for share, bundle in hg_bundles.iteritems():
         target_dir = '/builds/hg-shared/%s' % share
         sudo('rm -rf {d} && mkdir -p {d}'.format(d=target_dir),
              user="cltbld")
@@ -179,7 +181,7 @@ def unbundle_hg(hg_shares):
         run("chown cltbld: %s/.hg/hgrc" % target_dir)
         sudo('{hg} -R {d} unbundle {b}'.format(hg=hg, d=target_dir,
                                                b=bundle), user="cltbld")
-    log.info("Cloning HG repos finished")
+    log.info("Unbundling HG repos finished")
 
 
 def unpack_tarballs(tarballs):
@@ -193,6 +195,19 @@ def unpack_tarballs(tarballs):
                  bucket=bucket, key=key), user="cltbld")
     run("rm -f /tmp/s3-get")
     log.info("Unpacking tarballs finished")
+
+
+def share_repos(hg_repos):
+    log.info("Cloning HG repos")
+    hg = "/tools/python27-mercurial/bin/hg"
+    for share, repo in hg_repos.iteritems():
+        target_dir = '/builds/hg-shared/%s' % share
+        parent_dir = os.path.dirname(target_dir.rstrip("/"))
+        sudo('rm -rf {d} && mkdir -p {p}'.format(d=target_dir, p=parent_dir),
+             user="cltbld")
+        sudo('{hg} clone -U {repo} {d}'.format(hg=hg, repo=repo, d=target_dir),
+             user="cltbld")
+    log.info("Cloning HG repos finished")
 
 
 def create_instance(name, config, region, key_name, ssh_key, instance_data,
