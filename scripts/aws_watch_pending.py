@@ -398,8 +398,8 @@ def aws_watch_pending(dburl, regions, builder_map, region_priorities,
             regions=regions, region_priorities=region_priorities,
             spot_config=spot_config, dryrun=dryrun, slaveset=slaveset)
         count -= started
-        log.info("%s - started %i spot instances for slaveset %s; need %i",
-                 moz_instance_type, started, slaveset, count)
+        log.debug("%s - started %i spot instances for slaveset %s; need %i",
+                  moz_instance_type, started, slaveset, count)
         gr_log.add("need.{moz_instance_type}.{jacuzzi_type}".format(
             moz_instance_type=moz_instance_type,
             jacuzzi_type=jacuzzi_suffix(slaveset)), count, collect=True)
@@ -431,8 +431,8 @@ def aws_watch_pending(dburl, regions, builder_map, region_priorities,
                                        regions, region_priorities,
                                        dryrun, slaveset)
         count -= started
-        log.info("%s - started %i instances for slaveset %s; need %i",
-                 moz_instance_type, started, slaveset, count)
+        log.debug("%s - started %i instances for slaveset %s; need %i",
+                  moz_instance_type, started, slaveset, count)
 
 
 if __name__ == '__main__':

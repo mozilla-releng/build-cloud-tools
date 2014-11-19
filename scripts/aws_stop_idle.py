@@ -102,7 +102,7 @@ def get_last_activity(name, client):
             continue
 
         # uncomment to dump out ALL the lines
-        #log.debug("%s - %s", name, line.strip())
+        # log.debug("%s - %s", name, line.strip())
 
         if "RunProcess._startCommand" in line or "using PTY: " in line:
             log.debug("%s - started command - %s", name, line.strip())
@@ -116,7 +116,8 @@ def get_last_activity(name, client):
             # up
             if (slave_time - t) > uptime:
                 log.debug(
-                    "%s - shutdown line is older than uptime; assuming we're still booting %s", name, line.strip())
+                    "%s - shutdown line is older than uptime; assuming we're "
+                    "still booting %s", name, line.strip())
                 last_activity = "booting"
             else:
                 last_activity = "stopped"
@@ -203,7 +204,8 @@ def aws_safe_stop_instance(i, impaired_ids, credentials, masters_json,
                 stopped = True
                 if not dryrun:
                     log.debug(
-                        "%s - shut down an instance with impaired status", name)
+                        "%s - shut down an instance with impaired status",
+                        name)
                     i.terminate()
                 else:
                     log.debug("%s - would have stopped", name)
@@ -361,7 +363,7 @@ def aws_stop_idle(credentials, regions, masters_json, moz_types,
         if not dryrun:
             i.update()
         if 'moz-type' not in i.tags:
-            log.info("%s - has no moz-type! (%s)" % (i.tags.get('Name'), i.id))
+            log.warn("%s - has no moz-type! (%s)" % (i.tags.get('Name'), i.id))
 
         t = i.tags.get('moz-type', 'notype')
         if t not in total_stopped:
@@ -369,7 +371,7 @@ def aws_stop_idle(credentials, regions, masters_json, moz_types,
         total_stopped[t] += 1
 
     for t, c in sorted(total_stopped.items()):
-        log.info("%s - stopped %s", t, c)
+        log.debug("%s - stopped %s", t, c)
 
 if __name__ == '__main__':
     import argparse
