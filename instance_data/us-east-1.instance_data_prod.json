@@ -1,6 +1,7 @@
 {
   "puppet_masters": ["releng-puppet1.srv.releng.scl3.mozilla.com", "releng-puppet2.srv.releng.scl3.mozilla.com"],
   "hg_repos": {
+    "build/mozharness": "https://hg.mozilla.org/build/mozharness",
     "build/tools": "https://hg.mozilla.org/build/tools"
   },
   "s3_tarballs": {
