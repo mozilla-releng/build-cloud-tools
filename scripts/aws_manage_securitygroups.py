@@ -7,7 +7,7 @@ import yaml_includes
 
 # see http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/VPC_Appendix_Limits.html
 # note that "Rules" in that document actually refers to grants
-MAX_GRANTS_PER_SG = 50
+MAX_GRANTS_PER_SG = 125
 
 import logging
 log = logging.getLogger(__name__)
