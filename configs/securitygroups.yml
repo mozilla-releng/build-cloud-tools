@@ -264,3 +264,40 @@ nagios:
         - include: global-ping
     outbound:
         - include: global-any
+
+# proxxy is configured per-region; these two stanzas should be kept parallel
+proxxy-vpc-use1:
+    description: security group for proxxy servers in use1
+    regions:
+        us-east-1: vpc-b42100df
+    inbound:
+        - proto: tcp
+          ports: [80]
+          hosts:
+            - {include: build-use1}
+            - {include: test-use1}
+            - {include: test2-use1}
+            - {include: try-use1}
+        - include: admin-access
+        - include: observium
+        - include: global-ping
+    outbound:
+        - include: global-any
+
+proxxy-vpc-usw2:
+    description: security group for proxxy servers in usw2
+    regions:
+        us-west-2: vpc-cd63f2a4
+    inbound:
+        - proto: tcp
+          ports: [80]
+          hosts:
+            - {include: build-usw2}
+            - {include: test-usw2}
+            - {include: test2-usw2}
+            - {include: try-usw2}
+        - include: admin-access
+        - include: observium
+        - include: global-ping
+    outbound:
+        - include: global-any
