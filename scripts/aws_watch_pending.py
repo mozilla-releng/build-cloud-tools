@@ -494,6 +494,7 @@ if __name__ == '__main__':
         host = entry.get("host")
         port = entry.get("port")
         prefix = entry.get("prefix")
+        prefix = "{}.releng.aws.aws_watch_pending".format(entry.get("prefix"))
         if all([host, port, prefix]):
             gr_log.add_destination(host, port, prefix)
 

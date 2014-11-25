@@ -282,7 +282,7 @@ if __name__ == '__main__':
     for entry in secrets.get("graphite_hosts", []):
         host = entry.get("host")
         port = entry.get("port")
-        prefix = "aws_stop_idle"
+        prefix = "{}.releng.aws.aws_stop_idle".format(entry.get("prefix"))
         if all([host, port, prefix]):
             gr_log.add_destination(host, port, prefix)
 
