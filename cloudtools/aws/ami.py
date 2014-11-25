@@ -65,7 +65,7 @@ def volume_to_ami(volume, ami_name, arch, virtualization_type,
         try:
             ami = volume.connection.get_image(ami_id)
             ami.add_tag('Name', ami_name)
-            ami.add_tag('moz-created', int(time.mktime(time.gmtime())))
+            ami.add_tag('moz-created', int(time.time()))
             for tag, value in tags.iteritems():
                 ami.add_tag(tag, value)
             log.info('AMI created')
