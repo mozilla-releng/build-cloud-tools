@@ -11,6 +11,7 @@ MAX_GRANTS_PER_SG = 125
 
 import logging
 log = logging.getLogger(__name__)
+port_re = re.compile(r'^(\d+)-(\d+)$')
 
 
 def get_connection(region):
@@ -43,7 +44,6 @@ def resolve_host(hostname):
     return ips
 
 
-port_re = re.compile(r'^(\d+)-(\d+)$')
 def make_rules_for_def(rule):
     """Returns a set of rules for a given config definition. A rule is a
     (proto, from_port, to_port, hosts) tuple
@@ -60,7 +60,7 @@ def make_rules_for_def(rule):
             else:
                 ports.append((p, p))
     else:
-        ports = [(None,None)]
+        ports = [(None, None)]
     hosts = rule['hosts']
     # Resolve the hostnames
     log.debug("%s %s %s", proto, ports, hosts)
@@ -107,9 +107,9 @@ def rules_from_sg(sg):
         cidr_grants = set(g.cidr_ip for g in rule.grants if g.cidr_ip)
         if not cidr_grants:
             continue
-        rules.setdefault(('outbound', rule.ip_protocol, rule.from_port,
-                          rule.to_port), set()).update(set(g.cidr_ip for g in
-                                                           rule.grants if g.cidr_ip))
+        rules.setdefault(
+            ('outbound', rule.ip_protocol, rule.from_port, rule.to_port),
+            set()).update(set(g.cidr_ip for g in rule.grants if g.cidr_ip))
 
     return rules
 
@@ -232,7 +232,7 @@ def main():
     prompt = True
 
     # look for too-big security groups
-    ok =  True
+    ok = True
     for sg_name, sg_config in sg_defs.iteritems():
         rules = make_rules(sg_config)
         total_grants = sum([len(hosts) for hosts in rules.itervalues()])

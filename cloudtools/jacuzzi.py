@@ -7,7 +7,7 @@ _jacuzzi_allocated_cache = {}
 
 
 def get_allocated_slaves(buildername):
-    if buildername in _jacuzzi_allocated_cache:
+    if buildername in _jacuzzi_allocated_cache:  # pragma: no branch
         return _jacuzzi_allocated_cache[buildername]
 
     if buildername is None:

@@ -1,5 +1,6 @@
 import copy
 
+
 def process_includes(data):
     """
     Iterate over a de-YAML'd data structure.  A top-level 'includes'
@@ -10,6 +11,7 @@ def process_includes(data):
     if not isinstance(data, dict) or 'includes' not in data:
         return data
     includes = data.pop('includes')
+
     def iter(d):
         if isinstance(d, dict):
             if len(d) == 1 and 'include' in d and d['include'] in includes:

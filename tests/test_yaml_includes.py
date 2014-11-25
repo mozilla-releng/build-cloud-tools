@@ -8,6 +8,7 @@ import yaml
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../scripts'))
 from yaml_includes import process_includes
 
+
 class TestFreshInstances(unittest.TestCase):
 
     def test_no_change(self):
@@ -50,7 +51,6 @@ class TestFreshInstances(unittest.TestCase):
               b: 2
             """)))
         self.assertEqual(process_includes(input), exp)
-
 
     def test_recursion(self):
         input = yaml.load(StringIO(textwrap.dedent("""\

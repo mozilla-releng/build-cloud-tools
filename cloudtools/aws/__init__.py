@@ -251,3 +251,27 @@ def jacuzzi_suffix(slaveset):
         return "jacuzzied"
     else:
         return "not_jacuzzied"
+
+
+def get_buildslave_instances(region, moz_types):
+    # Look for running `moz_types` instances with moz-state=ready
+    conn = get_aws_connection(region)
+    instances = conn.get_only_instances(filters={
+        'tag:moz-state': 'ready',
+        'instance-state-name': 'running',
+    })
+
+    retval = []
+    for i in instances:
+        if i.tags.get("moz-type") in moz_types and \
+                not i.tags.get("moz-loaned-to"):
+            retval.append(i)
+
+    return retval
+
+
+def get_impaired_instance_ids(region):
+    conn = get_aws_connection(region)
+    impaired = conn.get_all_instance_status(
+        filters={'instance-status.status': 'impaired'})
+    return [i.id for i in impaired]

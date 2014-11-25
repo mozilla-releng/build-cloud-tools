@@ -47,6 +47,7 @@ def install_packages(packages_file, distro, chroot=None):
             "--force-yes {}".format(chroot_prefix, packages))
         run("{}apt-get clean".format(chroot_prefix))
 
+
 def sync(src, dst):
     for local_directory, _, files in os.walk(src, followlinks=True):
         directory = os.path.relpath(local_directory, src)

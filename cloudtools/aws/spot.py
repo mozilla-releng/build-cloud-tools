@@ -30,7 +30,7 @@ def populate_spot_requests_cache(region, request_ids=None):
     conn = get_aws_connection(region)
     try:
         reqs = conn.get_all_spot_instance_requests(**kwargs)
-    except boto.exception.EC2ResponseError, e:
+    except boto.exception.EC2ResponseError:
         log.debug("Some of the requests not found, requesting all")
         reqs = conn.get_all_spot_instance_requests()
     for req in reqs:

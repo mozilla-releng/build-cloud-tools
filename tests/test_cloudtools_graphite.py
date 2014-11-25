@@ -1,3 +1,4 @@
+import socket
 import unittest
 import mock
 import cloudtools.graphite
@@ -108,3 +109,40 @@ class TestGraphiteLogger(unittest.TestCase):
                 mock.call("prefix2.name 44 9999\n"),
             ]
             sock.sendall.assert_has_calls(expected_calls)
+
+    @mock.patch.object(socket, "create_connection")
+    def test_sendall_no_data(self, m_conn):
+        gl = get_graphite_logger()
+        gl.add_destination("host1", 1111, "prefix1")
+        gl.sendall()
+        self.assertEqual(m_conn.call_count, 0)
+
+    @mock.patch.object(socket, "create_connection")
+    def test_sendall_exception(self, m_create_connection):
+        gl = get_graphite_logger()
+        gl.add_destination("host1", 1111, "prefix1")
+        gl.add("name", 44)
+        m_create_connection.side_effect = Exception("oops")
+        # No exception should be raised
+        gl.sendall()
+        self.assertDictEqual({}, gl._data)
+
+
+class TestGenerateInstanceStats(unittest.TestCase):
+
+    def test_running_only(self):
+        i1 = mock.Mock()
+        i1.state = "running"
+        i2 = mock.Mock()
+        i2.state = "stopped"
+        for i in [i1, i2]:
+            i.region.name = "r1"
+            i.tags = {"moz-type": "m1"}
+            i.instance_type = "i1"
+            i.spot_instance_request_id = "r1"
+            i.virtualization_type = "v1"
+            i.root_device_type = "d1"
+        with mock.patch("cloudtools.graphite._graphite_logger") as m_l:
+            cloudtools.graphite.generate_instance_stats([i1, i2])
+            m_l.add.assert_called_once_with("running.r1.m1.i1.spot.v1.d1",
+                                            1, collect=True)

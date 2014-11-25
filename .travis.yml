@@ -3,6 +3,6 @@ python:
   - "2.7"
 
 install:
-    - travis_retry pip install -r requirements-tests.txt
-script: nosetests --with-coverage --cover-erase -v
-after_success: coveralls
+    - travis_retry pip install tox==1.8
+script:
+    - tox -e py27,py27-coverage

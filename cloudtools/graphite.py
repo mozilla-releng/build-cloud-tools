@@ -43,7 +43,7 @@ class GraphiteLogger(object):
 
     def sendall(self):
         if not self._data:
-            log.warning("Nothing to submit to graphite")
+            log.debug("Nothing to submit to graphite")
             return
 
         for host, port, prefix in self._servers:
