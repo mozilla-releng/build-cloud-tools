@@ -5,4 +5,4 @@ python:
 install:
     - travis_retry pip install tox==1.8
 script:
-    - tox -e py27,py27-coverage
+    - tox -e py27,py27-coveralls
