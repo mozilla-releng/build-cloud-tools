@@ -5,7 +5,7 @@ import os
 import site
 
 site.addsitedir(os.path.join(os.path.dirname(__file__), ".."))
-from cloudtools.aws.ami import get_ami, copy_ami
+from cloudtools.aws.ami import get_spot_ami, copy_ami
 
 log = logging.getLogger(__name__)
 
@@ -23,8 +23,8 @@ def main():
                         help="moz_instance_types to be copied")
     args = parser.parse_args()
 
-    amis_to_copy = [get_ami(region=args.from_region, moz_instance_type=t) for t
-                    in args.moz_instance_types]
+    amis_to_copy = [get_spot_ami(region=args.from_region, moz_instance_type=t)
+                    for t in args.moz_instance_types]
     for ami in amis_to_copy:
         for r in args.to_regions:
             log.info("Copying %s (%s) to %s", ami.id, ami.tags.get("Name"), r)

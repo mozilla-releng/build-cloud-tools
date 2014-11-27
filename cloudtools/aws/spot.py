@@ -79,7 +79,7 @@ def copy_spot_request_tags(i):
         log.debug("Cannot find spot request for %s", i)
         return
     tags = {}
-    for tag_name, tag_value in req.tags.iteritems():
+    for tag_name, tag_value in sorted(req.tags.iteritems()):
         if tag_name not in i.tags:
             log.info("Adding '%s' tag with '%s' value to %s", tag_name,
                      tag_value, i)

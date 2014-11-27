@@ -3,27 +3,22 @@ import json
 import uuid
 import time
 import boto
-import StringIO
-import random
 import site
 import os
 import multiprocessing
 import sys
 import logging
-from random import choice
-from fabric.api import run, put, sudo
-from fabric.context_managers import cd
 from boto.ec2.blockdevicemapping import BlockDeviceMapping, BlockDeviceType
-from boto.ec2.networkinterface import NetworkInterfaceSpecification, \
-    NetworkInterfaceCollection
 
 site.addsitedir(os.path.join(os.path.dirname(__file__), ".."))
-from cloudtools.aws import AMI_CONFIGS_DIR, get_aws_connection, get_vpc, \
+from cloudtools.aws import get_aws_connection, get_vpc, \
     name_available, wait_for_status, get_user_data_tmpl
 from cloudtools.dns import get_ip, get_ptr
+from cloudtools.aws.instance import assimilate_instance, \
+    make_instance_interfaces
 from cloudtools.aws.vpc import get_subnet_id, ip_available
-from cloudtools.aws.ami import ami_cleanup, volume_to_ami, copy_ami, get_ami
-from cloudtools.fabric import setup_fabric_env
+from cloudtools.aws.ami import ami_cleanup, volume_to_ami, copy_ami, \
+    get_spot_ami
 
 log = logging.getLogger(__name__)
 
@@ -51,7 +46,7 @@ def verify(hosts, config, region, ignore_subnet_check=False):
                 log.error("Bad PTR for %s", host)
                 passed = False
             log.debug("Checking %s availablility", ip)
-            if not ip_available(conn, ip):
+            if not ip_available(region, ip):
                 log.error("IP %s reserved for %s, but not available", ip, host)
                 passed = False
             if not ignore_subnet_check:
@@ -64,159 +59,12 @@ def verify(hosts, config, region, ignore_subnet_check=False):
         raise RuntimeError("Sanity check failed")
 
 
-def assimilate_windows(instance, config, instance_data):
-    # Wait for the instance to stop, and then clear its userData and start it
-    # again
-    log.info("waiting for instance to shut down")
-    wait_for_status(instance, 'state', 'stopped', 'update')
-
-    log.info("clearing userData")
-    instance.modify_attribute("userData", None)
-    log.info("starting instance")
-    instance.start()
-    log.info("waiting for instance to start")
-    # Wait for the instance to come up
-    wait_for_status(instance, 'state', 'running', 'update')
-
-
-def assimilate(instance, config, ssh_key, instance_data, deploypass,
-               reboot=True):
-    """Assimilate hostname into our collective
-
-    What this means is that hostname will be set up with some basic things like
-    a script to grab AWS user data, and get it talking to puppet (which is
-    specified in said config).
-    """
-    ip_addr = instance.private_ip_address
-    distro = config.get('distro', '')
-    if distro.startswith('win'):
-        return assimilate_windows(instance, config, instance_data)
-
-    setup_fabric_env(host_string=ip_addr, key_filename=ssh_key)
-
-    # Sanity check
-    run("date")
-
-    # Set our hostname
-    hostname = "{hostname}".format(**instance_data)
-    log.info("Bootstrapping %s...", hostname)
-    run("hostname %s" % hostname)
-    if distro in ('ubuntu', 'debian'):
-        run("echo %s > /etc/hostname" % hostname)
-
-    # Resize the file systems
-    # We do this because the AMI image usually has a smaller filesystem than
-    # the instance has.
-    if 'device_map' in config:
-        for device, mapping in config['device_map'].items():
-            if not mapping.get("skip_resize"):
-                run('resize2fs {dev}'.format(dev=mapping['instance_dev']))
-
-    # Set up /etc/hosts to talk to 'puppet'
-    hosts = ['127.0.0.1 %s localhost' % hostname,
-             '::1 localhost6.localdomain6 localhost6']
-    hosts = StringIO.StringIO("\n".join(hosts) + "\n")
-    put(hosts, '/etc/hosts')
-
-    if distro in ('ubuntu', 'debian'):
-        put('%s/releng-public.list' % AMI_CONFIGS_DIR, '/etc/apt/sources.list')
-        run("apt-get update")
-        run("apt-get install -y --allow-unauthenticated puppet cloud-init")
-        run("apt-get clean")
-    else:
-        # Set up yum repos
-        run('rm -f /etc/yum.repos.d/*')
-        put('%s/releng-public.repo' % AMI_CONFIGS_DIR,
-            '/etc/yum.repos.d/releng-public.repo')
-        run('yum clean all')
-        run('yum install -q -y puppet cloud-init')
-
-    run("wget -O /root/puppetize.sh https://hg.mozilla.org/build/puppet/raw-file/production/modules/puppet/files/puppetize.sh")
-    run("chmod 755 /root/puppetize.sh")
-    put(StringIO.StringIO(deploypass), "/root/deploypass")
-    put(StringIO.StringIO("exit 0\n"), "/root/post-puppetize-hook.sh")
-
-    puppet_master = random.choice(instance_data["puppet_masters"])
-    log.info("Puppetizing %s, it may take a while...", hostname)
-    run("PUPPET_SERVER=%s /root/puppetize.sh" % puppet_master)
-
-    if 'home_tarball' in instance_data:
-        put(instance_data['home_tarball'], '/tmp/home.tar.gz')
-        with cd('~cltbld'):
-            sudo('tar xzf /tmp/home.tar.gz', user="cltbld")
-            sudo('chmod 700 .ssh', user="cltbld")
-            sudo('chmod 600 .ssh/*', user="cltbld")
-        run('rm -f /tmp/home.tar.gz')
-
-    if "buildslave_password" in instance_data:
-        # Set up a stub buildbot.tac
-        sudo("/tools/buildbot/bin/buildslave create-slave /builds/slave "
-             "{buildbot_master} {name} "
-             "{buildslave_password}".format(**instance_data), user="cltbld")
-    if instance_data.get("hg_bundles"):
-        unbundle_hg(instance_data['hg_bundles'])
-    if instance_data.get("s3_tarballs"):
-        unpack_tarballs(instance_data["s3_tarballs"])
-    if instance_data.get("hg_repos"):
-        share_repos(instance_data["hg_repos"])
-
-    run("sync")
-    run("sync")
-    if reboot:
-        log.info("Rebooting %s...", hostname)
-        run("reboot")
-
-
-def unbundle_hg(hg_bundles):
-    log.info("Cloning HG bundles")
-    hg = "/tools/python27-mercurial/bin/hg"
-    for share, bundle in hg_bundles.iteritems():
-        target_dir = '/builds/hg-shared/%s' % share
-        sudo('rm -rf {d} && mkdir -p {d}'.format(d=target_dir),
-             user="cltbld")
-        sudo('{hg} init {d}'.format(hg=hg, d=target_dir), user="cltbld")
-        hgrc = "[paths]\n"
-        hgrc += "default = https://hg.mozilla.org/%s\n" % share
-        put(StringIO.StringIO(hgrc), '%s/.hg/hgrc' % target_dir)
-        run("chown cltbld: %s/.hg/hgrc" % target_dir)
-        sudo('{hg} -R {d} unbundle {b}'.format(hg=hg, d=target_dir,
-                                               b=bundle), user="cltbld")
-    log.info("Unbundling HG repos finished")
-
-
-def unpack_tarballs(tarballs):
-    log.info("Unpacking tarballs")
-    put("%s/s3-get" % AMI_CONFIGS_DIR, "/tmp/s3-get")
-    for dest_dir, info in tarballs.iteritems():
-        bucket, key = info["bucket"], info["key"]
-        sudo("mkdir -p {d}".format(d=dest_dir), user="cltbld")
-        with cd(dest_dir):
-            sudo("python /tmp/s3-get -b {bucket} -k {key} -o - | tar xf -".format(
-                 bucket=bucket, key=key), user="cltbld")
-    run("rm -f /tmp/s3-get")
-    log.info("Unpacking tarballs finished")
-
-
-def share_repos(hg_repos):
-    log.info("Cloning HG repos")
-    hg = "/tools/python27-mercurial/bin/hg"
-    for share, repo in hg_repos.iteritems():
-        target_dir = '/builds/hg-shared/%s' % share
-        parent_dir = os.path.dirname(target_dir.rstrip("/"))
-        sudo('rm -rf {d} && mkdir -p {p}'.format(d=target_dir, p=parent_dir),
-             user="cltbld")
-        sudo('{hg} clone -U {repo} {d}'.format(hg=hg, repo=repo, d=target_dir),
-             user="cltbld")
-    log.info("Cloning HG repos finished")
-
-
 def create_instance(name, config, region, key_name, ssh_key, instance_data,
                     deploypass, loaned_to, loan_bug, create_ami,
                     ignore_subnet_check, max_attempts):
     """Creates an AMI instance with the given name and config. The config must
     specify things like ami id."""
     conn = get_aws_connection(region)
-    vpc = get_vpc(region)
     # Make sure we don't request the same things twice
     token = str(uuid.uuid4())[:16]
 
@@ -246,29 +94,10 @@ def create_instance(name, config, region, key_name, ssh_key, instance_data,
 
             bdm[device] = bd
 
-    ip_address = get_ip(instance_data['hostname'])
-    subnet_id = None
-
-    if ip_address:
-        s_id = get_subnet_id(vpc, ip_address)
-        if ignore_subnet_check:
-            subnet_id = s_id
-        elif s_id in config['subnet_ids']:
-            if ip_available(conn, ip_address):
-                subnet_id = s_id
-            else:
-                log.warning("%s already assigned" % ip_address)
-
-    if not ip_address or not subnet_id:
-        ip_address = None
-        subnet_id = choice(config.get('subnet_ids'))
-    interface = NetworkInterfaceSpecification(
-        subnet_id=subnet_id, private_ip_address=ip_address,
-        delete_on_termination=True,
-        groups=config.get('security_group_ids', []),
-        associate_public_ip_address=config.get("use_public_ip")
-    )
-    interfaces = NetworkInterfaceCollection(interface)
+    interfaces = make_instance_interfaces(
+        region, instance_data['hostname'], ignore_subnet_check,
+        config.get('subnet_ids'), config.get('security_group_ids', []),
+        config.get("use_public_ip"))
 
     keep_going, attempt = True, 1
     while keep_going:
@@ -294,7 +123,7 @@ def create_instance(name, config, region, key_name, ssh_key, instance_data,
                 instance_type=config['instance_type'],
                 block_device_map=bdm,
                 client_token=token,
-                disable_api_termination=bool(config.get('disable_api_termination')),
+                disable_api_termination=config.get('disable_api_termination'),
                 user_data=user_data,
                 instance_profile_name=config.get('instance_profile_name'),
                 network_interfaces=interfaces,
@@ -329,9 +158,9 @@ def create_instance(name, config, region, key_name, ssh_key, instance_data,
         try:
             # Don't reboot if need to create ami
             reboot = not create_ami
-            assimilate(instance=instance, config=config, ssh_key=ssh_key,
-                       instance_data=instance_data, deploypass=deploypass,
-                       reboot=reboot)
+            assimilate_instance(instance=instance, config=config,
+                                ssh_key=ssh_key, instance_data=instance_data,
+                                deploypass=deploypass, reboot=reboot)
             break
         except:
             log.warn("problem assimilating %s (%s, %s), retrying in "
@@ -416,7 +245,9 @@ if __name__ == '__main__':
                         type=argparse.FileType('r'), required=True)
     parser.add_argument("--no-verify", action="store_true",
                         help="Skip DNS related checks")
-    parser.add_argument("-v", "--verbose", action="store_true",
+    parser.add_argument("-v", "--verbose", action="store_const",
+                        dest="log_level", const=logging.DEBUG,
+                        default=logging.INFO,
                         help="Increase logging verbosity")
     parser.add_argument("-l", "--loaned-to", help="Loaner contact e-mail")
     parser.add_argument("-b", "--bug", help="Loaner bug number")
@@ -429,14 +260,13 @@ if __name__ == '__main__':
     parser.add_argument("-t", "--copy-to-region", action="append", default=[],
                         dest="copy_to_regions", help="Regions to copy AMI to")
     parser.add_argument("--max-attempts",
-                        help="The number of attempts to try after each failure")
+                        help="The number of attempts to try after each failure"
+                        )
+
     args = parser.parse_args()
 
-    logging.basicConfig(format="%(asctime)s - %(levelname)s - %(message)s")
-    if args.verbose:
-        log.setLevel(logging.DEBUG)
-    else:
-        log.setLevel(logging.INFO)
+    logging.basicConfig(format="%(asctime)s - %(levelname)s - %(message)s",
+                        level=args.log_level)
 
     try:
         config = json.load(args.config)[args.region]
@@ -460,8 +290,8 @@ if __name__ == '__main__':
                    ignore_subnet_check=args.ignore_subnet_check,
                    max_attempts=args.max_attempts)
     for r in args.copy_to_regions:
-        ami = get_ami(region=args.region,
-                      moz_instance_type=config["type"])
+        ami = get_spot_ami(region=args.region,
+                           moz_instance_type=config["type"])
         log.info("Copying %s (%s) to %s", ami.id, ami.tags.get("Name"), r)
         new_ami = copy_ami(ami, r)
         log.info("New AMI created. AMI ID: %s", new_ami.id)
