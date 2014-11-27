@@ -9,7 +9,7 @@ import os
 site.addsitedir(os.path.join(os.path.dirname(__file__), ".."))
 from cloudtools.aws import DEFAULT_REGIONS
 
-from cloudtools.aws.ami import get_spot_ami
+from cloudtools.aws.ami import get_ami
 
 if __name__ == '__main__':
     import argparse
@@ -29,8 +29,7 @@ if __name__ == '__main__':
 
     for region in regions:
         for moz_instance_type in moz_instance_types:
-            ami = get_spot_ami(region=region,
-                               moz_instance_type=moz_instance_type)
+            ami = get_ami(region=region, moz_instance_type=moz_instance_type)
             print "%s, %s: %s (%s, %s)" % (moz_instance_type, region, ami.id,
                                            ami.tags.get("Name"),
                                            ami.root_device_type)
