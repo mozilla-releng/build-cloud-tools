@@ -21,7 +21,7 @@ from boto.ec2.networkinterface import NetworkInterfaceCollection, \
 import site
 site.addsitedir(os.path.join(os.path.dirname(__file__), ".."))
 
-from cloudtools.aws import (get_aws_connection,  aws_get_running_instances,
+from cloudtools.aws import (get_aws_connection, aws_get_running_instances,
                             aws_get_all_instances, filter_spot_instances,
                             filter_ondemand_instances, reduce_by_freshness,
                             distribute_in_region, load_instance_config,
