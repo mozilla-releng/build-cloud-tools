@@ -58,6 +58,18 @@ class TestSlaveMozType(unittest.TestCase):
         }
         self.assertEqual(slave_moz_type(slave), "tst-emulator64")
 
+    def test_golden(self):
+        slave = {
+            "name": "tst-linux64-ec2-golden",
+            "bitlength": "64",
+            "environment": "prod",
+            "distro": "ubuntu64",
+            "purpose": "tests",
+            "speed": "m1.medium",
+            "trustlevel": "try"
+        }
+        self.assertEqual(slave_moz_type(slave), "golden")
+
 
 class TestClassification(unittest.TestCase):
 
