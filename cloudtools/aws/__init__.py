@@ -264,6 +264,7 @@ def get_buildslave_instances(region, moz_types):
     retval = []
     for i in instances:
         if i.tags.get("moz-type") in moz_types and \
+                i.tags.get("moz-state") == "ready" and \
                 not i.tags.get("moz-loaned-to"):
             retval.append(i)
 

@@ -1,15 +1,21 @@
 #!/usr/bin/env python
-import boto.ec2
+import os
 import re
+import logging
 import yaml
+import boto.ec2
 import dns.resolver
-import yaml_includes
+
+import site
+site.addsitedir(os.path.join(os.path.dirname(__file__), ".."))
+
+from cloudtools.yaml import process_includes
+
 
 # see http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/VPC_Appendix_Limits.html
 # note that "Rules" in that document actually refers to grants
 MAX_GRANTS_PER_SG = 125
 
-import logging
 log = logging.getLogger(__name__)
 port_re = re.compile(r'^(\d+)-(\d+)$')
 
@@ -19,7 +25,7 @@ def get_connection(region):
 
 
 def load_config(filename):
-    return yaml_includes.process_includes(yaml.load(open(filename)))
+    return process_includes(yaml.load(open(filename)))
 
 
 def get_remote_sg_by_name(groups, name):

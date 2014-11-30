@@ -2,6 +2,9 @@ language: python
 python:
   - "2.7"
 
+before_install:
+    - sudo apt-get update
+    - sudo apt-get install libmysqlclient-dev
 install:
     - travis_retry pip install tox==1.8
 script:
