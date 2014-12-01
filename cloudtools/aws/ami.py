@@ -112,7 +112,7 @@ def get_spot_amis(region, tags, name_glob="spot-*", root_device_type=None):
 def delete_ebs_ami(ami):
     snap_id = ami.block_device_mapping[ami.root_device_name].snapshot_id
     snap = ami.connection.get_all_snapshots(snapshot_ids=[snap_id])[0]
-    log.warn("Deleting %s (%s)", ami, ami.tags.get("Name"))
+    log.warn("Deleting EBS-backed AMI %s (%s)", ami, ami.tags.get("Name"))
     ami.deregister()
     log.warn("Deleting %s (%s)", snap, snap.description)
     snap.delete()
@@ -129,7 +129,7 @@ def delete_instance_store_ami(ami):
     files = [f.firstChild.nodeValue for f in
              dom.getElementsByTagName("filename")]
     to_delete = [os.path.join(folder, f) for f in files] + [location]
-    log.warn("Deleting %s (%s)", ami, ami.tags.get("Name"))
+    log.warn("Deleting S3-backed %s (%s)", ami, ami.tags.get("Name"))
     ami.deregister()
     log.warn("Deleting files from S3: %s", to_delete)
     bucket.delete_keys(to_delete)
