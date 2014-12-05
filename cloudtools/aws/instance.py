@@ -147,7 +147,7 @@ def assimilate_instance(instance, config, ssh_key, instance_data, deploypass,
 
     if "buildslave_password" in instance_data:
         # Set up a stub buildbot.tac
-        run_chroot("sudo cltbld /tools/buildbot/bin/buildslave create-slave"
+        run_chroot("sudo -u cltbld /tools/buildbot/bin/buildslave create-slave "
                    "/builds/slave {buildbot_master} {name} "
                    "{buildslave_password}".format(**instance_data))
     if instance_data.get("hg_bundles"):
