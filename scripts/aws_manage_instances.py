@@ -63,7 +63,7 @@ def disable(i, dry_run, comments=None):
         i.add_tag("moz-state", moz_state)
 
 
-def terminate(i, dry_run):
+def terminate(i, dry_run, force=None):
     name = i.tags.get('Name', '')
     log.info("Terminating %s..." % name)
 
@@ -71,8 +71,11 @@ def terminate(i, dry_run):
         log.info("Dry run mode, skipping...")
         return
 
-    yesno = raw_input("WARNING: you are about to terminate %s! "
-                      "Are you sure? [y/N] " % name)
+    if force:
+        yesno = "y"
+    else:
+        yesno = raw_input("WARNING: you are about to terminate %s! "
+                          "Are you sure? [y/N] " % name)
     if yesno == "y":
         i.terminate()
         log.info("%s terminated" % name)
@@ -114,6 +117,8 @@ if __name__ == '__main__':
                         help="Supress logging messages")
     parser.add_argument("hosts", metavar="host", nargs="+",
                         help="hosts to be processed")
+    parser.add_argument("-f", "--force", action="store_true",
+                        help="Force action without prompting")
 
     args = parser.parse_args()
 
@@ -151,6 +156,6 @@ if __name__ == '__main__':
                 elif args.action == "disable":
                     disable(i, args.dry_run, args.comments)
                 elif args.action == "terminate":
-                    terminate(i, args.dry_run)
+                    terminate(i, args.dry_run, args.force)
                 elif args.action == "status":
                     status(i)
