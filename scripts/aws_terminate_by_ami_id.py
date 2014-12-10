@@ -37,7 +37,8 @@ def main():
     for r in regions:
         log.debug("working in %s", r)
         conn = get_aws_connection(r)
-        instances = conn.get_only_instances(filters={"image-id": args.amis})
+        instances = conn.get_only_instances(
+            filters={"image-id": args.amis, "instance-state-name": "running"})
         log.debug("got %s instances:\n%s", len(instances), instances)
         if instances:
             instances_to_kill.extend(instances)
