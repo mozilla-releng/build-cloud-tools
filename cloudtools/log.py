@@ -26,7 +26,7 @@ class SplitSysLogHandler(SysLogHandler):
             super(SplitSysLogHandler, self).emit(record)
 
 
-def add_syslog_handler(logger, address, app=None, formatter=None):
+def add_syslog_handler(logger, address, app="unknown", formatter=None):
     f = ContextFilter()
     logger.addFilter(f)
     syslog = SplitSysLogHandler(address=address)
