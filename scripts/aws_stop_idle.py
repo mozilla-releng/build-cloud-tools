@@ -289,7 +289,7 @@ if __name__ == '__main__':
 
     if secrets.get("syslog_address"):
         add_syslog_handler(log, address=secrets["syslog_address"],
-                           app="aws_watch_pending")
+                           app="aws_stop_idle")
 
     gr_log.sendall()
     log.debug("done")
