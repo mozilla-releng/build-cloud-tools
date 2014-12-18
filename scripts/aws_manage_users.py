@@ -4,8 +4,21 @@ import boto.exception
 import os
 import site
 import json
+import random
 
 site.addsitedir(os.path.join(os.path.dirname(__file__), ".."))
+
+
+def make_password(n=8):
+    uppers = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    lowers = "abcdefghijklmnopqrstuvwxyz"
+    nums = "0123456789"
+    special = "`-=~!@#$%^&*()_+[]\{}|;':\",./<>?"
+    all = uppers + lowers + nums + special
+
+    pw = list(random.choice(uppers) + random.choice(lowers) + random.choice(nums) + random.choice(special) + ''.join(random.choice(all) for _ in range(n - 4)))
+    random.shuffle(pw)
+    return ''.join(pw)
 
 
 def get_users(conn=None):
@@ -47,12 +60,35 @@ def enable_mfa(users):
             conn.put_user_policy(user_name, "manage_own_MFA", policy_json)
 
 
+def create_users(users):
+    conn = boto.iam.IAMConnection()
+    all_users = get_users(conn)
+    remote_users = {u.user_name for u in all_users}
+    for u in users:
+        if u in remote_users:
+            print u, "already exists"
+            continue
+
+        iam_user = conn.create_user(u)
+        try:
+            password = make_password()
+            conn.create_login_profile(u, password)
+            conn.add_user_to_group('RelEng', iam_user.user_name)
+            conn.put_user_policy(iam_user.user_name, 'manage_own_MFA', make_mfa_policy(iam_user.user_name))
+            print "username:", iam_user.user_name, "password:", password
+        except Exception:
+            conn.delete_user(u)
+            print "deleted", u, password
+            raise
+
+
 def main():
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("--mfa", help="enable mfas for users", action="store_const", const="mfa", dest="action")
     parser.add_argument("--list", help="list users", action="store_const", const="list", dest="action")
-    parser.add_argument("users", help="list of users to manage")
+    parser.add_argument("--create", help="create user", action="store_const", const="create", dest="action")
+    parser.add_argument("users", help="list of users to manage", nargs='+')
 
     args = parser.parse_args()
 
@@ -63,6 +99,10 @@ def main():
     elif args.action == "mfa":
         print "enabling MFA for", args.users
         enable_mfa(args.users)
+
+    elif args.action == 'create':
+        print "creating users", args.users
+        create_users(args.users)
 
 
 if __name__ == '__main__':
