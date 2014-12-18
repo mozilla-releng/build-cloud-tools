@@ -21,7 +21,7 @@ from boto.ec2.networkinterface import NetworkInterfaceCollection, \
 import site
 site.addsitedir(os.path.join(os.path.dirname(__file__), ".."))
 
-from cloudtools.aws import (get_aws_connection,  aws_get_running_instances,
+from cloudtools.aws import (get_aws_connection, aws_get_running_instances,
                             aws_get_all_instances, filter_spot_instances,
                             filter_ondemand_instances, reduce_by_freshness,
                             distribute_in_region, load_instance_config,
@@ -35,6 +35,7 @@ from cloudtools.buildbot import find_pending, map_builders
 from cloudtools.aws.instance import create_block_device_mapping, \
     user_data_from_template, tag_ondemand_instance
 import cloudtools.graphite
+from cloudtools.log import add_syslog_handler
 
 log = logging.getLogger()
 gr_log = cloudtools.graphite.get_graphite_logger()
@@ -398,8 +399,8 @@ def aws_watch_pending(dburl, regions, builder_map, region_priorities,
             regions=regions, region_priorities=region_priorities,
             spot_config=spot_config, dryrun=dryrun, slaveset=slaveset)
         count -= started
-        log.info("%s - started %i spot instances for slaveset %s; need %i",
-                 moz_instance_type, started, slaveset, count)
+        log.debug("%s - started %i spot instances for slaveset %s; need %i",
+                  moz_instance_type, started, slaveset, count)
         gr_log.add("need.{moz_instance_type}.{jacuzzi_type}".format(
             moz_instance_type=moz_instance_type,
             jacuzzi_type=jacuzzi_suffix(slaveset)), count, collect=True)
@@ -431,8 +432,8 @@ def aws_watch_pending(dburl, regions, builder_map, region_priorities,
                                        regions, region_priorities,
                                        dryrun, slaveset)
         count -= started
-        log.info("%s - started %i instances for slaveset %s; need %i",
-                 moz_instance_type, started, slaveset, count)
+        log.debug("%s - started %i instances for slaveset %s; need %i",
+                  moz_instance_type, started, slaveset, count)
 
 
 if __name__ == '__main__':
@@ -494,8 +495,12 @@ if __name__ == '__main__':
         host = entry.get("host")
         port = entry.get("port")
         prefix = entry.get("prefix")
+        prefix = "{}.releng.aws.aws_watch_pending".format(entry.get("prefix"))
         if all([host, port, prefix]):
             gr_log.add_destination(host, port, prefix)
+    if secrets.get("syslog_address"):
+        add_syslog_handler(log, address=secrets["syslog_address"],
+                           app="aws_watch_pending")
 
     gr_log.sendall()
     log.debug("done")

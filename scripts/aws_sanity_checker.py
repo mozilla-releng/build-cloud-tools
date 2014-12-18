@@ -14,6 +14,7 @@ from cloudtools.aws import get_aws_connection, DEFAULT_REGIONS
 
 log = logging.getLogger(__name__)
 
+
 def is_beanstalk_instance(i):
     """returns True if this is a beanstalk instance"""
     return i.tags.get("elasticbeanstalk:environment-name") is not None
@@ -41,7 +42,7 @@ def report(items, message):
 def _report_lazy_running_instances(lazy):
     """reports the lazy long running instances"""
     message = 'Lazy long running instances'
-    lazy = sorted(lazy, reverse=True, key=lambda x:x.get_uptime())
+    lazy = sorted(lazy, reverse=True, key=lambda x: x.get_uptime())
     lazy = [i.longrunning_message() for i in lazy]
     report(lazy, message)
 
@@ -52,7 +53,8 @@ def _report_long_running_instances(long_running):
     # remove lazy instances...
     long_running = [i for i in long_running if not i.is_lazy()]
     if long_running:
-        items = sorted(long_running, reverse=True, key=lambda x:x.get_uptime())
+        items = sorted(long_running, reverse=True,
+                       key=lambda x: x.get_uptime())
         items = [i.longrunning_message() for i in items]
         report(items, message)
     else:
@@ -69,6 +71,7 @@ def _report_loaned(loaned):
     else:
         print "==== No loaned instances ===="
         print
+
 
 def _report_bad_type(bad_type):
     """reports the instances with a bad type"""
@@ -87,7 +90,7 @@ def _report_bad_type(bad_type):
 def _report_bad_state(bad_state):
     """reports the instances with a bad state"""
     if bad_state:
-        message =  "Instances with unknown state"
+        message = "Instances with unknown state"
         items = sorted(bad_state, key=lambda x: x.get_region())
         items = [i.unknown_state_message() for i in items]
         report(items, message)
@@ -100,8 +103,9 @@ def _report_long_stopped(long_stopped):
     """reports the instances stopped for a while"""
     if long_stopped:
         message = "Instances stopped for a while"
-        items = sorted(long_stopped, reverse=True, key=lambda x: x.get_uptime())
-        items = [i.stopped_message() for i in items ]
+        items = sorted(long_stopped, reverse=True,
+                       key=lambda x: x.get_uptime())
+        items = [i.stopped_message() for i in items]
         report(items, message)
     else:
         print "==== No long stopped instances ===="
@@ -144,8 +148,8 @@ def _report_volume_sanity_check(volumes):
     print "Volume usage: %sG" % total
     if not_attached:
         print "==== Not attached volumes ===="
-        for instance, (volume, msg) in enumerate(sorted(not_attached,
-            key=lambda x: x[0].region.name)):
+        for instance, (volume, msg) in enumerate(
+                sorted(not_attached, key=lambda x: x[0].region.name)):
             print instance, "%s %s: %s" % (volume.id, volume.region.name, msg)
         print
 

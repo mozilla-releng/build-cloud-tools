@@ -15,10 +15,9 @@ import site
 import os
 
 import boto
-from boto.ec2 import connect_to_region
 from boto.ec2.blockdevicemapping import BlockDeviceMapping, BlockDeviceType
 from boto.ec2.networkinterface import NetworkInterfaceSpecification, \
-     NetworkInterfaceCollection
+    NetworkInterfaceCollection
 site.addsitedir(os.path.join(os.path.dirname(__file__), ".."))
 from cloudtools.aws import AMI_CONFIGS_DIR, wait_for_status, get_aws_connection
 log = logging.getLogger(__name__)
@@ -78,16 +77,14 @@ def create_instance(connection, instance_name, config, key_name):
 
 def create_ami(host_instance, config_name, config):
     connection = host_instance.connection
-    host_img = connection.get_image(config['ami'])
-    target_name = config_name
-    config_dir = "%s/%s" % (AMI_CONFIGS_DIR, target_name)
     dated_target_name = "%s-%s" % (
         config_name, time.strftime("%Y-%m-%d-%H-%M", time.gmtime()))
 
     log.info('Creating AMI')
-    host_img = connection.get_image(config['ami'])
 
-    ami_id = connection.create_image(host_instance.id, name=dated_target_name, description='%s EBS AMI' % dated_target_name,)
+    ami_id = connection.create_image(host_instance.id, name=dated_target_name,
+                                     description='%s EBS AMI' %
+                                     dated_target_name,)
     while True:
         try:
             ami = connection.get_image(ami_id)
@@ -113,12 +110,14 @@ if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(message)s")
 
     try:
-        config = json.load(open("%s/%s.json" % (AMI_CONFIGS_DIR, args['--config'])))[args['--region']]
+        config = json.load(
+            open("%s/%s.json" % (AMI_CONFIGS_DIR,
+                                 args['--config'])))[args['--region']]
     except KeyError:
-        parser.error("unknown configuration for region %s" % options.region)
+        log.error("unknown configuration")
+        exit(1)
 
     connection = get_aws_connection(args['--region'])
     host_instance = create_instance(connection, args['INSTANCE_NAME'], config,
                                     args['--key-name'])
-    #host_instance = connection.get_all_instances(["i-1c743476"])[0].instances[0]
     target_ami = create_ami(host_instance, args['--config'], config)

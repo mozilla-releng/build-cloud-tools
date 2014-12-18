@@ -1,12 +1,11 @@
 #!/usr/bin/env python
-import socket
-
 import boto.vpc
 import yaml
 import dns.resolver
 
 import logging
 log = logging.getLogger(__name__)
+_dns_cache = {}
 
 
 def get_connection(region):
@@ -17,7 +16,6 @@ def load_config(filename):
     return yaml.load(open(filename))
 
 
-_dns_cache = {}
 def resolve_host(hostname):
     if hostname in _dns_cache:
         return _dns_cache[hostname]
@@ -80,7 +78,6 @@ def sync_tables(conn, my_tables, remote_tables):
                     log.info("adding %s for %s", ip, cidr)
                     to_add.add(("%s/32" % ip, dest))
                 to_delete.add(cidr)
-
 
         for d in to_delete:
             del my_t['routes'][d]

@@ -1,7 +1,8 @@
 {
   "puppet_masters": ["releng-puppet1.srv.releng.scl3.mozilla.com", "releng-puppet2.srv.releng.scl3.mozilla.com"],
-  "hg_shares": {
-    "try": "https://ftp-ssl.mozilla.org/pub/mozilla.org/firefox/bundles/try.hg"
+  "hg_repos": {
+    "build/mozharness": "https://hg.mozilla.org/build/mozharness",
+    "build/tools": "https://hg.mozilla.org/build/tools"
   },
   "s3_tarballs": {
     "/builds/git-shared/repo": {"bucket": "mozilla-releng-tarballs-use1", "key": "git-shared-repo.tar"},

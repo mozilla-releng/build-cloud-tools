@@ -2,5 +2,10 @@ language: python
 python:
   - "2.7"
 
-install: "pip install -r requirements-tests.txt"
-script: nosetests -v
+before_install:
+    - sudo apt-get update
+    - sudo apt-get install libmysqlclient-dev
+install:
+    - travis_retry pip install tox==1.8
+script:
+    - tox -e py27,py27-coveralls

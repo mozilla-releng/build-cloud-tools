@@ -1,0 +1,7 @@
+[run]
+branch = True
+include =
+    cloudtools/*
+    scripts/*
+omit=
+    .tox

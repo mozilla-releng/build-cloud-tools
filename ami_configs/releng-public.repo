@@ -16,12 +16,6 @@ baseurl=http://puppetagain.pub.build.mozilla.org/data/repos/yum/mirrors/centos/6
 enabled=1
 gpgcheck=0
 
-[epel]
-name=epel
-baseurl=http://puppetagain.pub.build.mozilla.org/data/repos/yum/mirrors/epel/6/2014-05-06/$basearch
-enabled=1
-gpgcheck=0
-
 [puppetlabs-main]
 name=puppetlabs-main
 descr=Puppet
@@ -49,3 +43,10 @@ descr=Releng-noarch
 baseurl=http://puppetagain.pub.build.mozilla.org/data/repos/yum/releng/public/CentOS/6/noarch
 enabled=1
 gpgcheck=0
+
+[cloud-init]
+name=epel
+baseurl=http://puppetagain.pub.build.mozilla.org/data/repos/yum/custom/cloud-init/$basearch
+enabled=1
+gpgcheck=0
+

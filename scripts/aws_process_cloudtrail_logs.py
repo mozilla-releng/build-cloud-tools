@@ -33,11 +33,14 @@ def process_cloudtrail(discard_bad_logs, events_dir, filename):
         data = json.loads(data)
     except (ValueError, IOError):
         log.debug('cannot decode JSON from %s', filename)
-        if discard_bad_logs:
-            log.debug('%s is not valid, deleting it', filename)
-            os.remove(filename)
-        else:
-            move_to_bad_logs(filename)
+        try:
+            if discard_bad_logs:
+                log.debug('%s is not valid, deleting it', filename)
+                os.remove(filename)
+            else:
+                move_to_bad_logs(filename)
+        except Exception:
+            pass
         return
 
     log.debug('processing: %s', filename)
@@ -98,7 +101,9 @@ if __name__ == '__main__':
     parser.add_argument("--events-dir", metavar="events_dir", required=True,
                         help="directory where events logs will be stored")
     parser.add_argument("--discard-bad-logs", action="store_true",
-                        help="delete bad log files, if not provided, bad log files will be moved into bad_logs_dir (next to --event-dir)")
+                        help="delete bad log files, if not provided, bad log "
+                        "files will be moved into bad_logs_dir (next to "
+                        "--event-dir)")
     args = parser.parse_args()
 
     logging.basicConfig(format="%(asctime)s - %(message)s")
@@ -119,11 +124,9 @@ if __name__ == '__main__':
     # process_cloud_tails requires 3 arguments: discard_bad_logs,
     # events_dir and cloudtrail_file, maps() accepts only 2 parameters,
     # function name and an iterable, let's use partials
-    process_cloudtrail_partial = partial(process_cloudtrail,
-                                         args.discard_bad_logs)
-    process_cloudtrail_partial_2 = partial(process_cloudtrail_partial,
-                                           args.events_dir)
+    process_cloudtrail_partial = partial(
+        process_cloudtrail, args.discard_bad_logs, args.events_dir)
     pool = Pool()
-    pool.map(process_cloudtrail_partial_2, cloudtrail_files)
+    pool.map(process_cloudtrail_partial, cloudtrail_files)
     pool.close()
     pool.join()

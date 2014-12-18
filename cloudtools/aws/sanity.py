@@ -15,16 +15,16 @@ log = logging.getLogger(__name__)
 BUILDAPI_URL_JSON = "http://buildapi.pvt.build.mozilla.org/buildapi/recent/{slave_name}?format=json"
 BUILDAPI_URL = "http://buildapi.pvt.build.mozilla.org/buildapi/recent/{slave_name}"
 
-SLAVE_TAGS = ('try-linux64', 'tst-linux32', 'tst-linux64', 'tst-emulator64', 'bld-linux64')
+SLAVE_TAGS = ('try-linux64', 'tst-linux32', 'tst-linux64', 'tst-emulator64',
+              'bld-linux64')
 
 KNOWN_TYPES = ('puppetmaster', 'buildbot-master', 'dev-linux64', 'infra',
                'bld-linux64', 'try-linux64', 'tst-linux32', 'tst-linux64',
-               'tst-emulator64', 'tst-win64', 'dev', 'servo-linux64', 'packager',
-               'vcssync', "servo-puppet1", "signing")
+               'tst-emulator64', 'tst-win64', 'dev', 'packager',
+               'vcssync', "signing")
 
 EXPECTED_MAX_UPTIME = {
     "puppetmaster": "meh",
-    "servo-puppet1": "meh",
     "buildbot-master": "meh",
     "dev": "meh",
     "infra": "meh",
@@ -35,13 +35,11 @@ EXPECTED_MAX_UPTIME = {
     "tst-linux32": 12,
     "tst-linux64": 12,
     "tst-emulator64": 12,
-    "servo-linux64": 8,
     "default": 4
 }
 
 EXPECTED_MAX_DOWNTIME = {
     "puppetmaster": 0,
-    "servo-puppet1": 0,
     "buildbot-master": 0,
     "dev": 0,
     "infra": 0,
@@ -52,7 +50,6 @@ EXPECTED_MAX_DOWNTIME = {
     "tst-linux32": 72,
     "tst-linux64": 72,
     "tst-emulator64": 72,
-    "servo-linux64": 72,
     "packager": "meh",
     "default": 24
 }
@@ -76,7 +73,8 @@ def timedelta_to_time_string(timeout):
 
 def launch_time_to_epoch(launch_time):
     """converts a lunch_time into a timestamp"""
-    return calendar.timegm(time.strptime(launch_time[:19], '%Y-%m-%dT%H:%M:%S'))
+    return calendar.timegm(
+        time.strptime(launch_time[:19], '%Y-%m-%dT%H:%M:%S'))
 
 
 class AWSInstance(object):
@@ -164,7 +162,7 @@ class AWSInstance(object):
             return False
         if self.is_loaned():
             return False
-        my_uptime =  self._get_uptime_timestamp()
+        my_uptime = self._get_uptime_timestamp()
         return my_uptime > self.max_uptime
 
     def is_long_stopped(self):
@@ -174,7 +172,7 @@ class AWSInstance(object):
         if self.is_loaned():
             return False
         # get the uptime and assume it has been always down...
-        my_downtime =  self._get_uptime_timestamp()
+        my_downtime = self._get_uptime_timestamp()
         if self.events_dir:
             # ... unless we have the local logs
             my_downtime = self.get_stop_time_from_logs()
@@ -279,7 +277,6 @@ class AWSInstance(object):
         """returns the running_message and appends (no info from buildapi)"""
         message = self.running_message()
         return " ".join([message, "(no info from buildapi)"])
-
 
     def _event_log_file(self, event):
         """returns the json file from the event directory"""

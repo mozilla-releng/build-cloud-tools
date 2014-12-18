@@ -1,0 +1,74 @@
+{
+    "us-west-1": {
+        "ami": "ami-fe393ebb",
+        "instance_type": "c3.xlarge",
+        "arch": "x86_64",
+        "distro": "centos",
+        "root_device_type": "instance-store",
+        "virtualization_type": "hvm",
+        "bucket": "mozilla-releng-amis-usw1",
+        "bucket_dir": "bundles",
+        "aws_user_id": "314336048151",
+        "target": {
+            "size": 50,
+            "fs_type": "ext4",
+            "e2_label": "root_dev",
+            "aws_dev_name": "/dev/sdh",
+            "int_dev_name": "/dev/xvdh",
+            "mount_point": "/mnt",
+            "tags": {
+                "moz-type": "bld-linux64",
+                "moz-instance-family": "c3",
+                "moz-virtualization-type": "hvm"
+            }
+        }
+    },
+    "us-east-1": {
+        "ami": "ami-b06a98d8",
+        "instance_type": "c3.xlarge",
+        "arch": "x86_64",
+        "distro": "centos",
+        "root_device_type": "instance-store",
+        "virtualization_type": "hvm",
+        "bucket": "mozilla-releng-amis-use1",
+        "bucket_dir": "bundles",
+        "aws_user_id": "314336048151",
+        "target": {
+            "size": 50,
+            "fs_type": "ext4",
+            "e2_label": "root_dev",
+            "aws_dev_name": "/dev/sdh",
+            "int_dev_name": "/dev/xvdh",
+            "mount_point": "/mnt",
+            "tags": {
+                "moz-type": "bld-linux64",
+                "moz-instance-family": "c3",
+                "moz-virtualization-type": "hvm"
+            }
+        }
+    },
+    "us-west-2": {
+        "ami": "ami-7bdaa84b",
+        "instance_type": "c3.xlarge",
+        "arch": "x86_64",
+        "distro": "centos",
+        "root_device_type": "instance-store",
+        "virtualization_type": "hvm",
+        "bucket": "mozilla-releng-amis-usw2",
+        "bucket_dir": "bundles",
+        "aws_user_id": "314336048151",
+        "target": {
+            "size": 50,
+            "fs_type": "ext4",
+            "e2_label": "root_dev",
+            "aws_dev_name": "/dev/sdh",
+            "int_dev_name": "/dev/xvdh",
+            "mount_point": "/mnt",
+            "tags": {
+                "moz-type": "bld-linux64",
+                "moz-instance-family": "c3",
+                "moz-virtualization-type": "hvm"
+            }
+        }
+    }
+}

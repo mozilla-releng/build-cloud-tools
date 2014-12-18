@@ -23,8 +23,8 @@ def main():
                         help="moz_instance_types to be copied")
     args = parser.parse_args()
 
-    amis_to_copy = [get_ami(region=args.from_region, moz_instance_type=t) for t
-                    in args.moz_instance_types]
+    amis_to_copy = [get_ami(region=args.from_region, moz_instance_type=t)
+                    for t in args.moz_instance_types]
     for ami in amis_to_copy:
         for r in args.to_regions:
             log.info("Copying %s (%s) to %s", ami.id, ami.tags.get("Name"), r)

@@ -1,9 +1,12 @@
 import time
 import logging
+import xml.dom.minidom
+import os
 from boto.ec2.blockdevicemapping import BlockDeviceMapping, BlockDeviceType
 from fabric.api import run, put, cd
 
-from . import AMI_CONFIGS_DIR, wait_for_status, get_aws_connection
+from . import AMI_CONFIGS_DIR, wait_for_status, get_aws_connection, \
+    get_s3_connection
 
 log = logging.getLogger(__name__)
 
@@ -23,12 +26,6 @@ def ami_cleanup(mount_point, distro, remove_extra=None):
         run("sed -i -e 's/127.0.0.1.*/127.0.0.1 localhost/g' etc/hosts")
         put("%s/fake_puppet.sh" % AMI_CONFIGS_DIR,
             "usr/sbin/fake_puppet.sh", mirror_local_mode=True)
-        # TODO: remove the following code when runner is deployed
-        run("wget -O etc/check_ami.py https://raw.githubusercontent.com/mozilla/build-runner/master/example-tasks.d/0-check_ami.py")
-        run("chmod 755 etc/check_ami.py")
-        run("echo '#!/bin/sh' > usr/sbin/fake_puppet.sh")
-        run("echo python /etc/check_ami.py >> usr/sbin/fake_puppet.sh")
-        # TODO: end of remove
         # replace puppet init with our script
         if distro == "ubuntu":
             put("%s/fake_puppet.conf" % AMI_CONFIGS_DIR,
@@ -65,7 +62,7 @@ def volume_to_ami(volume, ami_name, arch, virtualization_type,
         try:
             ami = volume.connection.get_image(ami_id)
             ami.add_tag('Name', ami_name)
-            ami.add_tag('moz-created', int(time.mktime(time.gmtime())))
+            ami.add_tag('moz-created', int(time.time()))
             for tag, value in tags.iteritems():
                 ami.add_tag(tag, value)
             log.info('AMI created')
@@ -99,37 +96,76 @@ def copy_ami(source_ami, region_to_copy):
     return new_ami
 
 
-def get_spot_amis(region, tags, name_glob="spot-*"):
+def get_spot_amis(region, tags, name_glob="spot-*", root_device_type=None):
     conn = get_aws_connection(region)
-    filters = {}
+    filters = {"state": "available"}
     for tag, value in tags.iteritems():
         filters["tag:%s" % tag] = value
     # override Name tag
     filters["tag:Name"] = name_glob
+    if root_device_type:
+        filters["root-device-type"] = root_device_type
     avail_amis = conn.get_all_images(owners=["self"], filters=filters)
     return sorted(avail_amis, key=lambda ami: ami.tags.get("moz-created"))
 
 
-def delete_old_amis(region, tags, keep_last):
-    amis = get_spot_amis(region, tags)
-    conn = get_aws_connection(region)
+def delete_ebs_ami(ami):
+    snap_id = ami.block_device_mapping[ami.root_device_name].snapshot_id
+    snap = ami.connection.get_all_snapshots(snapshot_ids=[snap_id])[0]
+    log.warn("Deleting EBS-backed AMI %s (%s)", ami, ami.tags.get("Name"))
+    ami.deregister()
+    log.warn("Deleting %s (%s)", snap, snap.description)
+    snap.delete()
+
+
+def delete_instance_store_ami(ami):
+    bucket, location = ami.location.split("/", 1)
+    folder = os.path.dirname(location)
+    conn = get_s3_connection()
+    bucket = conn.get_bucket(bucket)
+    key = bucket.get_key(location)
+    manifest = key.get_contents_as_string()
+    dom = xml.dom.minidom.parseString(manifest)
+    files = [f.firstChild.nodeValue for f in
+             dom.getElementsByTagName("filename")]
+    to_delete = [os.path.join(folder, f) for f in files] + [location]
+    log.warn("Deleting S3-backed %s (%s)", ami, ami.tags.get("Name"))
+    ami.deregister()
+    log.warn("Deleting files from S3: %s", to_delete)
+    bucket.delete_keys(to_delete)
+
+
+def delete_ami(ami, dry_run=False):
+    if dry_run:
+        log.warn("Dry run: would delete %s", ami)
+        return
+    if ami.root_device_type == "ebs":
+        delete_ebs_ami(ami)
+    elif ami.root_device_type == "instance-store":
+        delete_instance_store_ami(ami)
+
+
+def delete_old_amis(region, tags, keep_last, root_device_type="ebs",
+                    dry_run=False):
+    amis = get_spot_amis(region, tags, root_device_type=root_device_type)
     if len(amis) > keep_last:
-        amis_to_delete = amis[:-keep_last]
+        if keep_last == 0:
+            amis_to_delete = amis
+        else:
+            amis_to_delete = amis[:-keep_last]
+
         for a in amis_to_delete:
-            snap_id = a.block_device_mapping[a.root_device_name].snapshot_id
-            snap = conn.get_all_snapshots(snapshot_ids=[snap_id])[0]
-            log.warn("Deleting %s (%s)", a, a.tags.get("Name"))
-            a.deregister()
-            log.warn("Deleting %s (%s)", snap, snap.description)
-            snap.delete()
+            delete_ami(a, dry_run)
+    else:
+        log.info("Nothing to delete")
 
 
-def get_ami(region, moz_instance_type):
-    conn = get_aws_connection(region)
-    avail_amis = conn.get_all_images(
-        owners=["self"],
-        filters={"tag:moz-type": moz_instance_type, "state": "available"})
-    # If creation dates are equal, use AMI IDs to sort
-    last_ami = sorted(
-        avail_amis, key=lambda ami: (ami.tags.get("moz-created"), ami.id))[-1]
+def get_ami(region, moz_instance_type, root_device_type=None):
+    """Returns a list of AMIs sorted by creation time, reversed.
+    root_device type can be either "ebs" or "instance-store"
+    virtualization_type can be either "hvm" or "paravirtual"""
+    spot_amis = get_spot_amis(region=region,
+                              tags={"moz-type": moz_instance_type},
+                              root_device_type=root_device_type)
+    last_ami = spot_amis[-1]
     return last_ami

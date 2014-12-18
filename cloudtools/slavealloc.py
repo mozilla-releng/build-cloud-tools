@@ -43,6 +43,10 @@ def is_enabled(slave):
 
 
 def slave_moz_type(slave):
+    # Separate golden slaves
+    if slave.get("name") and "golden" in slave.get("name"):
+        return "golden"
+
     # bld-linux64
     if slave.get("bitlength") == "64" and \
        slave.get("environment") == "prod" and \

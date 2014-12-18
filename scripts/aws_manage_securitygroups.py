@@ -1,10 +1,23 @@
 #!/usr/bin/env python
-import boto.ec2
+import os
+import re
+import logging
 import yaml
+import boto.ec2
 import dns.resolver
 
-import logging
+import site
+site.addsitedir(os.path.join(os.path.dirname(__file__), ".."))
+
+from cloudtools.yaml import process_includes
+
+
+# see http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/VPC_Appendix_Limits.html
+# note that "Rules" in that document actually refers to grants
+MAX_GRANTS_PER_SG = 125
+
 log = logging.getLogger(__name__)
+port_re = re.compile(r'^(\d+)-(\d+)$')
 
 
 def get_connection(region):
@@ -12,7 +25,7 @@ def get_connection(region):
 
 
 def load_config(filename):
-    return yaml.load(open(filename))
+    return process_includes(yaml.load(open(filename)))
 
 
 def get_remote_sg_by_name(groups, name):
@@ -44,9 +57,16 @@ def make_rules_for_def(rule):
     retval = []
     proto = str(rule['proto'])
     if 'ports' in rule:
-        ports = [str(p) for p in rule['ports']]
+        ports = []
+        for p in rule['ports']:
+            p = str(p)
+            mo = port_re.match(p)
+            if mo:
+                ports.append(tuple(mo.groups()))
+            else:
+                ports.append((p, p))
     else:
-        ports = [None]
+        ports = [(None, None)]
     hosts = rule['hosts']
     # Resolve the hostnames
     log.debug("%s %s %s", proto, ports, hosts)
@@ -59,8 +79,8 @@ def make_rules_for_def(rule):
                 hosts.append("%s/32" % ip)
     log.debug("%s %s %s", proto, ports, hosts)
 
-    for port in ports:
-        retval.append((proto, port, port, set(hosts)))
+    for from_port, to_port in ports:
+        retval.append((proto, from_port, to_port, set(hosts)))
     return retval
 
 
@@ -82,13 +102,20 @@ def make_rules(sg_config):
 def rules_from_sg(sg):
     rules = {}
     for rule in sg.rules:
+        # ignore non-cidr grants (to other sg's)
+        cidr_grants = set(g.cidr_ip for g in rule.grants if g.cidr_ip)
+        if not cidr_grants:
+            continue
         rules.setdefault(('inbound', rule.ip_protocol, rule.from_port,
-                          rule.to_port), set()).update(set(g.cidr_ip for g in
-                                                           rule.grants))
+                          rule.to_port), set()).update(cidr_grants)
     for rule in sg.rules_egress:
-        rules.setdefault(('outbound', rule.ip_protocol, rule.from_port,
-                          rule.to_port), set()).update(set(g.cidr_ip for g in
-                                                           rule.grants))
+        # ignore non-cidr grants (to other sg's)
+        cidr_grants = set(g.cidr_ip for g in rule.grants if g.cidr_ip)
+        if not cidr_grants:
+            continue
+        rules.setdefault(
+            ('outbound', rule.ip_protocol, rule.from_port, rule.to_port),
+            set()).update(set(g.cidr_ip for g in rule.grants if g.cidr_ip))
 
     return rules
 
@@ -175,7 +202,7 @@ def sync_security_group(remote_sg, sg_config, prompt):
                               (remote_sg.name, rule_key, old_hosts)) != 'y':
                 continue
             log.info("%s - removing rule for %s to %s", remote_sg.name,
-                     rule_key, new_hosts)
+                     rule_key, old_hosts)
             remove_hosts(remote_sg, rule_key, old_hosts)
     apply_to_object(remote_sg, sg_config.get("apply-to", {}).get("instances"),
                     remote_sg.connection.get_only_instances,
@@ -209,6 +236,18 @@ def main():
         security_groups_by_region[region] = all_groups
 
     prompt = True
+
+    # look for too-big security groups
+    ok = True
+    for sg_name, sg_config in sg_defs.iteritems():
+        rules = make_rules(sg_config)
+        total_grants = sum([len(hosts) for hosts in rules.itervalues()])
+        if total_grants > MAX_GRANTS_PER_SG:
+            log.warning("Group %s has %d rules, more than the allowed %d",
+                        sg_name, total_grants, MAX_GRANTS_PER_SG)
+            ok = False
+    if not ok:
+        exit(1)
 
     # Now compare vs. our configs
     for sg_name, sg_config in sg_defs.items():

@@ -36,13 +36,6 @@ us-west-2:
             name: test
             routing_table: testers
 
-        10.132.80.0/23:
-            name: build.servo
-            routing_table: default
-
-        10.132.82.0/23:
-            name: srv.servo
-            routing_table: default
 
 us-east-1:
     vpc-b42100df:
@@ -83,11 +76,3 @@ us-east-1:
             name: test
             routing_table: testers
             skip_azs: []
-
-        10.134.80.0/23:
-            name: build.servo
-            routing_table: default
-
-        10.134.82.0/23:
-            name: srv.servo
-            routing_table: default

@@ -1,3 +1,107 @@
+# Macros that can be included below; see yaml_includes.py.  Be careful in applying these:
+# the include processor doesn't automatically flatten lists or anything like that.
+includes:
+
+    # ping is allowed from anywhere in just about every SG
+    global-ping:
+        proto: icmp
+        ports: [-1]
+        hosts:
+          - 0.0.0.0/0
+
+    # most outgoing flows are completely open
+    global-any:
+        proto: -1
+        hosts:
+          - 0.0.0.0/0
+
+    # administrative hosts have unrestricted access on all ports
+    admin-access:
+        proto: -1
+        hosts:
+          - 10.22.75.6/31  # admin1a/b
+          - admin1.private.scl3.mozilla.com
+          - scan1.ops.scl3.mozilla.com
+          - openvpn1.corpdmz.scl3.mozilla.com
+          - openvpn1.stage.corpdmz.scl3.mozilla.com
+          - ssh1.corpdmz.scl3.mozilla.com
+          - ssh1.stage.corpdmz.scl3.mozilla.com
+          - vpn1.dmz.releng.scl3.mozilla.com
+          - nagios1.private.releng.scl3.mozilla.com  # note: includes tcp/5666
+          - 10.22.240.0/20  # scl3-vpn-net
+          - 10.22.20.0/25  # admin1.scl3-vpn
+
+    # observium has universal SNMP access
+    observium:
+        proto: udp
+        ports: [161]
+        hosts:
+          - observium2.private.scl3.mozilla.com
+
+    # infra puppetizes hosts by SSHing to them from the master
+    infra-puppetize:
+        proto: tcp
+        ports: [22]
+        hosts:
+          - puppet1.private.scl3.mozilla.com
+
+    # all slave VLANs look the same
+    slave-vlan-inbound:
+        - proto: tcp
+          ports: [22]
+          hosts:
+            - cruncher.build.mozilla.org
+            - {include: slaveapi-servers}
+            - dev-master1.build.mozilla.org
+            - aws-manager1.srv.releng.scl3.mozilla.com
+        - include: admin-access
+        - include: observium
+        - include: infra-puppetize
+        - include: global-ping
+
+    slave-vlan-outbound:
+        - include: global-any
+
+    # host set aliases:
+    slaveapi-servers: 10.26.48.16/31
+
+    # network aliases:
+    build-scl3: 10.26.52.0/22
+    test-scl3: 10.26.56.0/22
+    try-scl3: 10.26.64.0/22
+    winbuild-scl3: 10.26.36.0/22
+    wintest-scl3: 10.26.40.0/22
+    wintry-scl3: 10.26.44.0/22
+    pods-scl3: 10.26.128.0/17
+    build-usw2: 10.132.52.0/22
+    test-usw2: 10.132.56.0/22
+    test2-usw2: 10.132.156.0/22
+    try-usw2: 10.132.64.0/22
+    build-use1: 10.134.52.0/22
+    test-use1: 10.134.56.0/22
+    test2-use1: 10.134.156.0/22
+    try-use1: 10.134.64.0/22
+    slave-vlans:
+      - {include: build-scl3}
+      - {include: test-scl3}
+      - {include: try-scl3}
+      - {include: winbuild-scl3}
+      - {include: wintest-scl3}
+      - {include: wintry-scl3}
+      - {include: pods-scl3}
+      - {include: build-usw2}
+      - {include: test-usw2}
+      - {include: test2-usw2}
+      - {include: try-usw2}
+      - {include: build-use1}
+      - {include: test-use1}
+      - {include: test2-use1}
+      - {include: try-use1}
+
+    # and port aliases
+    buildbot-http-portrange: 8000-8999
+    buildbot-rpc-portrange: 9000-9999
+
 tests:
     description: security group for test slaves
     regions:
@@ -13,26 +117,9 @@ tests:
             tags:
                 - [moz-type, tst-linux*]
     inbound:
-        - proto: tcp
-          ports: [22, 5900]
-          hosts:
-            # admin1a/b
-            - 10.22.75.6/31
-            # mozilla VPN
-            - 10.22.240.0/20
-            - cruncher.build.mozilla.org
-            - slaveapi1.srv.releng.scl3.mozilla.com
-            - slaveapi-dev1.srv.releng.scl3.mozilla.com
-            - dev-master1.build.mozilla.org
-            - aws-manager1.srv.releng.scl3.mozilla.com
-        - proto: icmp
-          ports: [-1]
-          hosts:
-            - 0.0.0.0/0
+        include: slave-vlan-inbound
     outbound:
-        - proto: -1
-          hosts:
-            - 0.0.0.0/0
+        include: slave-vlan-outbound
 
 build:
     description: security group for build slaves
@@ -49,26 +136,9 @@ build:
             tags:
                 - [moz-type, bld-linux64]
     inbound:
-        - proto: tcp
-          ports: [22, 5900]
-          hosts:
-            # admin1a/b
-            - 10.22.75.6/31
-            # mozilla VPN
-            - 10.22.240.0/20
-            - cruncher.build.mozilla.org
-            - slaveapi1.srv.releng.scl3.mozilla.com
-            - slaveapi-dev1.srv.releng.scl3.mozilla.com
-            - dev-master1.build.mozilla.org
-            - aws-manager1.srv.releng.scl3.mozilla.com
-        - proto: icmp
-          ports: [-1]
-          hosts:
-            - 0.0.0.0/0
+        include: slave-vlan-inbound
     outbound:
-        - proto: -1
-          hosts:
-            - 0.0.0.0/0
+        include: slave-vlan-outbound
 
 try:
     description: security group for try build slaves
@@ -85,26 +155,9 @@ try:
             tags:
                 - [moz-type, try-linux64]
     inbound:
-        - proto: tcp
-          ports: [22, 5900]
-          hosts:
-            # admin1a/b
-            - 10.22.75.6/31
-            # mozilla VPN
-            - 10.22.240.0/20
-            - cruncher.build.mozilla.org
-            - slaveapi1.srv.releng.scl3.mozilla.com
-            - slaveapi-dev1.srv.releng.scl3.mozilla.com
-            - dev-master1.build.mozilla.org
-            - aws-manager1.srv.releng.scl3.mozilla.com
-        - proto: icmp
-          ports: [-1]
-          hosts:
-            - 0.0.0.0/0
+        include: slave-vlan-inbound
     outbound:
-        - proto: -1
-          hosts:
-            - 0.0.0.0/0
+        include: slave-vlan-outbound
 
 buildbot-master:
     description: security group for buildbot masters
@@ -113,58 +166,73 @@ buildbot-master:
         us-west-2: vpc-cd63f2a4
         us-east-1: vpc-b42100df
     inbound:
+        # traffic from other masters
         - proto: tcp
-          ports: [9301,8001,9302,8202,5666,22,9101,8101,9001,9201]
+          ports:
+            - 22  # ssh
+            - {include: buildbot-rpc-portrange}
+            - {include: buildbot-http-portrange}
           hosts:
-            - 0.0.0.0/0
-        - proto: icmp
-          ports: [-1]
-          hosts:
-            - 0.0.0.0/0
-    outbound:
-        - proto: -1
-          hosts:
-            - 0.0.0.0/0
+            - 10.26.68.0/24  # bb.releng.scl3
+            - 10.132.68.0/24  # bb.releng.usw2
+            - 10.134.68.0/24  # bb.releng.use1
+            # To keep the SG small, we assume that there are only buildmasters
+            # in the AWS srv VLANs (which is mostly true)
+            - 10.132.48.0/22  # srv.releng.usw2
+            - 10.134.48.0/22  # srv.releng.use1
+            # scl3 individual masters (not in the BB VLANs)
+            - buildbot-master81.srv.releng.scl3.mozilla.com
+            - buildbot-master82.srv.releng.scl3.mozilla.com
+            - buildbot-master83.srv.releng.scl3.mozilla.com
+            - buildbot-master84.srv.releng.scl3.mozilla.com
+            - buildbot-master85.srv.releng.scl3.mozilla.com
+            - buildbot-master86.srv.releng.scl3.mozilla.com
+            - buildbot-master87.srv.releng.scl3.mozilla.com
+            - buildbot-master89.srv.releng.scl3.mozilla.com
+            - buildbot-master100.srv.releng.scl3.mozilla.com
+            - buildbot-master101.srv.releng.scl3.mozilla.com
+            - buildbot-master102.srv.releng.scl3.mozilla.com
+            - buildbot-master103.srv.releng.scl3.mozilla.com
+            - buildbot-master104.srv.releng.scl3.mozilla.com
+            - buildbot-master105.srv.releng.scl3.mozilla.com
+            - buildbot-master106.srv.releng.scl3.mozilla.com
+            - buildbot-master107.srv.releng.scl3.mozilla.com
+            - buildbot-master108.srv.releng.scl3.mozilla.com
+            - buildbot-master109.srv.releng.scl3.mozilla.com
+            - buildbot-master110.srv.releng.scl3.mozilla.com
+            - buildbot-master111.srv.releng.scl3.mozilla.com
+            - buildbot-master112.srv.releng.scl3.mozilla.com
+            # and cruncher, for the utility of it..
+            - cruncher.build.mozilla.org
 
-servo-buildbot-master:
-    description: security group for servo buildbot masters
-    regions:
-        us-west-1: vpc-7a7dd613
-        us-west-2: vpc-cd63f2a4
-        us-east-1: vpc-b42100df
-    inbound:
+        # traffic from buildslaves
         - proto: tcp
-          ports: [9301,8001,9302,8202,5666,22,9101,8101,9001,9201]
-          hosts:
-            - 0.0.0.0/0
-        - proto: icmp
-          ports: [-1]
-          hosts:
-            - 0.0.0.0/0
-    outbound:
-        - proto: -1
-          hosts:
-            - 0.0.0.0/0
+          ports:
+            - {include: buildbot-rpc-portrange}
+          hosts: {include: slave-vlans}
 
-puppet-master:
-    description: security group for puppet masters
-    regions:
-        us-west-1: vpc-7a7dd613
-        us-west-2: vpc-cd63f2a4
-        us-east-1: vpc-b42100df
-    inbound:
+        # ssh access from some automation hosts
         - proto: tcp
-          ports: [8140,5666,22,80,443]
+          ports: [22]
           hosts:
-            - 0.0.0.0/0
-        - proto: icmp
-          ports: [-1]
+            - {include: slaveapi-servers}
+            - dev-master1.build.mozilla.org
+            - aws-manager1.srv.releng.scl3.mozilla.com
+
+        # buildbot-http from aws-manager1
+        - proto: tcp
+          ports:
+            - {include: buildbot-http-portrange}
           hosts:
-            - 0.0.0.0/0
+            - aws-manager1.srv.releng.scl3.mozilla.com
+
+        # generic stuff
+        - include: admin-access
+        - include: observium
+        - include: infra-puppetize
+        - include: global-ping
     outbound:
-        - proto: -1
-          hosts:
-            - 0.0.0.0/0
+        - include: global-any
 
 blobber:
     description: security group for blobber service
@@ -174,21 +242,14 @@ blobber:
         us-east-1: vpc-b42100df
     inbound:
         - proto: tcp
-          ports: [22]
-          hosts:
-            - 0.0.0.0/0
-        - proto: tcp
-          ports: [80,443]
-          hosts:
-            - 10.0.0.0/8
-        - proto: icmp
-          ports: [-1]
-          hosts:
-            - 0.0.0.0/0
+          ports: [443]
+          hosts: {include: slave-vlans}
+        - include: admin-access
+        - include: observium
+        - include: infra-puppetize
+        - include: global-ping
     outbound:
-        - proto: -1
-          hosts:
-            - 0.0.0.0/0
+        - include: global-any
 
 nagios:
     description: security group for nagios servers
@@ -197,15 +258,46 @@ nagios:
         us-west-2: vpc-cd63f2a4
         us-east-1: vpc-b42100df
     inbound:
-        - proto: tcp
-          ports: [22,80,443]
-          hosts:
-            - 0.0.0.0/0
-        - proto: icmp
-          ports: [-1]
-          hosts:
-            - 0.0.0.0/0
+        - include: admin-access
+        - include: observium
+        - include: infra-puppetize
+        - include: global-ping
     outbound:
-        - proto: -1
+        - include: global-any
+
+# proxxy is configured per-region; these two stanzas should be kept parallel
+proxxy-vpc-use1:
+    description: security group for proxxy servers in use1
+    regions:
+        us-east-1: vpc-b42100df
+    inbound:
+        - proto: tcp
+          ports: [80]
           hosts:
-            - 0.0.0.0/0
+            - {include: build-use1}
+            - {include: test-use1}
+            - {include: test2-use1}
+            - {include: try-use1}
+        - include: admin-access
+        - include: observium
+        - include: global-ping
+    outbound:
+        - include: global-any
+
+proxxy-vpc-usw2:
+    description: security group for proxxy servers in usw2
+    regions:
+        us-west-2: vpc-cd63f2a4
+    inbound:
+        - proto: tcp
+          ports: [80]
+          hosts:
+            - {include: build-usw2}
+            - {include: test-usw2}
+            - {include: test2-usw2}
+            - {include: try-usw2}
+        - include: admin-access
+        - include: observium
+        - include: global-ping
+    outbound:
+        - include: global-any

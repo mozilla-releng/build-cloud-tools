@@ -1,0 +1,61 @@
+{
+    "hostname": "try-linux64-ec2-%03d",
+    "us-east-1": {
+        "type": "try-linux64",
+        "domain": "try.releng.use1.mozilla.com",
+        "ami": "ami-c469c0ac",
+        "subnet_ids": ["subnet-27a9834c", "subnet-39a98352", "subnet-3ea98355", "subnet-93b285e7", "subnet-e5bacacd", "subnet-cd83d28b"],
+        "security_group_ids": ["sg-718b1214"],
+        "instance_type": "c3.xlarge",
+        "distro": "centos",
+        "ssh_key": "aws-releng",
+        "use_public_ip": true,
+        "instance_profile_name": "try-linux64",
+        "device_map": {
+            "/dev/sdb": {
+                "ephemeral_name": "ephemeral0",
+                "instance_dev": "/dev/xvdb",
+                "skip_resize": true,
+                "delete_on_termination": false
+            },
+            "/dev/sdc": {
+                "ephemeral_name": "ephemeral1",
+                "instance_dev": "/dev/xvdc",
+                "skip_resize": true,
+                "delete_on_termination": false
+            }
+        },
+        "tags": {
+            "moz-type": "try-linux64"
+        }
+    },
+    "us-west-2": {
+        "type": "try-linux64",
+        "domain": "try.releng.usw2.mozilla.com",
+        "ami": "ami-058ece35",
+        "subnet_ids": ["subnet-ae48dac7", "subnet-a348daca", "subnet-a448dacd", "subnet-72b68206"],
+        "security_group_ids": ["sg-3aaa095f"],
+        "instance_type": "c3.xlarge",
+        "distro": "centos",
+        "ssh_key": "aws-releng",
+        "use_public_ip": true,
+        "instance_profile_name": "try-linux64",
+        "device_map": {
+            "/dev/sdb": {
+                "ephemeral_name": "ephemeral0",
+                "instance_dev": "/dev/xvdb",
+                "skip_resize": true,
+                "delete_on_termination": false
+            },
+            "/dev/sdc": {
+                "ephemeral_name": "ephemeral1",
+                "instance_dev": "/dev/xvdc",
+                "skip_resize": true,
+                "delete_on_termination": false
+            }
+        },
+        "tags": {
+            "moz-type": "try-linux64"
+        }
+    }
+}
