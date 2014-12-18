@@ -35,6 +35,7 @@ from cloudtools.buildbot import find_pending, map_builders
 from cloudtools.aws.instance import create_block_device_mapping, \
     user_data_from_template, tag_ondemand_instance
 import cloudtools.graphite
+from cloudtools.log import add_syslog_handler
 
 log = logging.getLogger()
 gr_log = cloudtools.graphite.get_graphite_logger()
@@ -497,6 +498,9 @@ if __name__ == '__main__':
         prefix = "{}.releng.aws.aws_watch_pending".format(entry.get("prefix"))
         if all([host, port, prefix]):
             gr_log.add_destination(host, port, prefix)
+    if secrets.get("syslog_address"):
+        add_syslog_handler(log, address=secrets["syslog_address"],
+                           app="aws_watch_pending")
 
     gr_log.sendall()
     log.debug("done")

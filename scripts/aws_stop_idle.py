@@ -21,6 +21,7 @@ from cloudtools.buildbot import graceful_shutdown, get_last_activity, \
     ACTIVITY_STOPPED, ACTIVITY_BOOTING
 from cloudtools.ssh import SSHClient
 import cloudtools.graphite
+from cloudtools.log import add_syslog_handler
 
 log = logging.getLogger(__name__)
 gr_log = cloudtools.graphite.get_graphite_logger()
@@ -285,6 +286,10 @@ if __name__ == '__main__':
         prefix = "{}.releng.aws.aws_stop_idle".format(entry.get("prefix"))
         if all([host, port, prefix]):
             gr_log.add_destination(host, port, prefix)
+
+    if secrets.get("syslog_address"):
+        add_syslog_handler(log, address=secrets["syslog_address"],
+                           app="aws_stop_idle")
 
     gr_log.sendall()
     log.debug("done")
