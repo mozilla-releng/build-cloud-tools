@@ -17,7 +17,7 @@ def test_connect(m_connect):
     ssh_client = SSHClient(instance, "u1", "k1")
     ssh_client.connect()
     m_connect.assert_called_once_with(hostname="ip1", username="u1",
-                                      key_filename="k1")
+                                      key_filename="k1", timeout=10)
 
 
 @mock.patch.object(paramiko.SSHClient, "exec_command")

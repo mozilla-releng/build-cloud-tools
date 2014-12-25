@@ -8,7 +8,7 @@ gr_log = get_graphite_logger()
 
 class SSHClient(paramiko.SSHClient):
 
-    def __init__(self, instance, username, key_filename):
+    def __init__(self, instance, username, key_filename, timeout=10):
         super(SSHClient, self).__init__()
         self.set_missing_host_key_policy(paramiko.MissingHostKeyPolicy())
         self.instance = instance
@@ -16,12 +16,14 @@ class SSHClient(paramiko.SSHClient):
         self.key_filename = key_filename
         self.ip = instance.private_ip_address
         self.name = instance.tags.get("Name")
+        self.timeout = timeout
 
     def connect(self, *args, **kwargs):
         try:
             super(SSHClient, self).connect(*args, hostname=self.ip,
                                            username=self.username,
                                            key_filename=self.key_filename,
+                                           timeout=self.timeout,
                                            **kwargs)
             return self
         except Exception:
