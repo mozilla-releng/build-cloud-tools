@@ -61,3 +61,4 @@ docs/_build/
 
 # Dev env
 logs/*.log
+slaves.json
