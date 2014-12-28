@@ -39,12 +39,23 @@ def report(items, message):
         print
 
 
+def kill_and_filter_out_lazy_spot_instances(lazy):
+    """ Terminate and filter out spot instances """
+    if "-spot-" in lazy.instance.tags.get("Name"):
+        lazy.instance.terminate()
+        return False
+    else:
+        return True
+
+
 def _report_lazy_running_instances(lazy):
     """reports the lazy long running instances"""
-    message = 'Lazy long running instances'
-    lazy = sorted(lazy, reverse=True, key=lambda x: x.get_uptime())
-    lazy = [i.longrunning_message() for i in lazy]
-    report(lazy, message)
+    lazy = [l for l in lazy if kill_and_filter_out_lazy_spot_instances(l)]
+    if lazy:
+        message = 'Lazy long running instances'
+        lazy = sorted(lazy, reverse=True, key=lambda x: x.get_uptime())
+        lazy = [i.longrunning_message() for i in lazy]
+        report(lazy, message)
 
 
 def _report_long_running_instances(long_running):
@@ -106,6 +117,7 @@ def _report_long_stopped(long_stopped):
         items = sorted(long_stopped, reverse=True,
                        key=lambda x: x.get_uptime())
         items = [i.stopped_message() for i in items]
+        items = [i for i in items if i]
         report(items, message)
     else:
         print "==== No long stopped instances ===="

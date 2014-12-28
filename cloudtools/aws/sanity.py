@@ -12,8 +12,10 @@ from cloudtools.aws import parse_aws_time
 
 log = logging.getLogger(__name__)
 
-BUILDAPI_URL_JSON = "http://buildapi.pvt.build.mozilla.org/buildapi/recent/{slave_name}?format=json"
-BUILDAPI_URL = "http://buildapi.pvt.build.mozilla.org/buildapi/recent/{slave_name}"
+BUILDAPI_URL_JSON = "http://buildapi.pvt.build.mozilla.org/buildapi/recent/" \
+    "{slave_name}?format=json"
+BUILDAPI_URL = "http://buildapi.pvt.build.mozilla.org/buildapi/recent/" \
+    "{slave_name}"
 
 SLAVE_TAGS = ('try-linux64', 'tst-linux32', 'tst-linux64', 'tst-emulator64',
               'bld-linux64')
@@ -135,7 +137,10 @@ class AWSInstance(object):
 
     def get_uptime(self):
         """returns the uptime in human readable format"""
-        return timedelta_to_time_string(self._get_uptime_timestamp())
+        if self.instance.launch_time:
+            return timedelta_to_time_string(self._get_uptime_timestamp())
+        else:
+            return "unknown"
 
     def get_name(self):
         """retuns tag name"""
@@ -240,7 +245,7 @@ class AWSInstance(object):
         """if the instance is stopped, it returns the following string:
            instance_name (instance id, region) down for X hours"""
         if not self.is_stopped():
-            return ""
+            return None
         stop_time = self.get_stop_time_from_logs()
         if not stop_time:
             stop_time = self.get_uptime()
