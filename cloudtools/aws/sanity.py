@@ -135,12 +135,12 @@ class AWSInstance(object):
         instance = self.instance
         return time.time() - launch_time_to_epoch(instance.launch_time)
 
-    def get_uptime(self):
+    def get_uptime(self, default=None):
         """returns the uptime in human readable format"""
         if self.instance.launch_time:
             return timedelta_to_time_string(self._get_uptime_timestamp())
         else:
-            return "unknown"
+            return default
 
     def get_name(self):
         """retuns tag name"""
@@ -233,7 +233,7 @@ class AWSInstance(object):
         bug = self._get_bug_string()
         status = 'stopped'
         if not self.is_stopped():
-            status = "up for {0}".format(self.get_uptime())
+            status = "up for {0}".format(self.get_uptime(default="unknown"))
         msg = "{me} Loaned to: {loaned_to}, in {bug}, {status}".format(
               me=self.__repr__(),
               loaned_to=loaned_to,
@@ -248,7 +248,7 @@ class AWSInstance(object):
             return None
         stop_time = self.get_stop_time_from_logs()
         if not stop_time:
-            stop_time = self.get_uptime()
+            stop_time = self.get_uptime(default="unknown")
         else:
             stop_time = timedelta_to_time_string(stop_time)
         return "{0} down for {1}".format(self.__repr__(), stop_time)
@@ -258,7 +258,8 @@ class AWSInstance(object):
            instance_name (instance id, region) up for X hours"""
         if not self.is_running():
             return ""
-        return "{0} up for {1}".format(self.__repr__(), self.get_uptime())
+        return "{0} up for {1}".format(self.__repr__(),
+                                       self.get_uptime(default="unknown"))
 
     def unknown_state_message(self):
         """returns the following message:
