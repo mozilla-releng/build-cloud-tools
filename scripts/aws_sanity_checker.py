@@ -41,7 +41,7 @@ def report(items, message):
 
 def kill_and_filter_out_lazy_spot_instances(lazy):
     """ Terminate and filter out spot instances """
-    if "-spot-" in lazy.instance.tags.get("Name"):
+    if lazy.instance.spot_instance_request_id:
         lazy.instance.terminate()
         return False
     else:
