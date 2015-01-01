@@ -256,8 +256,6 @@ class AWSInstance(object):
     def running_message(self):
         """if the instance is running, it returns the following string:
            instance_name (instance id, region) up for X hours"""
-        if not self.is_running():
-            return ""
         return "{0} up for {1}".format(self.__repr__(),
                                        self.get_uptime(default="unknown"))
 
