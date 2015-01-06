@@ -37,7 +37,7 @@ from cloudtools.aws.instance import create_block_device_mapping, \
 import cloudtools.graphite
 from cloudtools.log import add_syslog_handler
 
-log = logging.getLogger()
+log = logging.getLogger(__name__)
 gr_log = cloudtools.graphite.get_graphite_logger()
 
 
@@ -455,7 +455,8 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    logging.getLogger().setLevel(logging.DEBUG)
+    logging.basicConfig(format="%(asctime)s - %(levelname)s - %(message)s",
+                        level=args.loglevel)
     logging.getLogger("boto").setLevel(logging.INFO)
     logging.getLogger("requests").setLevel(logging.WARN)
     logging.getLogger("iso8601").setLevel(logging.INFO)
@@ -464,13 +465,13 @@ if __name__ == '__main__':
     handler = logging.StreamHandler()
     handler.setFormatter(formatter)
     handler.setLevel(args.loglevel)
-    logging.getLogger().addHandler(handler)
+    log.addHandler(handler)
     if args.logfile:
         fhandler = logging.handlers.RotatingFileHandler(
             args.logfile, maxBytes=10 * (1024 ** 2), backupCount=100)
         fhandler.setLevel(logging.DEBUG)
         fhandler.setFormatter(formatter)
-        logging.getLogger().addHandler(fhandler)
+        log.addHandler(fhandler)
 
     config = json.load(args.config)
     secrets = json.load(args.secrets)
