@@ -1,0 +1,8 @@
+stacks:
+  # TODO: figure out how to handle region naming suffixes
+  RelengNetworkUsw1:
+    region: us-west-1
+    template: network.py
+    # TODO: allow parameters here, to facilitate template re-use
+
+# vim: set ts=2 sw=2:
