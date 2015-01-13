@@ -32,8 +32,6 @@ def main():
     parser.add_argument('--config', type=str,
                         help='Path to stacks.yml (default is relative to this script)',
                         default=stacks_yml)
-    parser.add_argument('--create', action='store_true',
-                        help='Create a new stack, instead of updating')
     parser.add_argument('--noop', action='store_true',
                         help='Just parse and output the template, without updating')
     parser.add_argument('--wait', action='store_true',
@@ -102,15 +100,27 @@ class EventLoop(object):
 def deploy_template(args, stack_config, template_body):
     region = stack_config['region']
     cf = boto.cloudformation.connect_to_region(region)
-    if args.create:
+
+    try:
+        stack = cf.describe_stacks(args.stack)[0]
+        stackid = stack.stack_id
+        create = False
+    except boto.exception.BotoServerError as e:
+        if e.code != 'ValidationError':
+            raise
+        log.debug("Stack %r does not exist; creating" % args.stack)
+        create = True
+
+    if create:
         stackid = cf.create_stack(stack_name=args.stack,
                                   template_body=template_body)
         event_loop = EventLoop(cf, stackid)
     else:
         # flush all of the pre-existing events before starting the
         # update
-        event_loop = EventLoop(cf, args.stack)
+        event_loop = EventLoop(cf, stackid)
         event_loop.iterate(log_events=False)
+
         try:
             stackid = cf.update_stack(stack_name=args.stack,
                                     template_body=template_body)
