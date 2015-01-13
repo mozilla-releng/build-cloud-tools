@@ -32,25 +32,31 @@ def main():
     parser.add_argument('--config', type=str,
                         help='Path to stacks.yml (default is relative to this script)',
                         default=stacks_yml)
+    parser.add_argument('--delete', action='store_true',
+                        help='Delete the stack')
     parser.add_argument('--noop', action='store_true',
                         help='Just parse and output the template, without updating')
     parser.add_argument('--wait', action='store_true',
                         help='Wait for the create or update operation to complete')
 
     args = parser.parse_args()
-    if not args.stack:
-        parser.error("No stack specified")
 
     # load the config file
     config = yaml.load(open(args.config))
     if 'stacks' not in config or args.stack not in config['stacks']:
         parser.error("Stack %r not found in %s" % (args.stack, args.config))
-    if not deploy_stack(args, config, args.stack):
+    stack_config = config['stacks'][args.stack]
+
+    if args.delete:
+        success = delete_stack(args, stack_config, args.stack)
+    else:
+        success = deploy_stack(args, stack_config, args.stack)
+
+    if not success:
         sys.exit(1)
 
 
-def deploy_stack(args, config, stack_name):
-    stack_config = config['stacks'][stack_name]
+def deploy_stack(args, stack_config, stack_name):
     template_path = os.path.join(os.path.dirname(args.config),
                                  stack_config['template'])
     template_body = load_template(args, stack_config, template_path)
@@ -97,6 +103,27 @@ class EventLoop(object):
                 log.info(msg)
 
 
+def delete_stack(args, stack_config, stack_name):
+    region = stack_config['region']
+    cf = boto.cloudformation.connect_to_region(region)
+
+    try:
+        stack = cf.describe_stacks(args.stack)[0]
+        stackid = stack.stack_id
+    except boto.exception.BotoServerError as e:
+        if e.code != 'ValidationError':
+            raise
+        log.warning("Stack %r does not exist" % args.stack)
+        return True
+
+    event_loop = EventLoop(cf, stackid)
+    # flush events before the delete
+    event_loop.iterate(log_events=False)
+    cf.delete_stack(stack_name)
+
+    return poll_stack(args, cf, event_loop, stackid)
+
+
 def deploy_template(args, stack_config, template_body):
     region = stack_config['region']
     cf = boto.cloudformation.connect_to_region(region)
@@ -123,7 +150,7 @@ def deploy_template(args, stack_config, template_body):
 
         try:
             stackid = cf.update_stack(stack_name=args.stack,
-                                    template_body=template_body)
+                                      template_body=template_body)
         except boto.exception.BotoServerError as e:
             # consider this particular error to indicate success
             if e.message == 'No updates are to be performed.':
@@ -131,7 +158,13 @@ def deploy_template(args, stack_config, template_body):
                 return True
             raise
 
-    while args.wait:
+    return poll_stack(args, cf, event_loop, stackid)
+
+
+def poll_stack(args, cf, event_loop, stackid):
+    if not args.wait:
+        return True
+    while True:
         event_loop.iterate()
         # if the stack is in a "terminal" condition, we're done
         status = cf.describe_stacks(stackid)[0].stack_status
