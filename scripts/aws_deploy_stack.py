@@ -6,6 +6,7 @@
 
 import argparse
 import boto.cloudformation
+import boto.exception
 import boto.s3
 import sys
 import time
@@ -110,8 +111,15 @@ def deploy_template(args, stack_config, template_body):
         # update
         event_loop = EventLoop(cf, args.stack)
         event_loop.iterate(log_events=False)
-        stackid = cf.update_stack(stack_name=args.stack,
-                                  template_body=template_body)
+        try:
+            stackid = cf.update_stack(stack_name=args.stack,
+                                    template_body=template_body)
+        except boto.exception.BotoServerError as e:
+            # consider this particular error to indicate success
+            if e.message == 'No updates are to be performed.':
+                log.info("Stack has not changed; treated as success")
+                return True
+            raise
 
     while args.wait:
         event_loop.iterate()
