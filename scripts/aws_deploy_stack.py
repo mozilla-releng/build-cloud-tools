@@ -21,7 +21,7 @@ from cfn_pyplates.options import OptionsMapping
 log = logging.getLogger(__name__)
 
 
-def main():
+def main(args):
     stacks_yml = os.path.abspath(
         os.path.join(
             os.path.dirname(__file__),
@@ -39,7 +39,7 @@ def main():
     parser.add_argument('--wait', action='store_true',
                         help='Wait for the create or update operation to complete')
 
-    args = parser.parse_args()
+    args = parser.parse_args(args)
 
     # load the config file
     config = yaml.load(open(args.config))
@@ -48,12 +48,9 @@ def main():
     stack_config = config['stacks'][args.stack]
 
     if args.delete:
-        success = delete_stack(args, stack_config, args.stack)
+        return delete_stack(args, stack_config, args.stack)
     else:
-        success = deploy_stack(args, stack_config, args.stack)
-
-    if not success:
-        sys.exit(1)
+        return deploy_stack(args, stack_config, args.stack)
 
 
 def deploy_stack(args, stack_config, stack_name):
@@ -178,4 +175,6 @@ def poll_stack(args, cf, event_loop, stackid):
 if __name__ == '__main__':
     logging.basicConfig(format="%(asctime)s - %(message)s", level=logging.DEBUG)
     logging.getLogger('boto').setLevel(logging.INFO)
-    main()
+    success = main(sys.argv[1:])
+    if not success:
+        sys.exit(1)
