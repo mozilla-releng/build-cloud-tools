@@ -3,6 +3,7 @@ stacks:
   RelengNetworkUsw1:
     region: us-west-1
     template: network.py
-    # TODO: allow parameters here, to facilitate template re-use
+    options:
+      region: usw1
 
 # vim: set ts=2 sw=2:
