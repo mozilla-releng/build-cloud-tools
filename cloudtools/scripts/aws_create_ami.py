@@ -1,16 +1,15 @@
 #!/usr/bin/env python
 
-from boto.ec2.blockdevicemapping import BlockDeviceMapping, BlockDeviceType
+import argparse
 import boto
-from fabric.api import run, put, lcd
-from fabric.context_managers import hide
 import json
 import time
 import logging
 import os
-import site
 
-site.addsitedir(os.path.join(os.path.dirname(__file__), ".."))
+from boto.ec2.blockdevicemapping import BlockDeviceMapping, BlockDeviceType
+from fabric.api import run, put, lcd
+from fabric.context_managers import hide
 from cloudtools.aws import AMI_CONFIGS_DIR, wait_for_status
 from cloudtools.aws.ami import ami_cleanup, copy_ami
 from cloudtools.aws.instance import run_instance, assimilate_instance
@@ -421,8 +420,7 @@ def create_ami(host_instance, args, config, instance_config, ssh_key,
     return ami
 
 
-if __name__ == '__main__':
-    import argparse
+def main():
     parser = argparse.ArgumentParser()
     parser.set_defaults(
         region="us-west-1",
@@ -459,7 +457,6 @@ if __name__ == '__main__':
                         dest="log_level", help="Verbose logging")
     parser.add_argument("host", metavar="host", nargs=1,
                         help="Temporary hostname")
-    args = parser.parse_args()
 
     args = parser.parse_args()
 
@@ -514,3 +511,6 @@ if __name__ == '__main__':
         log.info("Copying %s (%s) to %s", ami.id, ami.tags.get("Name"), r)
         new_ami = copy_ami(ami, r)
         log.info("New AMI created. AMI ID: %s", new_ami.id)
+
+if __name__ == '__main__':
+    main()

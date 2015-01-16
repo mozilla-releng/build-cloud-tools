@@ -1,10 +1,7 @@
 #!/usr/bin/env python
 import argparse
 import logging
-import os
-import site
 
-site.addsitedir(os.path.join(os.path.dirname(__file__), ".."))
 from cloudtools.aws.ami import get_ami, copy_ami
 
 log = logging.getLogger(__name__)

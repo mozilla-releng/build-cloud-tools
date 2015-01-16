@@ -3,16 +3,13 @@
 Lists AMIs used by spot instances
 """
 
-import site
-import os
+import argparse
 
-site.addsitedir(os.path.join(os.path.dirname(__file__), ".."))
 from cloudtools.aws import DEFAULT_REGIONS
-
 from cloudtools.aws.ami import get_ami
 
-if __name__ == '__main__':
-    import argparse
+
+def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-r", "--region", action="append", dest="regions")
     parser.add_argument("-t", "--type", action="append",
@@ -33,3 +30,6 @@ if __name__ == '__main__':
             print "%s, %s: %s (%s, %s)" % (moz_instance_type, region, ami.id,
                                            ami.tags.get("Name"),
                                            ami.root_device_type)
+
+if __name__ == '__main__':
+    main()

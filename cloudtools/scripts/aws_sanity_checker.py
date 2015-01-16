@@ -5,10 +5,7 @@ import argparse
 import logging
 import collections
 import re
-import site
-import os
 
-site.addsitedir(os.path.join(os.path.dirname(__file__), ".."))
 from cloudtools.aws.sanity import AWSInstance, aws_instance_factory, SLAVE_TAGS
 from cloudtools.aws import get_aws_connection, DEFAULT_REGIONS
 
@@ -243,8 +240,7 @@ def get_not_attached(volumes):
     return bad_volumes
 
 
-if __name__ == '__main__':
-
+def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-r", "--region", dest="regions", action="append",
                         help="optional list of regions")
@@ -274,3 +270,6 @@ if __name__ == '__main__':
                     instances=all_instances,
                     volumes=all_volumes,
                     events_dir=args.events_dir)
+
+if __name__ == '__main__':
+    main()
