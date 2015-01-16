@@ -1,13 +1,10 @@
 #!/usr/bin/env python
-import os
 import re
 import logging
 import yaml
 import boto.ec2
 import dns.resolver
-
-import site
-site.addsitedir(os.path.join(os.path.dirname(__file__), ".."))
+import sys
 
 from cloudtools.yaml import process_includes
 
@@ -215,7 +212,8 @@ def sync_security_group(remote_sg, sg_config, prompt):
 
 
 def main():
-    import sys
+    logging.basicConfig(format="%(asctime)s - %(message)s", level=logging.INFO)
+
     log.debug("Parsing file")
     sg_defs = load_config(sys.argv[1])
 
@@ -276,5 +274,4 @@ def main():
 
 
 if __name__ == '__main__':
-    logging.basicConfig(format="%(asctime)s - %(message)s", level=logging.INFO)
     main()

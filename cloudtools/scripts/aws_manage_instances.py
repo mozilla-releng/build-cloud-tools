@@ -2,12 +2,9 @@
 
 import argparse
 import logging
-from time import gmtime, strftime
-import site
-import os
 
-site.addsitedir(os.path.join(os.path.dirname(__file__), ".."))
 from cloudtools.aws import get_aws_connection, DEFAULT_REGIONS
+from time import gmtime, strftime
 
 log = logging.getLogger(__name__)
 
@@ -101,8 +98,7 @@ def status(i):
     print "=" * 72
 
 
-if __name__ == '__main__':
-
+def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-r", "--region", dest="regions", action="append",
                         help="optional list of regions")
@@ -159,3 +155,6 @@ if __name__ == '__main__':
                     terminate(i, args.dry_run, args.force)
                 elif args.action == "status":
                     status(i)
+
+if __name__ == '__main__':
+    main()

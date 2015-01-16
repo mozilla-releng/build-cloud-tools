@@ -1,13 +1,12 @@
 #!/usr/bin/env python
 """parses local cloudtrail logs and stores the results in the events dir"""
 
+import argparse
 import json
 import os
-import site
 from functools import partial
 from multiprocessing import Pool
 
-site.addsitedir(os.path.join(os.path.dirname(__file__), ".."))
 from cloudtools.fileutils import (mkdir_p, get_data_from_gz_file,
                                   get_data_from_json_file)
 
@@ -90,8 +89,7 @@ def write_to_json(events_dir, data):
             json.dump(data, f_out)
 
 
-if __name__ == '__main__':
-    import argparse
+def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-v", "--verbose", action="store_true",
                         help="Increase logging verbosity")
@@ -112,7 +110,6 @@ if __name__ == '__main__':
     else:
         log.setLevel(logging.INFO)
 
-    prefixes = []
     # cloudtrails
     # get all the available cloudtrail files
     logging.debug("processing cloudtrail files")
@@ -130,3 +127,6 @@ if __name__ == '__main__':
     pool.map(process_cloudtrail_partial, cloudtrail_files)
     pool.close()
     pool.join()
+
+if __name__ == '__main__':
+    main()

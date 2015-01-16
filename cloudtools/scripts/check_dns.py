@@ -2,10 +2,7 @@
 import argparse
 import logging
 from multiprocessing import Pool
-import site
-import os
 
-site.addsitedir(os.path.join(os.path.dirname(__file__), ".."))
 from cloudtools.aws import get_aws_connection
 from cloudtools.dns import get_ip, get_ptr, get_cname
 

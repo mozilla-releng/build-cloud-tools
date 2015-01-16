@@ -1,16 +1,12 @@
 #!/usr/bin/env python
-# Add cloudtools to our module search path
-import site
-import os
-site.addsitedir(os.path.join(os.path.dirname(__file__), ".."))
-
-import itertools
-
-import yaml
-from netaddr import IPNetwork, IPSet
 import cloudtools.aws
-
+import itertools
 import logging
+import sys
+import yaml
+
+from netaddr import IPNetwork, IPSet
+
 log = logging.getLogger(__name__)
 
 
@@ -109,7 +105,9 @@ def sync_subnets(conn, config):
 
 
 def main():
-    import sys
+    logging.getLogger('boto').setLevel(logging.INFO)
+    logging.basicConfig(format="%(asctime)s - %(message)s", level=logging.DEBUG)
+
     log.debug("parsing file")
     config = load_config(sys.argv[1])
 
@@ -120,6 +118,4 @@ def main():
 
 
 if __name__ == '__main__':
-    logging.getLogger('boto').setLevel(logging.INFO)
-    logging.basicConfig(format="%(asctime)s - %(message)s", level=logging.DEBUG)
     main()
