@@ -2,9 +2,8 @@
 import boto.vpc
 import yaml
 import dns.resolver
-import logging
-import sys
 
+import logging
 log = logging.getLogger(__name__)
 _dns_cache = {}
 
@@ -124,8 +123,7 @@ def sync_tables(conn, my_tables, remote_tables):
 
 
 def main():
-    logging.basicConfig(format="%(asctime)s - %(message)s", level=logging.INFO)
-
+    import sys
     log.debug("Parsing file")
     rt_defs = load_config(sys.argv[1])
 
@@ -144,4 +142,5 @@ def main():
         sync_tables(conn, my_tables, remote_tables)
 
 if __name__ == '__main__':
+    logging.basicConfig(format="%(asctime)s - %(message)s", level=logging.INFO)
     main()

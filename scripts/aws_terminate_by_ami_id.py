@@ -2,10 +2,13 @@
 """
 Kills instances with specified AMI IDs
 """
+import site
+import os
 import logging
 import argparse
 import time
 
+site.addsitedir(os.path.join(os.path.dirname(__file__), ".."))
 from cloudtools.aws import get_aws_connection, DEFAULT_REGIONS
 
 log = logging.getLogger(__name__)

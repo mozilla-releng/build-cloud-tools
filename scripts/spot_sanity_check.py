@@ -2,8 +2,11 @@
 
 import argparse
 import logging
+import site
+import os
 import time
 
+site.addsitedir(os.path.join(os.path.dirname(__file__), ".."))
 from cloudtools.aws import get_aws_connection, DEFAULT_REGIONS, \
     parse_aws_time, aws_get_all_instances
 from cloudtools.aws.spot import CANCEL_STATUS_CODES, IGNORABLE_STATUS_CODES
@@ -40,7 +43,7 @@ def sanity_check(regions):
             req.cancel()
 
 
-def main():
+if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("-r", "--region", dest="regions", action="append",
                         help="optional list of regions")
@@ -57,6 +60,3 @@ def main():
 
     regions = args.regions or DEFAULT_REGIONS
     sanity_check(regions)
-
-if __name__ == '__main__':
-    main()

@@ -21,19 +21,12 @@ from cfn_pyplates.options import OptionsMapping
 log = logging.getLogger(__name__)
 
 
-def main():
-    success = deploy(sys.argv[1:])
-    if not success:
-        sys.exit(1)
-
-
-def deploy(args):
+def main(args):
     stacks_yml = os.path.abspath(
         os.path.join(
             os.path.dirname(__file__),
             "../configs/cloudformation/stacks.yml"))
-    parser = argparse.ArgumentParser(
-        description='deploy a cloudformation stack')
+    parser = argparse.ArgumentParser(description='deploy a cloudformation stack')
     parser.add_argument('stack', type=str,
                         help='CloudFormation stack to create or update')
     parser.add_argument('--config', type=str,
@@ -47,10 +40,6 @@ def deploy(args):
                         help='Wait for the create or update operation to complete')
 
     args = parser.parse_args(args)
-
-    logging.basicConfig(
-        format="%(asctime)s - %(message)s", level=logging.DEBUG)
-    logging.getLogger('boto').setLevel(logging.INFO)
 
     # load the config file
     config = yaml.load(open(args.config))
@@ -184,4 +173,8 @@ def poll_stack(args, cf, event_loop, stackid):
         time.sleep(2)
 
 if __name__ == '__main__':
-    main()
+    logging.basicConfig(format="%(asctime)s - %(message)s", level=logging.DEBUG)
+    logging.getLogger('boto').setLevel(logging.INFO)
+    success = main(sys.argv[1:])
+    if not success:
+        sys.exit(1)

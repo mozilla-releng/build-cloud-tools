@@ -1,12 +1,15 @@
+import os
+import site
 import random
 import argparse
 import json
 from IPy import IP
 
-from cloudtools.aws import get_vpc
+site.addsitedir(os.path.join(os.path.dirname(__file__), ".."))
+from cloudtools.aws import get_aws_connection, get_vpc
 
 
-def main():
+if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-c", "--config", required=True,
                         type=argparse.FileType('r'),
@@ -22,6 +25,7 @@ def main():
     except KeyError:
         parser.error("unknown configuration")
 
+    conn = get_aws_connection(args.region)
     vpc = get_vpc(args.region)
 
     interfaces = vpc.get_all_network_interfaces()
@@ -40,6 +44,3 @@ def main():
     sample = random.sample(available_ips, args.number)
     for ip in sample:
         print ip
-
-if __name__ == "__main__":
-    main()

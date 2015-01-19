@@ -2,7 +2,10 @@
 import argparse
 import json
 import logging
+import os
+import site
 
+site.addsitedir(os.path.join(os.path.dirname(__file__), ".."))
 from cloudtools.aws import DEFAULT_REGIONS, INSTANCE_CONFIGS_DIR
 from cloudtools.aws.ami import delete_old_amis
 

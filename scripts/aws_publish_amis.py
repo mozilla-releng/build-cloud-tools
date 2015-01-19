@@ -2,10 +2,13 @@
 
 import argparse
 import logging
+import site
+import os
 import json
+from collections import defaultdict
 import boto
 
-from collections import defaultdict
+site.addsitedir(os.path.join(os.path.dirname(__file__), ".."))
 from cloudtools.aws import get_aws_connection, DEFAULT_REGIONS
 
 log = logging.getLogger(__name__)
@@ -48,7 +51,8 @@ def update_ami_status(data):
     key.set_acl("public-read")
 
 
-def main():
+if __name__ == '__main__':
+
     parser = argparse.ArgumentParser()
     parser.add_argument("-r", "--region", dest="regions", action="append",
                         help="optional list of regions")
@@ -71,6 +75,3 @@ def main():
         images.extend(conn.get_all_images(owners=["self"],
                                           filters={"state": "available"}))
     update_ami_status(amis_to_dict(images))
-
-if __name__ == '__main__':
-    main()

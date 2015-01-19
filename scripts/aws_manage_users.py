@@ -1,8 +1,12 @@
 #!/usr/bin/env python
 import boto.iam
 import boto.exception
+import os
+import site
 import json
 import random
+
+site.addsitedir(os.path.join(os.path.dirname(__file__), ".."))
 
 
 def make_password(n=8):

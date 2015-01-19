@@ -1,15 +1,16 @@
 #!/usr/bin/env python
 """Downloads the cloudtrail logs locally"""
 
-import argparse
 import datetime
 import os
+import site
 import shutil
 import json
-import logging
 
+site.addsitedir(os.path.join(os.path.dirname(__file__), ".."))
 from cloudtools.aws import DEFAULT_REGIONS
 
+import logging
 log = logging.getLogger(__name__)
 
 
@@ -70,8 +71,8 @@ def delete_obsolete_json_file(json_file, numdays):
         # file does not exist
         pass
 
-
-def main():
+if __name__ == '__main__':
+    import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("-v", "--verbose", action="store_true",
                         help="Increase logging verbosity")
@@ -90,6 +91,9 @@ def main():
     else:
         log.setLevel(logging.INFO)
 
+    prefixes = []
+    today = datetime.date.today()
+
     numdays = 60
     base = datetime.datetime.today()
     last_day_to_keep = base - datetime.timedelta(days=numdays)
@@ -102,8 +106,7 @@ def main():
 
     log.debug("deleting obsolete cloudtrail logs")
     for region in DEFAULT_REGIONS:
-        aws_cloudtrail_logs = os.path.join(
-            cache_dir, args.s3_base_prefix, region)
+        aws_cloudtrail_logs = os.path.join(cache_dir, args.s3_base_prefix, region)
 
         # delete last years
         root_dir = aws_cloudtrail_logs
@@ -127,6 +130,3 @@ def main():
                 # do not delete non instance files
                 instance_event_file = os.path.join(root, f)
                 delete_obsolete_json_file(instance_event_file, numdays)
-
-if __name__ == '__main__':
-    main()

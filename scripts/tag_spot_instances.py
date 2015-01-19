@@ -2,7 +2,10 @@
 
 import argparse
 import logging
+import site
+import os
 
+site.addsitedir(os.path.join(os.path.dirname(__file__), ".."))
 from cloudtools.aws import DEFAULT_REGIONS
 from cloudtools.aws.spot import get_instances_to_tag, \
     populate_spot_requests_cache, copy_spot_request_tags
@@ -10,7 +13,7 @@ from cloudtools.aws.spot import get_instances_to_tag, \
 log = logging.getLogger(__name__)
 
 
-def main():
+if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("-r", "--region", dest="regions", action="append",
                         help="optional list of regions")
@@ -39,6 +42,3 @@ def main():
             for i in instances_to_tag:
                 log.debug("tagging %s", i)
                 copy_spot_request_tags(i)
-
-if __name__ == '__main__':
-    main()
