@@ -1,19 +1,18 @@
 #!/usr/bin/env python
 """Downloads the cloudtrail logs locally"""
 
+import argparse
 import datetime
 import boto
 import os
 import signal
-import site
 from functools import partial
 from multiprocessing import Pool
-
-site.addsitedir(os.path.join(os.path.dirname(__file__), ".."))
 from cloudtools.aws import DEFAULT_REGIONS, get_s3_connection
 from cloudtools.fileutils import mkdir_p
 
 import logging
+
 log = logging.getLogger(__name__)
 
 LIMIT_MONTHS = 1  # 1 this month and the previous one
@@ -71,8 +70,8 @@ def write_to_disk(cache_dir, key):
         # file is already cached locally
         log.debug('{0} is already cached'.format(key.name))
 
-if __name__ == '__main__':
-    import argparse
+
+def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-v", "--verbose", action="store_true",
                         help="Increase logging verbosity")
@@ -109,3 +108,6 @@ if __name__ == '__main__':
         pool.map(write_to_disk_partial, keys)
         pool.close()
         pool.join()
+
+if __name__ == '__main__':
+    main()

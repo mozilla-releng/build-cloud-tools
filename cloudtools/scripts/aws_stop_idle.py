@@ -3,6 +3,8 @@
 Watches running EC2 instances and shuts them down when idle
 """
 # lint_ignore=E501,C901
+import argparse
+import logging.handlers
 import time
 import calendar
 import random
@@ -10,12 +12,9 @@ import threading
 import boto.ec2
 import requests
 import logging
-import site
-import os
 import json
-from Queue import Queue, Empty
 
-site.addsitedir(os.path.join(os.path.dirname(__file__), ".."))
+from Queue import Queue, Empty
 from cloudtools.aws import get_impaired_instance_ids, get_buildslave_instances
 from cloudtools.buildbot import graceful_shutdown, get_last_activity, \
     ACTIVITY_STOPPED, ACTIVITY_BOOTING
@@ -225,9 +224,8 @@ def aws_stop_idle(user, key_filename, regions, masters_json, moz_types,
         log.debug("%s - stopped %s", t, c)
         gr_log.add("stopped.%s" % t, c)
 
-if __name__ == '__main__':
-    import argparse
-    import logging.handlers
+
+def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-r", "--region", action="append", dest="regions",
                         required=True)
@@ -293,3 +291,6 @@ if __name__ == '__main__':
 
     gr_log.sendall()
     log.debug("done")
+
+if __name__ == '__main__':
+    main()

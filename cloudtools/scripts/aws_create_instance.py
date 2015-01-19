@@ -1,16 +1,16 @@
 #!/usr/bin/env python
+
+import argparse
 import json
 import uuid
 import time
 import boto
-import site
 import os
 import multiprocessing
 import sys
 import logging
 from boto.ec2.blockdevicemapping import BlockDeviceMapping, BlockDeviceType
 
-site.addsitedir(os.path.join(os.path.dirname(__file__), ".."))
 from cloudtools.aws import get_aws_connection, get_vpc, \
     name_available, wait_for_status, get_user_data_tmpl
 from cloudtools.dns import get_ip, get_ptr
@@ -195,6 +195,7 @@ def create_instance(name, config, region, key_name, ssh_key, instance_data,
 
 
 class LoggingProcess(multiprocessing.Process):
+
     def __init__(self, log, *args, **kwargs):
         self.log = log
         super(LoggingProcess, self).__init__(*args, **kwargs)
@@ -228,8 +229,7 @@ def make_instances(names, config, region, key_name, ssh_key, instance_data,
         p.join()
 
 
-if __name__ == '__main__':
-    import argparse
+def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-c", "--config", required=True,
                         type=argparse.FileType('r'),
@@ -294,3 +294,6 @@ if __name__ == '__main__':
         log.info("Copying %s (%s) to %s", ami.id, ami.tags.get("Name"), r)
         new_ami = copy_ami(ami, r)
         log.info("New AMI created. AMI ID: %s", new_ami.id)
+
+if __name__ == '__main__':
+    main()

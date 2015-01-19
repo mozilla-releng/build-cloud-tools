@@ -11,15 +11,14 @@ import json
 import uuid
 import time
 import logging
-import site
-import os
-
 import boto
+
 from boto.ec2.blockdevicemapping import BlockDeviceMapping, BlockDeviceType
 from boto.ec2.networkinterface import NetworkInterfaceSpecification, \
     NetworkInterfaceCollection
-site.addsitedir(os.path.join(os.path.dirname(__file__), ".."))
 from cloudtools.aws import AMI_CONFIGS_DIR, wait_for_status, get_aws_connection
+from docopt import docopt
+
 log = logging.getLogger(__name__)
 
 
@@ -102,9 +101,7 @@ def create_ami(host_instance, config_name, config):
     return ami
 
 
-if __name__ == '__main__':
-    from docopt import docopt
-
+def main():
     args = docopt(__doc__)
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(message)s")
@@ -120,4 +117,7 @@ if __name__ == '__main__':
     connection = get_aws_connection(args['--region'])
     host_instance = create_instance(connection, args['INSTANCE_NAME'], config,
                                     args['--key-name'])
-    target_ami = create_ami(host_instance, args['--config'], config)
+    create_ami(host_instance, args['--config'], config)
+
+if __name__ == '__main__':
+    main()

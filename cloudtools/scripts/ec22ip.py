@@ -1,14 +1,11 @@
 #!/usr/bin/env python
 
 import re
-import site
-import os
 
-site.addsitedir(os.path.join(os.path.dirname(__file__), ".."))
 from cloudtools.aws import get_aws_connection
 
 
-if __name__ == '__main__':
+def main():
     from optparse import OptionParser
     parser = OptionParser()
     parser.add_option("-r", "--region", dest="region", help="region to use",
@@ -30,3 +27,6 @@ if __name__ == '__main__':
                 hostname = i.tags.get('FQDN', i.tags.get('Name', ''))
                 if mask.search(hostname) and i.private_ip_address:
                     print i.private_ip_address, hostname
+
+if __name__ == '__main__':
+    main()

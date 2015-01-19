@@ -3,9 +3,9 @@
 Watches pending jobs and starts or creates EC2 instances if required
 """
 # lint_ignore=E501,C901
+import argparse
 import time
 from collections import defaultdict
-import os
 import logging
 
 try:
@@ -17,9 +17,6 @@ except ImportError:
 from boto.exception import BotoServerError, EC2ResponseError
 from boto.ec2.networkinterface import NetworkInterfaceCollection, \
     NetworkInterfaceSpecification
-
-import site
-site.addsitedir(os.path.join(os.path.dirname(__file__), ".."))
 
 from cloudtools.aws import (get_aws_connection, aws_get_running_instances,
                             aws_get_all_instances, filter_spot_instances,
@@ -436,8 +433,7 @@ def aws_watch_pending(dburl, regions, builder_map, region_priorities,
                   moz_instance_type, started, slaveset, count)
 
 
-if __name__ == '__main__':
-    import argparse
+def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-r", "--region", action="append", dest="regions",
                         required=True)
@@ -504,3 +500,6 @@ if __name__ == '__main__':
 
     gr_log.sendall()
     log.debug("done")
+
+if __name__ == '__main__':
+    main()
