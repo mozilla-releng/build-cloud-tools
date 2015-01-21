@@ -129,9 +129,8 @@ cft.resources.add(Resource(
     'Scl3CustomerGateway', 'AWS::EC2::CustomerGateway',
     Properties({
         'Type': 'ipsec.1',
-        # XXX should be .82, but using that will "adopt" the existing, production CGW
-        'IpAddress': '63.245.214.99',
-        'BgpAsn': '99999',  # XXX should be 65026, same
+        'IpAddress': '63.245.214.82',
+        'BgpAsn': '65026',
     })
 ))
 
