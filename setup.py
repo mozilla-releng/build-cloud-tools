@@ -32,7 +32,7 @@ setup(
         'ssh==1.8.0',
         'wsgiref==0.1.2',
         'cfn-pyplates',
-        'IPy==0.782a',
+        'IPy==0.81',
     ],
     extras_require={
         'test': [
