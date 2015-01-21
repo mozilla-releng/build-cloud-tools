@@ -129,9 +129,8 @@ cft.resources.add(Resource(
     'Scl3CustomerGateway', 'AWS::EC2::CustomerGateway',
     Properties({
         'Type': 'ipsec.1',
-        # XXX should be .82, but using that will "adopt" the existing, production CGW
-        'IpAddress': '63.245.214.99',
-        'BgpAsn': '99999',  # XXX should be 65026, same
+        'IpAddress': '63.245.214.82',
+        'BgpAsn': '65026',
     })
 ))
 
@@ -192,6 +191,11 @@ subnets = [
         'name': 'bb',
         'ip_space': [('68.0', 24)],
         'split_to_length': 26,  # only a /24, so split to /26
+    },
+    {
+        'name': 'private',
+        'ip_space': [('75.0', 24)],
+        'split_to_length': 24,  # no splitting (it's not a cloudy subnet)
     },
 ]
 
