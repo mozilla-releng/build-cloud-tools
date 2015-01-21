@@ -193,6 +193,11 @@ subnets = [
         'ip_space': [('68.0', 24)],
         'split_to_length': 26,  # only a /24, so split to /26
     },
+    {
+        'name': 'private',
+        'ip_space': [('75.0', 24)],
+        'split_to_length': 24,  # no splitting (it's not a cloudy subnet)
+    },
 ]
 
 for subnet in subnets:
