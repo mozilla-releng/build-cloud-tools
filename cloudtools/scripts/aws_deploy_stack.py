@@ -8,6 +8,7 @@ import argparse
 import boto.cloudformation
 import boto.exception
 import boto.s3
+import cfn_pyplates.core
 import sys
 import time
 import os
@@ -31,7 +32,7 @@ def deploy(args):
     stacks_yml = os.path.abspath(
         os.path.join(
             os.path.dirname(__file__),
-            "../configs/cloudformation/stacks.yml"))
+            "../../configs/cloudformation/stacks.yml"))
     parser = argparse.ArgumentParser(
         description='deploy a cloudformation stack')
     parser.add_argument('stack', type=str,
@@ -80,7 +81,11 @@ def load_template(args, stack_config, template_path):
     # see https://github.com/seandst/cfn-pyplates/issues/27 for the
     # solution to using these private functions
     sys.path.insert(0, os.path.dirname(template_path))
-    options_mapping = OptionsMapping({})
+    options_mapping = OptionsMapping(stack_config.get('options', {}))
+    # make 'options' available for import, so that flake8 can stay
+    # happy when parsing the templates
+    cfn_pyplates.core.options = options_mapping
+    # load the template and convert the result to JSON
     pyplate = _load_pyplate(open(template_path), options_mapping)
     cft = _find_cloudformationtemplate(pyplate)
     return unicode(cft)
@@ -98,17 +103,21 @@ class EventLoop(object):
         evts = self.conn.describe_stack_events(
             self.stackid, next_token=self.next_token)
         self.next_token = evts.next_token
-        for evt in evts:
-            if evt.event_id in self.seen:
-                continue
-            self.seen.add(evt.event_id)
-            if log_events:
-                msg = "{} - {} {} -> {}".format(
-                    evt.timestamp, evt.resource_type, evt.logical_resource_id,
-                    evt.resource_status)
-                if evt.resource_status_reason:
-                    msg += ' ({})'.format(evt.resource_status_reason)
-                log.info(msg)
+        # iterate until we get an empty set of events
+        while True:
+            for evt in evts:
+                if evt.event_id in self.seen:
+                    continue
+                self.seen.add(evt.event_id)
+                if log_events:
+                    msg = "{} - {} {} -> {}".format(
+                        evt.timestamp, evt.resource_type, evt.logical_resource_id,
+                        evt.resource_status)
+                    if evt.resource_status_reason:
+                        msg += ' ({})'.format(evt.resource_status_reason)
+                    log.info(msg)
+            else:
+                break
 
 
 def delete_stack(args, stack_config, stack_name):
