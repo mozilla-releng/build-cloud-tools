@@ -54,7 +54,8 @@ class Deployer(object):
         # load the config file
         config = self.config = yaml.load(open(args.config))
         if 'stacks' not in config or args.stack not in config['stacks']:
-            parser.error("Stack %r not found in %s" % (args.stack, args.config))
+            parser.error("Stack %r not found in %s" %
+                         (args.stack, args.config))
 
     def run(self):
         if self.args.delete:
@@ -131,6 +132,26 @@ class Deployer(object):
         else:
             return True
 
+    def load_external_resources(self, options_mapping, stack_name):
+        stack_config = self.config['stacks'][stack_name]
+        ext = {}
+        for opt, ref in stack_config.get('options', {}).iteritems():
+            # only translate those options that have both a 'stack' and
+            # 'resource'
+            if set(ref.keys()) != {'stack', 'resource'}:
+                continue
+            ref_stack = self.config['stacks'][ref['stack']]
+            conn = self.conn(ref_stack['region'])
+            res = conn.describe_stack_resource(ref['stack'], ref['resource'])
+            # for some reason boto doesn't handle this response..
+            res = res['DescribeStackResourceResponse']
+            res = res['DescribeStackResourceResult']
+            res = res['StackResourceDetail']
+            options_mapping[opt] = res['PhysicalResourceId']
+            log.debug("Mapped option %r (stack %r resource %r) to physical id %r",
+                      opt, ref['stack'], ref['resource'], options_mapping[opt])
+        return ext
+
     def load_template(self, stack_name, template_path):
         stack_config = self.config['stacks'][stack_name]
         log.debug("converting template %r to JSON", template_path)
@@ -139,6 +160,9 @@ class Deployer(object):
         # solution to using these private functions
         sys.path.insert(0, os.path.dirname(template_path))
         options_mapping = OptionsMapping(stack_config.get('options', {}))
+
+        # add external resources to options
+        self.load_external_resources(options_mapping, stack_name)
 
         # make 'options' available for import, so that flake8 can stay
         # happy when parsing the templates
