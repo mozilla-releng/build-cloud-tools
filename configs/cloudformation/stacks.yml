@@ -6,4 +6,12 @@ stacks:
     options:
       region: usw1
 
+  ITUsw1:
+    region: us-west-1
+    template: it.py
+    options:
+      vpcid:
+        stack: RelengNetworkUsw1
+        resource: RelengVPC
+
 # vim: set ts=2 sw=2:
