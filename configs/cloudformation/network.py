@@ -9,6 +9,7 @@ from IPy import IP
 from cfn_pyplates.core import CloudFormationTemplate, Resource
 from cfn_pyplates.core import Properties, options, DependsOn
 from cfn_pyplates.functions import ref
+from utils import nametag
 
 # Parameters
 
@@ -59,10 +60,6 @@ def subnet_cidr(suffix, length):
 def subnet_az(index):
     azs = availability_zones[options['region']]
     return azs[index % len(azs)]
-
-
-def nametag(name):
-    return {'Key': 'Name', 'Value': name}
 
 
 def resolve_host(hostname):

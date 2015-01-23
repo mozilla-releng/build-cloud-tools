@@ -29,10 +29,29 @@ The format of `stacks.yml` is as follows:
       * `template`: *template filename* -- the filename of the template that defines this stack
       * `options`: *option dictionary* -- an arbitrary dictionary that will be available to the template as `options`.
         This is *not* the same thing as parameters, although it is often more useful; see the pyplates documentation for details.
+        See "Inter-stack References" below, too.
+
+#### Inter-stack References
+
+Stacks often refer to resources in other stacks.
+Rather than hard-code these correspondances, the tools can look them up for you.
+Any option which has sub-keys `stack` and `resource` will be looked up before the template is generated.
+For example, to get the releng VPC's id, use
+
+```
+    options:
+        vpcid:
+            stack: RelengNetworkUsw1
+            resource: RelengVPC
+```
+
+then refer to this resource as `options['vpcid']` in the template body.
+
+Note that this system uses a "live" lookup of the resource name when the template is deployed.
+At that time, the reference is converted into a static resource id and encoded into the template.
 
 ### Future Plans
 
- * Ability to reference resource in other stacks
  * Support for parameters
  * Automatic region suffixes
 
