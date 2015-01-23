@@ -138,7 +138,7 @@ class Deployer(object):
         for opt, ref in stack_config.get('options', {}).iteritems():
             # only translate those options that have both a 'stack' and
             # 'resource'
-            if set(ref.keys()) != {'stack', 'resource'}:
+            if not isinstance(ref, dict) or set(ref.keys()) != {'stack', 'resource'}:
                 continue
             ref_stack = self.config['stacks'][ref['stack']]
             conn = self.conn(ref_stack['region'])
