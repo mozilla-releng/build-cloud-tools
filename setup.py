@@ -13,7 +13,6 @@ setup(
     url='https://github.com/mozilla/build-cloud-tools',
     install_requires=[
         'Fabric==1.8.0',
-        'IPy==0.81',
         'MySQL-python==1.2.5',
         'PyYAML==3.11',
         'SQLAlchemy==0.8.3',
