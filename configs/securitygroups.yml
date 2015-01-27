@@ -215,7 +215,6 @@ buildbot-master:
         - proto: tcp
           ports: [22]
           hosts:
-            - {include: slaveapi-servers}
             - dev-master1.build.mozilla.org
             - aws-manager1.srv.releng.scl3.mozilla.com
 
@@ -224,6 +223,7 @@ buildbot-master:
           ports:
             - {include: buildbot-http-portrange}
           hosts:
+            - {include: slaveapi-servers}
             - aws-manager1.srv.releng.scl3.mozilla.com
 
         # generic stuff
