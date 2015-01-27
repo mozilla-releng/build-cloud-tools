@@ -128,7 +128,7 @@ class Deployer(object):
         event_loop.consume_old_events()
         conn.delete_stack(stack_name)
         if self.args.wait:
-            return event_loop.log_events_until_done(conn, stackid)
+            return event_loop.log_events_until_done()
         else:
             return True
 
