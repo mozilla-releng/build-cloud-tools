@@ -21,13 +21,12 @@ includes:
         hosts:
           - 10.22.75.6/31  # admin1a/b
           - admin1.private.scl3.mozilla.com
-          - scan1.ops.scl3.mozilla.com
           - openvpn1.corpdmz.scl3.mozilla.com
           - openvpn1.stage.corpdmz.scl3.mozilla.com
           - ssh1.corpdmz.scl3.mozilla.com
           - ssh1.stage.corpdmz.scl3.mozilla.com
-          - vpn1.dmz.releng.scl3.mozilla.com
           - nagios1.private.releng.scl3.mozilla.com  # note: includes tcp/5666
+          - vportal1a.ops.scl3.mozilla.com
           - 10.22.240.0/20  # scl3-vpn-net
           - 10.22.20.0/25  # admin1.scl3-vpn
 
