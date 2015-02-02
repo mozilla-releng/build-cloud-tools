@@ -201,8 +201,6 @@ buildbot-master:
             - buildbot-master110.srv.releng.scl3.mozilla.com
             - buildbot-master111.srv.releng.scl3.mozilla.com
             - buildbot-master112.srv.releng.scl3.mozilla.com
-            # and cruncher, for the utility of it..
-            - cruncher.build.mozilla.org
 
         # traffic from buildslaves
         - proto: tcp
