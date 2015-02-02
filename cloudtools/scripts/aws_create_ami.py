@@ -489,7 +489,7 @@ def main():
         dns_required = True
         for attr in ("instance_config", "instance_data", "secrets"):
             if not getattr(args, attr):
-                parser.error("{} is required for S3-backed AMIs".format(attr))
+                parser.error("{} is required for puppetizing AMIs".format(attr))
         if ami_config.get("root_device_type") == "instance-store":
             for attr in ("certificate", "pkey"):
                 if not getattr(args, attr):
