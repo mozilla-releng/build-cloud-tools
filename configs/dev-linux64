@@ -3,7 +3,7 @@
     "us-east-1": {
         "type": "dev-linux64",
         "domain": "dev.releng.use1.mozilla.com",
-        "ami": "ami-41013328",
+        "ami": "ami-6c92d204",
         "subnet_ids": ["subnet-2ba98340", "subnet-2da98346", "subnet-22a98349"],
         "security_group_ids": [],
         "instance_type": "c3.xlarge",
@@ -23,7 +23,7 @@
     "us-west-2": {
         "type": "dev-linux64",
         "domain": "dev.releng.usw2.mozilla.com",
-        "ami": "ami-6eea8b5e",
+        "ami": "ami-8f114abf",
         "subnet_ids": ["subnet-d748dabe", "subnet-a848dac1", "subnet-ad48dac4"],
         "security_group_ids": [],
         "instance_type": "c3.xlarge",

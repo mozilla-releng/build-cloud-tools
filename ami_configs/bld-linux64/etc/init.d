@@ -1,1 +1,1 @@
-../../centos-6-x86_64-hvm-base/etc/init.d
+../../centos-62-x86_64-hvm-base/etc/init.d
