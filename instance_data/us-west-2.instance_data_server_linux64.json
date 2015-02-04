@@ -1,0 +1,3 @@
+{
+  "puppet_masters": ["releng-puppet1.srv.releng.scl3.mozilla.com", "releng-puppet2.srv.releng.scl3.mozilla.com"]
+}
