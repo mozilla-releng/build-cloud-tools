@@ -2,3 +2,5 @@ dhclient
 openssh-server
 kernel
 grub
+lvm2
+yum
