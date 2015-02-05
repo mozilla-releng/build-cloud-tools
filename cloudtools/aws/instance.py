@@ -123,7 +123,7 @@ def assimilate_instance(instance, config, ssh_key, instance_data, deploypass,
             '{}/etc/apt/sources.list'.format(chroot))
         run_chroot("apt-get update")
         run_chroot("apt-get install -y --allow-unauthenticated "
-                   "puppet cloud-init")
+                   "puppet cloud-init wget")
         run_chroot("apt-get clean")
     else:
         # Set up yum repos
@@ -131,7 +131,7 @@ def assimilate_instance(instance, config, ssh_key, instance_data, deploypass,
         put('%s/releng-public.repo' % AMI_CONFIGS_DIR,
             '{}/etc/yum.repos.d/releng-public.repo'.format(chroot))
         run_chroot('yum clean all')
-        run_chroot('yum install -q -y puppet cloud-init')
+        run_chroot('yum install -q -y puppet cloud-init wget')
 
     run_chroot("wget -O /root/puppetize.sh "
                "https://hg.mozilla.org/build/puppet/"
