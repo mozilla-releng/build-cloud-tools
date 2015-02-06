@@ -158,7 +158,7 @@ def create_ami(host_instance, args, config, instance_config, ssh_key,
 
     # Step 0: install required packages
     if config.get('distro') == "centos":
-        run('which MAKEDEV >/dev/null || yum install -y MAKEDEV')
+        run('which MAKEDEV >/dev/null || yum -d 1 install -y MAKEDEV')
 
     # Step 1: prepare target FS
     run('mkdir -p %s' % mount_point)
@@ -213,9 +213,12 @@ def create_ami(host_instance, args, config, instance_config, ssh_key,
             put('etc/yum-local.cfg', '%s/etc/yum-local.cfg' % mount_point)
             put('groupinstall', '/tmp/groupinstall')
             put('additional_packages', '/tmp/additional_packages')
-        yum = 'yum -c {0}/etc/yum-local.cfg -y --installroot={0} '.format(
+        yum = 'yum -d 1 -c {0}/etc/yum-local.cfg -y --installroot={0} '.format(
             mount_point)
+        # groupinstall emulates the %packages section of the kickstart config
         run('%s groupinstall "`cat /tmp/groupinstall`"' % yum)
+        # and this attempts to emulate the additional packages that Anaconda installs
+        # as it needs them.
         run('%s install `cat /tmp/additional_packages`' % yum)
         run('%s clean packages' % yum)
         # Rebuild RPM DB for cases when versions mismatch
@@ -273,7 +276,7 @@ def create_ami(host_instance, args, config, instance_config, ssh_key,
             grub_install_patch = os.path.join(config_dir, "grub-install.diff")
             if os.path.exists(grub_install_patch):
                 put(grub_install_patch, "/tmp/grub-install.diff")
-                run('which patch >/dev/null || yum install -y patch')
+                run('which patch >/dev/null || yum -d 1 install -y patch')
                 run('patch -p0 -i /tmp/grub-install.diff /sbin/grub-install')
             run("grub-install --root-directory=%s --no-floppy %s" %
                 (mount_point, grub_dev))
@@ -322,7 +325,7 @@ def create_ami(host_instance, args, config, instance_config, ssh_key,
     if config.get("root_device_type") == "instance-store" \
             and config.get("distro") == "centos":
         # create bundle
-        run("yum install -y ruby "
+        run("yum -d 1 install -y ruby "
             "http://s3.amazonaws.com/ec2-downloads/ec2-ami-tools.noarch.rpm")
         bundle_location = "{b}/{d}/{t}/{n}".format(
             b=config["bucket"], d=config["bucket_dir"],

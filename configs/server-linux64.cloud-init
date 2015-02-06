@@ -1,0 +1,11 @@
+#cloud-config
+
+fqdn: {fqdn}
+hostname: {fqdn}
+package_update: false
+resize_rootfs: true
+manage_etc_hosts: true
+disable_root: false
+ssh_pwauth: true
+moz_instance_type: {moz_instance_type}
+mounts: false
