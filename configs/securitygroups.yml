@@ -215,6 +215,7 @@ buildbot-master:
           hosts:
             - dev-master1.build.mozilla.org
             - aws-manager1.srv.releng.scl3.mozilla.com
+            - aws-manager2.srv.releng.scl3.mozilla.com
 
         # buildbot-http from aws-manager1
         - proto: tcp
