@@ -47,6 +47,7 @@ igw_routed_hosts = [
     'git.mozilla.org',
     'carbon.hostedgraphite.com',
     'mozilla.carbon.hostedgraphite.com',
+    'aus4.mozilla.org',
 ]
 
 # Utility Functions
