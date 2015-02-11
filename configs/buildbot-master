@@ -3,7 +3,7 @@
     "us-east-1": {
         "type": "buildbot-master",
         "domain": "bb.releng.use1.mozilla.com",
-        "ami": "ami-18abe670",
+        "ami": "ami-58246f30",
         "subnet_ids": ["subnet-5bea1b2c", "subnet-8992a1a1", "subnet-9be0f3dd"],
         "security_group_ids": ["sg-31e8185e"],
         "instance_type": "m3.medium",
@@ -32,7 +32,7 @@
     "us-west-1": {
         "type": "buildbot-master",
         "domain": "bb.releng.use1.mozilla.com",
-        "ami": "ami-c86d768d",
+        "ami": "ami-18a7bc5d",
         "subnet_ids": ["subnet-37465b71", "subnet-33f02d56", "subnet-31f02d54", "subnet-2e465b68"],
         "security_group_ids": ["sg-31e8185e"],
         "instance_type": "m3.medium",
