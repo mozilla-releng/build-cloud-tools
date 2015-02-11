@@ -3,7 +3,7 @@
     "us-east-1": {
         "type": "buildbot-master",
         "domain": "bb.releng.use1.mozilla.com",
-        "ami": "ami-43c7b72a",
+        "ami": "ami-18abe670",
         "subnet_ids": ["subnet-5bea1b2c", "subnet-8992a1a1", "subnet-9be0f3dd"],
         "security_group_ids": ["sg-31e8185e"],
         "instance_type": "m3.medium",
@@ -12,15 +12,46 @@
         "use_public_ip": true,
         "instance_profile_name": "buildbot-master",
         "device_map": {
-            "/dev/sda1": {
-                "size": 15,
-                "instance_dev": "/dev/xvde1"
-            },
-            "/dev/sdb": {
+            "/dev/xvda": {
+                "delete_on_termination": true,
+                "skip_resize": true,
+                "volume_type": "gp2",
+                "instance_dev": "/dev/xvda1"
+            },  
+            "/dev/xvdb": {
                 "ephemeral_name": "ephemeral0",
-                "instance_dev": "/dev/xvdf",
-                "delete_on_termination": false,
-                "skip_resize": true
+                "instance_dev": "/dev/xvdb",
+                "skip_resize": true,
+                "delete_on_termination": false
+            }
+        },
+        "tags": {
+            "moz-type": "buildbot-master"
+        }
+    },
+    "us-west-1": {
+        "type": "buildbot-master",
+        "domain": "bb.releng.use1.mozilla.com",
+        "ami": "ami-c86d768d",
+        "subnet_ids": ["subnet-37465b71", "subnet-33f02d56", "subnet-31f02d54", "subnet-2e465b68"],
+        "security_group_ids": ["sg-31e8185e"],
+        "instance_type": "m3.medium",
+        "disable_api_termination": true,
+        "ssh_key": "aws-releng",
+        "use_public_ip": true,
+        "instance_profile_name": "buildbot-master",
+        "device_map": {
+            "/dev/xvda": {
+                "delete_on_termination": true,
+                "skip_resize": true,
+                "volume_type": "gp2",
+                "instance_dev": "/dev/xvda1"
+            },
+            "/dev/xvdb": {
+                "ephemeral_name": "ephemeral0",
+                "instance_dev": "/dev/xvdb",
+                "skip_resize": true,
+                "delete_on_termination": false
             }
         },
         "tags": {
@@ -30,7 +61,7 @@
     "us-west-2": {
         "type": "buildbot-master",
         "domain": "bb.releng.usw2.mozilla.com",
-        "ami": "ami-516cfc61",
+        "ami": "ami-51f9a261",
         "subnet_ids": ["subnet-7c54b20b", "subnet-e77170a1", "subnet-e457b193", "subnet-c69353a3"],
         "security_group_ids": ["sg-932e33ff"],
         "instance_type": "m3.medium",
@@ -39,15 +70,17 @@
         "use_public_ip": true,
         "instance_profile_name": "buildbot-master",
         "device_map": {
-            "/dev/sda1": {
-                "size": 15,
-                "instance_dev": "/dev/xvde1"
+            "/dev/xvda": {
+                "delete_on_termination": true,
+                "skip_resize": true,
+                "volume_type": "gp2",
+                "instance_dev": "/dev/xvda1"
             },
-            "/dev/sdb": {
+            "/dev/xvdb": {
                 "ephemeral_name": "ephemeral0",
-                "instance_dev": "/dev/xvdf",
-                "delete_on_termination": false,
-                "skip_resize": true
+                "instance_dev": "/dev/xvdb",
+                "skip_resize": true,
+                "delete_on_termination": false
             }
         },
         "tags": {
