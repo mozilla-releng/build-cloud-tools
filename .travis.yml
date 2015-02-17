@@ -8,4 +8,6 @@ before_install:
 install:
     - travis_retry pip install tox==1.8
 script:
-    - tox -e py27,py27-coveralls
+    - tox -e py27
+after_success:
+    - tox -e py27-coveralls
