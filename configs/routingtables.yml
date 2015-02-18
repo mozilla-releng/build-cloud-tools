@@ -58,7 +58,7 @@ us-west-2:
             mozilla.carbon.hostedgraphite.com: IGW
 
             # Bug 1047550 - gaia try jobs clone gaia from github
-            github.com: IGW
+            192.30.252.0/22: IGW
 
             ftp-ssl.mozilla.org: IGW
             hg.mozilla.org: IGW
@@ -165,7 +165,7 @@ us-east-1:
             mozilla.carbon.hostedgraphite.com: IGW
 
             # Bug 1047550 - gaia try jobs clone gaia from github
-            github.com: IGW
+            192.30.252.0/22: IGW
 
             hg.mozilla.org: IGW
             git.mozilla.org: IGW
