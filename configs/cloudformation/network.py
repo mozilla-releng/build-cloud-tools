@@ -27,7 +27,8 @@ availability_zones = {
 # routed via the internet gateway.  `whois` is useful for checking netblock
 # sizes when you spot a new IP range.
 
-amazon_cidrs = [
+igw_routed_cidrs = [
+    # Amazon subnets
     "50.16.0.0/14",
     "54.230.0.0/15",
     "54.239.0.0/17",
@@ -37,6 +38,14 @@ amazon_cidrs = [
     "178.236.0.0/21",
     "205.251.192.0/18",
     "207.171.160.0/19",
+
+    # papertrail servers
+    '173.247.96.0/19',
+    '67.214.208.0/20',
+
+    # GitHub's subnet, per
+    # https://help.github.com/articles/what-ip-addresses-does-github-use-that-i-should-whitelist/
+    '192.30.252.0/22',
 ]
 
 # all A records corresponding to these hosts should be
@@ -255,9 +264,9 @@ cft.resources.add(Resource(
     DependsOn(['Scl3VPNConnection', 'Scl3VPCGatewayAttachment']),
 ))
 
-for n, cidr in enumerate(amazon_cidrs, 1):
+for n, cidr in enumerate(igw_routed_cidrs, 1):
     cft.resources.add(Resource(
-        'VPCToAWS{}'.format(n), 'AWS::EC2::Route',
+        'VPCToCidr{}'.format(n), 'AWS::EC2::Route',
         Properties({
             'DestinationCidrBlock': cidr,
             'GatewayId': ref('IGW'),
@@ -265,18 +274,6 @@ for n, cidr in enumerate(amazon_cidrs, 1):
         }),
         DependsOn(['IGW', 'IGWAttachment']),
     ))
-
-cft.resources.add(Resource(
-    'VPCToGitHub', 'AWS::EC2::Route',
-    Properties({
-        # GitHub's subnet, per
-        # https://help.github.com/articles/what-ip-addresses-does-github-use-that-i-should-whitelist/
-        'DestinationCidrBlock': '192.30.252.0/22',
-        'GatewayId': ref('IGW'),
-        'RouteTableId': ref('VpcRouteTable'),
-    }),
-    DependsOn('IGW'),
-))
 
 for hostname in igw_routed_hosts:
     camelcaps = ''.join(a.title() for a in re.split('[^a-z0-9]', hostname))
