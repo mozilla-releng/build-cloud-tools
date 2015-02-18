@@ -1,33 +1,4 @@
-us-west-1:
-    default:
-        routes:
-            # Amazon routes (check via 'whois')
-            50.16.0.0/14: IGW
-            54.230.0.0/15: IGW
-            54.239.0.0/17: IGW
-            54.240.0.0/12: IGW
-            72.21.192.0/19: IGW
-            176.32.96.0/21: IGW
-            178.236.0.0/21: IGW
-            205.251.192.0/18: IGW
-            207.171.160.0/19: IGW
-
-            hg.mozilla.org: IGW
-            git.mozilla.org: IGW
-            10.130.0.0/16: local
-            0.0.0.0/0: VGW
-
-    nat:
-        routes:
-            10.130.0.0/16: local
-            10.0.0.0/8: VGW
-            0.0.0.0/0: null
-
-    "nat subnet":
-        routes:
-            0.0.0.0/0: IGW
-            10.0.0.0/8: VGW
-            10.130.0.0/16: local
+# us-west-1 is managed by cloudformation
 
 us-west-2:
     default:
