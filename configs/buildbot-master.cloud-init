@@ -10,4 +10,7 @@ ssh_pwauth: true
 moz_instance_type: {moz_instance_type}
 # buildbot masters use their first ephemeral disk for swap
 mounts:
- - [ ephemeral0, /mnt, auto, "defaults,noexec" ]
+ - [ ephemeral0, none, swap, sw, 0, 0 ]
+bootcmd:
+ - mkswap /dev/$(curl http://169.254.169.254/latest/meta-data/block-device-mapping/ephemeral0)
+ - swapon /dev/$(curl http://169.254.169.254/latest/meta-data/block-device-mapping/ephemeral0)
