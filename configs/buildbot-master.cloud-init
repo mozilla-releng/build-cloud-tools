@@ -12,5 +12,5 @@ moz_instance_type: {moz_instance_type}
 mounts:
  - [ ephemeral0, none, swap, sw, 0, 0 ]
 bootcmd:
- - mkswap /dev/xvdb
- - swapon /dev/xvdb
+ - mkswap /dev/$(curl http://169.254.169.254/latest/meta-data/block-device-mapping/ephemeral0)
+ - swapon /dev/$(curl http://169.254.169.254/latest/meta-data/block-device-mapping/ephemeral0)
