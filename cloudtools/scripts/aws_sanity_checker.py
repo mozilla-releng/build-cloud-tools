@@ -50,7 +50,7 @@ def _report_lazy_running_instances(lazy):
     lazy = [l for l in lazy if kill_and_filter_out_lazy_spot_instances(l)]
     if lazy:
         message = 'Lazy long running instances'
-        lazy = sorted(lazy, reverse=True, key=lambda x: x.get_uptime())
+        lazy = sorted(lazy, reverse=True, key=lambda x: x._get_uptime_timestamp())
         lazy = [i.longrunning_message() for i in lazy]
         report(lazy, message)
 
@@ -62,7 +62,7 @@ def _report_long_running_instances(long_running):
     long_running = [i for i in long_running if not i.is_lazy()]
     if long_running:
         items = sorted(long_running, reverse=True,
-                       key=lambda x: x.get_uptime())
+                       key=lambda x: x._get_uptime_timestamp())
         items = [i.longrunning_message() for i in items]
         report(items, message)
     else:
@@ -112,7 +112,7 @@ def _report_long_stopped(long_stopped):
     if long_stopped:
         message = "Instances stopped for a while"
         items = sorted(long_stopped, reverse=True,
-                       key=lambda x: x.get_uptime())
+                       key=lambda x: x._get_uptime_timestamp())
         items = [i.stopped_message() for i in items]
         items = [i for i in items if i]
         report(items, message)

@@ -130,10 +130,12 @@ class AWSInstance(object):
         """returns moz-type string (moz-type tag)"""
         return self._get_tag("moz-type")
 
-    def _get_uptime_timestamp(self):
+    def _get_uptime_timestamp(self, default=None):
         """returns the uptime in timestamp format"""
-        instance = self.instance
-        return time.time() - launch_time_to_epoch(instance.launch_time)
+        if self.instance.launch_time:
+            return time.time() - launch_time_to_epoch(self.instance.launch_time)
+        else:
+            return default
 
     def get_uptime(self, default=None):
         """returns the uptime in human readable format"""
