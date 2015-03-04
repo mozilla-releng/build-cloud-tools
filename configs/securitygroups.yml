@@ -51,7 +51,6 @@ includes:
           hosts:
             - cruncher.build.mozilla.org
             - {include: slaveapi-servers}
-            - dev-master1.build.mozilla.org
             - aws-manager1.srv.releng.scl3.mozilla.com
             - aws-manager2.srv.releng.scl3.mozilla.com
         - include: admin-access
