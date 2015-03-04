@@ -220,7 +220,7 @@ def do_request_instance(region, moz_instance_type, price, ami, instance_config,
         groups=instance_config[region].get("security_group_ids"))
     nc = NetworkInterfaceCollection(spec)
 
-    user_data = user_data_from_template(moz_instance_type, fqdn)
+    user_data = user_data_from_template(moz_instance_type, fqdn, region)
     bdm = create_block_device_mapping(
         ami, instance_config[region]['device_map'])
     if is_spot:

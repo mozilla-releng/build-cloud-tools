@@ -276,3 +276,13 @@ def get_impaired_instance_ids(region):
     impaired = conn.get_all_instance_status(
         filters={'instance-status.status': 'impaired'})
     return [i.id for i in impaired]
+
+
+def get_region_dns_atom(region):
+    """Maps AWS regions to region names used by Mozilla in DNS names"""
+    mapping = {
+        "us-east-1": "use1",
+        "us-west-1": "usw1",
+        "us-west-2": "usw2",
+    }
+    return mapping.get(region)
