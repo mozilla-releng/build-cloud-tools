@@ -16,4 +16,4 @@ bootcmd:
  - swapon /dev/$(curl http://169.254.169.254/latest/meta-data/block-device-mapping/ephemeral0)
 rsyslog:
  - filename: log_aggregator_client.conf
-   content: "*.* @@log-aggregator.srv.releng.{moz_region}.mozilla.com:1514"
+   content: "*.* @@log-aggregator.srv.releng.{region_dns_atom}.mozilla.com:1514"

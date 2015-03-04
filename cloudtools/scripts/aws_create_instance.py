@@ -12,7 +12,7 @@ import logging
 from boto.ec2.blockdevicemapping import BlockDeviceMapping, BlockDeviceType
 
 from cloudtools.aws import get_aws_connection, get_vpc, \
-    name_available, wait_for_status, get_user_data_tmpl, get_moz_region
+    name_available, wait_for_status, get_user_data_tmpl, get_region_dns_atom
 from cloudtools.dns import get_ip, get_ptr
 from cloudtools.aws.instance import assimilate_instance, \
     make_instance_interfaces
@@ -115,7 +115,7 @@ def create_instance(name, config, region, key_name, ssh_key, instance_data,
                     dns_search_domain=config.get('dns_search_domain'),
                     password=deploypass,
                     moz_instance_type=config['type'],
-                    moz_region=get_moz_region(region),
+                    region_dns_atom=get_region_dns_atom(region),
                 )
 
             reservation = conn.run_instances(

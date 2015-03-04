@@ -10,4 +10,4 @@ ssh_pwauth: true
 moz_instance_type: {moz_instance_type}
 rsyslog:
  - filename: log_aggregator_client.conf
-   content: "*.* @@log-aggregator.srv.releng.{moz_region}.mozilla.com:1514"
+   content: "*.* @@log-aggregator.srv.releng.{region_dns_atom}.mozilla.com:1514"

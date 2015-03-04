@@ -278,7 +278,8 @@ def get_impaired_instance_ids(region):
     return [i.id for i in impaired]
 
 
-def get_moz_region(region):
+def get_region_dns_atom(region):
+    """Maps AWS regions to region names used by Mozilla in DNS names"""
     mapping = {
         "us-east-1": "use1",
         "us-west-1": "usw1",

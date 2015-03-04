@@ -12,7 +12,7 @@ from fabric.context_managers import cd
 from ..fabric import setup_fabric_env
 from ..dns import get_ip
 from . import wait_for_status, AMI_CONFIGS_DIR, get_aws_connection, \
-    get_user_data_tmpl, get_moz_region
+    get_user_data_tmpl, get_region_dns_atom
 from .vpc import get_subnet_id, ip_available, get_vpc
 from boto.exception import BotoServerError, EC2ResponseError
 
@@ -292,7 +292,7 @@ def user_data_from_template(moz_instance_type, fqdn, region):
     if user_data:
         user_data = user_data.format(
             fqdn=fqdn,
-            moz_region=get_moz_region(region),
+            region_dns_atom=get_region_dns_atom(region),
             moz_instance_type=moz_instance_type)
 
     return user_data
