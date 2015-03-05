@@ -206,6 +206,29 @@ buildbot-master:
     outbound:
         - include: global-any
 
+puppet-master:
+    description: security group for puppet masters
+    regions:
+        us-west-1: vpc-7a7dd613
+        us-west-2: vpc-cd63f2a4
+        us-east-1: vpc-b42100df
+    inbound:
+        - proto: tcp
+          ports: [443, 80, 8140]
+          hosts:
+            - 10.26.0.0/16
+            - 10.130.0.0/16
+            - 10.132.0.0/16
+            - 10.134.0.0/16
+
+        # generic stuff
+        - include: admin-access
+        - include: observium
+        - include: infra-puppetize
+        - include: global-ping
+    outbound:
+        - include: global-any
+
 blobber:
     description: security group for blobber service
     regions:
