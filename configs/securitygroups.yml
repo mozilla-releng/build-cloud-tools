@@ -296,3 +296,23 @@ proxxy-vpc-usw2:
         - include: global-ping
     outbound:
         - include: global-any
+
+LogAggregators:
+    description: Group for log aggregators and their load balancer
+    regions:
+        us-west-1: vpc-7a7dd613
+        us-west-2: vpc-cd63f2a4
+        us-east-1: vpc-b42100df
+    inbound:
+        - proto: tcp
+          ports: [1514]
+          hosts:
+            - 10.26.0.0/16
+            - 10.130.0.0/16
+            - 10.132.0.0/16
+            - 10.134.0.0/16
+        - include: admin-access
+        - include: observium
+        - include: global-ping
+    outbound:
+        - include: global-any
