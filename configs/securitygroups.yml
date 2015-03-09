@@ -221,6 +221,16 @@ puppet-master:
             - 10.130.0.0/16
             - 10.132.0.0/16
             - 10.134.0.0/16
+        
+        # SSH from other masters
+        - proto: tcp
+          ports: [22]
+          hosts:
+            - releng-puppet1.srv.releng.scl3.mozilla.com
+            - releng-puppet2.srv.releng.scl3.mozilla.com
+            # it'd be nice to be able to reference this SG here, instead
+            - releng-puppet1.srv.releng.use1.mozilla.com
+            - releng-puppet1.srv.releng.usw2.mozilla.com
 
         # generic stuff
         - include: aws-manager-ssh
