@@ -1,0 +1,111 @@
+{
+    "hostname": "releng-puppet%d",
+    "us-east-1": {
+        "type": "puppet-master",
+        "domain": "srv.releng.use1.mozilla.com",
+        "ami": "ami-58246f30",
+        "subnet_ids": ["subnet-173ff076", "subnet-1b20ef7a", "subnet-35a9835e", "subnet-0aa98361", "subnet-30a9835b", "subnet-33a98358", "subnet-8f21eeee", "subnet-8c20efed"],
+        "security_group_ids": ["sg-b36a84dc"],
+        "instance_type": "m3.medium",
+        "disable_api_termination": true,
+        "ssh_key": "aws-releng",
+        "use_public_ip": true,
+        "instance_profile_name": "puppet-master",
+        "device_map": {
+            "/dev/xvda": {
+                "delete_on_termination": true,
+                "skip_resize": true,
+                "volume_type": "gp2",
+                "instance_dev": "/dev/xvda1"
+            },  
+            "/dev/xvdb": {
+                "ephemeral_name": "ephemeral0",
+                "instance_dev": "/dev/xvdb",
+                "skip_resize": true,
+                "delete_on_termination": false
+            },
+            "/dev/xvdc": {
+                "comment": "for /data, but this must be set up as an LVM PV and mounted manually",
+                "skip_resize": true,
+                "instance_dev": "/dev/xvdc",
+                "size": 400,
+                "delete_on_termination": false
+            }
+        },
+        "tags": {
+            "moz-type": "puppet-master"
+        }
+    },
+    "us-west-1": {
+        "type": "puppet-master",
+        "domain": "srv.releng.use1.mozilla.com",
+        "ami": "ami-18a7bc5d",
+        "subnet_ids": ["subnet-2f465b69", "subnet-39f02d5c", "subnet-30f02d55", "subnet-2a465b6c"],
+        "security_group_ids": ["sg-38150854"],
+        "instance_type": "m3.medium",
+        "disable_api_termination": true,
+        "ssh_key": "aws-releng",
+        "use_public_ip": true,
+        "instance_profile_name": "puppet-master",
+        "device_map": {
+            "/dev/xvda": {
+                "delete_on_termination": true,
+                "skip_resize": true,
+                "volume_type": "gp2",
+                "instance_dev": "/dev/xvda1"
+            },
+            "/dev/xvdb": {
+                "ephemeral_name": "ephemeral0",
+                "instance_dev": "/dev/xvdb",
+                "skip_resize": true,
+                "delete_on_termination": false
+            },
+            "/dev/xvdc": {
+                "comment": "for /data, but this must be set up as an LVM PV and mounted manually",
+                "skip_resize": true,
+                "instance_dev": "/dev/xvdc",
+                "size": 400,
+                "delete_on_termination": false
+            }
+        },
+        "tags": {
+            "moz-type": "puppet-master"
+        }
+    },
+    "us-west-2": {
+        "type": "puppet-master",
+        "domain": "srv.releng.usw2.mozilla.com",
+        "ami": "ami-51f9a261",
+        "subnet_ids": ["subnet-b948dad0", "subnet-ba48dad3", "subnet-ed464a99", "subnet-bf48dad6"],
+        "security_group_ids": ["sg-4e2d3022"],
+        "instance_type": "m3.medium",
+        "disable_api_termination": true,
+        "ssh_key": "aws-releng",
+        "use_public_ip": true,
+        "instance_profile_name": "puppet-master",
+        "device_map": {
+            "/dev/xvda": {
+                "delete_on_termination": true,
+                "skip_resize": true,
+                "volume_type": "gp2",
+                "instance_dev": "/dev/xvda1"
+            },
+            "/dev/xvdb": {
+                "ephemeral_name": "ephemeral0",
+                "skip_resize": true,
+                "instance_dev": "/dev/xvdb",
+                "skip_resize": true,
+                "delete_on_termination": false
+            },
+            "/dev/xvdc": {
+                "comment": "for /data, but this must be set up as an LVM PV and mounted manually",
+                "instance_dev": "/dev/xvdc",
+                "size": 400,
+                "delete_on_termination": false
+            }
+        },
+        "tags": {
+            "moz-type": "puppet-master"
+        }
+    }
+}
