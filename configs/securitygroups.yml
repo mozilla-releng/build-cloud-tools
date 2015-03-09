@@ -101,6 +101,13 @@ includes:
     buildbot-http-portrange: 8000-8999
     buildbot-rpc-portrange: 9000-9999
 
+    aws-manager-ssh:
+      proto: tcp
+      ports: [22]
+      hosts:
+        - aws-manager1.srv.releng.scl3.mozilla.com
+        - aws-manager2.srv.releng.scl3.mozilla.com
+
 tests:
     description: security group for test slaves
     regions:
@@ -182,13 +189,6 @@ buildbot-master:
             - {include: buildbot-rpc-portrange}
           hosts: {include: slave-vlans}
 
-        # ssh access from some automation hosts
-        - proto: tcp
-          ports: [22]
-          hosts:
-            - aws-manager1.srv.releng.scl3.mozilla.com
-            - aws-manager2.srv.releng.scl3.mozilla.com
-
         # buildbot-http from aws-managers and slaveapi
         - proto: tcp
           ports:
@@ -199,6 +199,7 @@ buildbot-master:
             - aws-manager2.srv.releng.scl3.mozilla.com
 
         # generic stuff
+        - include: aws-manager-ssh
         - include: admin-access
         - include: observium
         - include: infra-puppetize
@@ -222,6 +223,7 @@ puppet-master:
             - 10.134.0.0/16
 
         # generic stuff
+        - include: aws-manager-ssh
         - include: admin-access
         - include: observium
         - include: infra-puppetize
@@ -273,6 +275,7 @@ proxxy-vpc-use1:
             - {include: test-use1}
             - {include: test2-use1}
             - {include: try-use1}
+        - include: aws-manager-ssh
         - include: admin-access
         - include: observium
         - include: global-ping
@@ -291,6 +294,7 @@ proxxy-vpc-usw2:
             - {include: test-usw2}
             - {include: test2-usw2}
             - {include: try-usw2}
+        - include: aws-manager-ssh
         - include: admin-access
         - include: observium
         - include: global-ping
@@ -311,6 +315,7 @@ LogAggregators:
             - 10.130.0.0/16
             - 10.132.0.0/16
             - 10.134.0.0/16
+        - include: aws-manager-ssh
         - include: admin-access
         - include: observium
         - include: global-ping
