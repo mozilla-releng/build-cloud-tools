@@ -30,7 +30,7 @@ setup(
         'simplejson==3.3.1',
         'ssh==1.8.0',
         'wsgiref==0.1.2',
-        'cfn-pyplates',
+        'cfn-pyplates>=0.5.0',
         'IPy==0.81',
     ],
     extras_require={
