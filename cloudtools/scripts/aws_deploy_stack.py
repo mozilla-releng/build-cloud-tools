@@ -15,8 +15,7 @@ import os
 import logging
 import yaml
 
-from cfn_pyplates.cli import _find_cloudformationtemplate
-from cfn_pyplates.cli import _load_pyplate
+from cfn_pyplates.core import generate_pyplate
 from cfn_pyplates.options import OptionsMapping
 
 log = logging.getLogger(__name__)
@@ -169,9 +168,7 @@ class Deployer(object):
         cfn_pyplates.core.options = options_mapping
 
         # load the template and convert the result to JSON
-        pyplate = _load_pyplate(open(template_path), options_mapping)
-        cft = _find_cloudformationtemplate(pyplate)
-        return unicode(cft)
+        return generate_pyplate(template_path, options_mapping)
 
     def conn(self, region):
         try:
