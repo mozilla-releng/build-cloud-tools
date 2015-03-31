@@ -14,4 +14,22 @@ stacks:
         stack: RelengNetworkUsw1
         resource: RelengVPC
 
+  TooltoolUsw1:
+    region: us-west-1
+    template: tooltool.py
+    options:
+      region: usw1
+
+  TooltoolUsw2:
+    region: us-west-2
+    template: tooltool.py
+    options:
+      region: usw2
+
+  TooltoolUse1:
+    region: us-east-1
+    template: tooltool.py
+    options:
+      region: use1
+
 # vim: set ts=2 sw=2:
