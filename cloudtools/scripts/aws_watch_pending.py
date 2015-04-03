@@ -26,7 +26,7 @@ from cloudtools.aws import (get_aws_connection, aws_get_running_instances,
 from cloudtools.aws.spot import get_spot_requests_for_moztype, \
     usable_spot_choice, get_available_slave_name, get_spot_choices
 from cloudtools.jacuzzi import filter_instances_by_slaveset
-from cloudtools.aws.ami import get_ami
+from cloudtools.aws.ami import get_ami, get_spot_amis
 from cloudtools.aws.vpc import get_avail_subnet
 from cloudtools.buildbot import find_pending, map_builders
 from cloudtools.aws.instance import create_block_device_mapping, \
@@ -36,6 +36,63 @@ from cloudtools.log import add_syslog_handler
 
 log = logging.getLogger()
 gr_log = cloudtools.graphite.get_graphite_logger()
+
+
+def find_prev_latest_amis_needed(latest_ami_percentage, latest_ami_count,
+                                 prev_ami_count, instances_to_start):
+    """
+    Uses the current ratio of previous/latest ami instaces, a target
+    "latest" percentage, and a number of new instances to be launched
+    to calculate a distribution of new amis which would move
+    the overall ratio closer to the target.
+
+    e.g. if we have 60 instances running our old ami and 40 instances
+    running latest, and we wish to launch another 10 instances with the
+    same 60/40 split, the function would return (4, 6) to indicate that
+    4 previous and 6 latest amis should be launched.
+
+    returns: (int:previous amis needed, int:latest amis needed)
+    >>> find_prev_latest_amis_needed(10, 0, 10, 1)
+    (0, 1)
+    >>> find_prev_latest_amis_needed(50, 0, 10, 5)
+    (0, 5)
+    >>> find_prev_latest_amis_needed(50, 10, 10, 10)
+    (5, 5)
+    >>> find_prev_latest_amis_needed(60, 60, 40, 10)
+    (4, 6)
+    >>> find_prev_latest_amis_needed(100, 10, 10, 40)
+    (0, 40)
+    >>> find_prev_latest_amis_needed(0, 10, 10, 40)
+    (40, 0)
+    >>> find_prev_latest_amis_needed(30, 0, 7, 3)
+    (0, 3)
+    >>> find_prev_latest_amis_needed(30, 7, 0, 3)
+    (3, 0)
+    """
+    total_amis = prev_ami_count + latest_ami_count
+    if latest_ami_percentage < 100 and latest_ami_percentage >= 0:
+        latest_ami_percentage_diff = latest_ami_percentage - \
+            round(((float(latest_ami_count)/float(total_amis))*100), 0)
+
+        if latest_ami_percentage_diff == 0:
+            # If we're already at equilibrium, just distribute according to
+            # the latest ami percentage
+            latest_ami_percentage_diff = latest_ami_percentage
+
+        latest_ami_needed_total = round(
+            (max(10, total_amis) + instances_to_start) * (latest_ami_percentage_diff/100.00), 0)
+        latest_ami_needed = latest_ami_needed_total - latest_ami_count
+        log.info("Ami latest/previous ratio needs to be adjusted by %i%, %i instances",
+                 latest_ami_percentage_diff, latest_ami_needed)
+        if latest_ami_needed < 0:
+            latest_ami_needed = max(latest_ami_needed, -1 * instances_to_start)
+        elif latest_ami_needed > 0:
+            latest_ami_needed = min(latest_ami_needed, instances_to_start)
+        to_be_started_prev = min(instances_to_start, instances_to_start - latest_ami_needed)
+        instances_to_start = max(0, latest_ami_needed)
+        return (int(to_be_started_prev), int(instances_to_start))
+    # 100%+ has been requested, there's no sense in doing any work
+    return (0, instances_to_start)
 
 
 def aws_resume_instances(all_instances, moz_instance_type, start_count,
@@ -75,7 +132,7 @@ def aws_resume_instances(all_instances, moz_instance_type, start_count,
 
 def request_spot_instances(all_instances, moz_instance_type, start_count,
                            regions, region_priorities, spot_config, dryrun,
-                           slaveset):
+                           slaveset, latest_ami_percentage):
     started = 0
     spot_rules = spot_config.get("rules", {}).get(moz_instance_type)
     if not spot_rules:
@@ -90,8 +147,14 @@ def request_spot_instances(all_instances, moz_instance_type, start_count,
         log.warn("No spot choices for %s", moz_instance_type)
         return 0
 
-    to_start = {}
-    acitve_instance_ids = set(i.id for i in all_instances)
+    to_start = defaultdict(list)
+    active_instance_ids = set(i.id for i in all_instances)
+
+    # count the number of instances for each image id
+    ami_distribution = defaultdict(int)
+    for instance in all_instances:
+        ami_distribution[instance.image_id] += 1
+
     for region in regions:
         # Check if spots are enabled in this region for this type
         region_limit = spot_config.get("limits", {}).get(region, {}).get(
@@ -108,7 +171,7 @@ def request_spot_instances(all_instances, moz_instance_type, start_count,
                   region, moz_instance_type)
         # Filter out requests for instances that don't exist
         active_requests = [r for r in active_requests if r.instance_id is not
-                           None and r.instance_id in acitve_instance_ids]
+                           None and r.instance_id in active_instance_ids]
         log.debug("%i real active spot requests for %s %s",
                   len(active_requests), region, moz_instance_type)
         active_count = len(active_requests)
@@ -119,10 +182,26 @@ def request_spot_instances(all_instances, moz_instance_type, start_count,
                       region_limit, active_count)
             continue
 
-        to_be_started = min(can_be_started, start_count - started)
-        ami = get_ami(region=region, moz_instance_type=moz_instance_type)
-        to_start[region] = {"ami": ami, "instances": to_be_started}
-
+        to_be_started_latest = min(can_be_started, start_count - started)
+        spot_amis = get_spot_amis(region=region, tags={"moz-type": moz_instance_type})
+        ami_latest = spot_amis[-1]
+        if len(spot_amis) > 1 and latest_ami_percentage < 100:
+            # get the total number of running instances with both the latest and
+            # prevous ami types, so that we can decide how many of each type to
+            # launch.
+            ami_prev = spot_amis[-2]
+            prev_ami_count = ami_distribution[ami_prev.id]
+            latest_ami_count = ami_distribution[ami_latest.id]
+            ami_prev_to_start, ami_latest_to_start = find_prev_latest_amis_needed(
+                latest_ami_percentage,
+                prev_ami_count,
+                latest_ami_count,
+                to_be_started_latest
+            )
+            to_start[region].append({"ami": ami_prev, "instances": ami_prev_to_start})
+            to_start[region].append({"ami": ami_latest, "instances": ami_latest_to_start})
+        else:
+            to_start[region].append({"ami": ami_latest, "instances": to_be_started_latest})
     if not to_start:
         log.debug("Nothing to start for %s", moz_instance_type)
         return 0
@@ -135,22 +214,24 @@ def request_spot_instances(all_instances, moz_instance_type, start_count,
         if not usable_spot_choice(choice):
             log.debug("Skipping %s for %s - unusable", choice, region)
             continue
-        need = min(to_start[region]["instances"], start_count - started)
-        log.debug("Need %s of %s in %s", need, moz_instance_type,
-                  choice.availability_zone)
+        for to_start_entry in to_start[region]:
+            need = min(to_start_entry["instances"], start_count - started)
+            if need > 0:
+                log.debug("Need %s of %s in %s", need, moz_instance_type,
+                          choice.availability_zone)
 
-        log.debug("Using %s", choice)
-        launched = do_request_spot_instances(
-            amount=need,
-            region=region,
-            moz_instance_type=moz_instance_type,
-            ami=to_start[region]["ami"],
-            instance_config=instance_config, dryrun=dryrun,
-            spot_choice=choice,
-            slaveset=slaveset,
-            all_instances=all_instances,
-        )
-        started += launched
+                log.debug("Using %s", choice)
+                launched = do_request_spot_instances(
+                    amount=need,
+                    region=region,
+                    moz_instance_type=moz_instance_type,
+                    ami=to_start_entry["ami"],
+                    instance_config=instance_config, dryrun=dryrun,
+                    spot_choice=choice,
+                    slaveset=slaveset,
+                    all_instances=all_instances,
+                )
+                started += launched
 
         if started >= start_count:
             break
@@ -318,7 +399,7 @@ def do_request_ondemand_instance(region, price, ami_id, instance_type, ssh_key,
 
 
 def aws_watch_pending(dburl, regions, builder_map, region_priorities,
-                      spot_config, ondemand_config, dryrun):
+                      spot_config, ondemand_config, dryrun, latest_ami_percentage):
     # First find pending jobs in the db
     pending = find_pending(dburl)
 
@@ -354,7 +435,6 @@ def aws_watch_pending(dburl, regions, builder_map, region_priorities,
             aws_get_running_instances(all_instances, moz_instance_type),
             slaveset)
         spot_running = filter_spot_instances(running)
-
         to_create_spot[moz_instance_type, slaveset] = reduce_by_freshness(
             count, spot_running, moz_instance_type, slaveset)
 
@@ -394,7 +474,8 @@ def aws_watch_pending(dburl, regions, builder_map, region_priorities,
             all_instances,
             moz_instance_type=moz_instance_type, start_count=count,
             regions=regions, region_priorities=region_priorities,
-            spot_config=spot_config, dryrun=dryrun, slaveset=slaveset)
+            spot_config=spot_config, dryrun=dryrun, slaveset=slaveset,
+            latest_ami_percentage=latest_ami_percentage)
         count -= started
         log.debug("%s - started %i spot instances for slaveset %s; need %i",
                   moz_instance_type, started, slaveset, count)
@@ -448,6 +529,10 @@ def main():
                         help="don't actually do anything")
     parser.add_argument("-l", "--logfile", dest="logfile",
                         help="log file for full debug log")
+    parser.add_argument("--latest-ami-percentage", type=int, default=100,
+                        help="percentage instances which will be launched with"
+                        " the latest ami available, remaining requests will be"
+                        " made using the previous (default: 100)")
 
     args = parser.parse_args()
 
@@ -479,6 +564,7 @@ def main():
         dryrun=args.dryrun,
         spot_config=config.get("spot"),
         ondemand_config=config.get("ondemand"),
+        latest_ami_percentage=args.latest_ami_percentage,
     )
 
     if all([config.get("graphite_host"), config.get("graphite_port"),
