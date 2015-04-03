@@ -82,12 +82,17 @@ def find_prev_latest_amis_needed(latest_ami_percentage, latest_ami_count,
         latest_ami_needed_total = round(
             (max(10, total_amis) + instances_to_start) * (latest_ami_percentage_diff/100.00), 0)
         latest_ami_needed = latest_ami_needed_total - latest_ami_count
+
         log.info("Ami latest/previous ratio needs to be adjusted by %i%, %i instances",
                  latest_ami_percentage_diff, latest_ami_needed)
+
+        # trim the latest_ami_needed amount so that it's not larger than
+        # the number of instances we're actually starting.
         if latest_ami_needed < 0:
             latest_ami_needed = max(latest_ami_needed, -1 * instances_to_start)
         elif latest_ami_needed > 0:
             latest_ami_needed = min(latest_ami_needed, instances_to_start)
+
         to_be_started_prev = min(instances_to_start, instances_to_start - latest_ami_needed)
         instances_to_start = max(0, latest_ami_needed)
         return (int(to_be_started_prev), int(instances_to_start))
