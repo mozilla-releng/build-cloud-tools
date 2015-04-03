@@ -90,14 +90,16 @@ class Deployer(object):
 
         if create:
             stackid = conn.create_stack(stack_name=stack_name,
-                                        template_body=template_body)
+                                        template_body=template_body,
+                                        capabilities=['CAPABILITY_IAM'])
             event_loop = EventLoop(conn, stackid)
         else:
             event_loop = EventLoop(conn, stackid)
             event_loop.consume_old_events()
             try:
                 stackid = conn.update_stack(stack_name=stack_name,
-                                            template_body=template_body)
+                                            template_body=template_body,
+                                            capabilities=['CAPABILITY_IAM'])
             except boto.exception.BotoServerError as e:
                 # consider this particular error to indicate success
                 if e.message == 'No updates are to be performed.':
