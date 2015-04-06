@@ -80,7 +80,7 @@ def find_prev_latest_amis_needed(latest_ami_percentage, latest_ami_count,
             latest_ami_percentage_diff = latest_ami_percentage
 
         latest_ami_needed_total = round(
-            (max(10, total_amis) + instances_to_start) * (latest_ami_percentage_diff/100.00), 0)
+            (total_amis + instances_to_start) * (latest_ami_percentage_diff/100.00), 0)
         latest_ami_needed = latest_ami_needed_total - latest_ami_count
 
         log.info("Ami latest/previous ratio needs to be adjusted by %i%, %i instances",
