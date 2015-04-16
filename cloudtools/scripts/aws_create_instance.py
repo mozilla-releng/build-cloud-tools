@@ -169,8 +169,8 @@ def create_instance(name, config, region, key_name, ssh_key, instance_data,
             # it takes a while for the machine to start/reboot so the
             # NetworkError exception is quite common, just log the error,
             # without the full stack trace
-            log.warn("problem assimilating %s (%s, %s) - %s, retrying in "
-                     "10 sec ...", instance_data['hostname'], instance.id,
+            log.warn("cannot connect; instance may still be starting  %s (%s, %s) - %s,
+                     "retrying in 10 sec ...", instance_data['hostname'], instance.id,
                      instance.private_ip_address, e)
             time.sleep(10)
 
