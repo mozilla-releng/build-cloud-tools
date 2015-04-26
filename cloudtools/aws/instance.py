@@ -88,6 +88,8 @@ def assimilate_instance(instance, config, ssh_key, instance_data, deploypass,
             run(cmd, *args, **kwargs)
 
     distro = config.get('distro', '')
+    if distro in ('debian', 'ubuntu'):
+        ubuntu_release = config.get("release", "precise")
     if distro.startswith('win'):
         return assimilate_windows(instance, config, instance_data)
 
@@ -119,7 +121,7 @@ def assimilate_instance(instance, config, ssh_key, instance_data, deploypass,
     put(hosts, "{}/etc/hosts".format(chroot))
 
     if distro in ('ubuntu', 'debian'):
-        put('%s/releng-public.list' % AMI_CONFIGS_DIR,
+        put('%s/releng-public-%s.list' % (AMI_CONFIGS_DIR, ubuntu_release),
             '{}/etc/apt/sources.list'.format(chroot))
         run_chroot("apt-get update")
         run_chroot("apt-get install -y --allow-unauthenticated "

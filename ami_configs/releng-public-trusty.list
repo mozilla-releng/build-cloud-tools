@@ -1,0 +1,4 @@
+deb http://puppetagain.pub.build.mozilla.org/data/repos/apt/ubuntu trusty main restricted universe
+deb http://puppetagain.pub.build.mozilla.org/data/repos/apt/ubuntu trusty-security main restricted universe
+deb http://puppetagain.pub.build.mozilla.org/data/repos/apt/releng trusty main
+deb http://puppetagain.pub.build.mozilla.org/data/repos/apt/puppetlabs trusty main dependencies
