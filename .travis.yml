@@ -9,5 +9,6 @@ install:
     - travis_retry pip install tox==1.8
 script:
     - tox -e py27
+    - for f in `find . -name '*.json'` ./configs/watch_pending.cfg; do python -m json.tool $f; done
 after_success:
     - tox -e py27-coveralls
