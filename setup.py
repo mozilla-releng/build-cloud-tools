@@ -32,6 +32,7 @@ setup(
         'wsgiref==0.1.2',
         'cfn-pyplates>=0.5.0',
         'IPy==0.81',
+        'redo==1.4',
     ],
     extras_require={
         'test': [
