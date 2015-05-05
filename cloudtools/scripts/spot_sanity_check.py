@@ -5,7 +5,7 @@ import logging
 import time
 
 from cloudtools.aws import get_aws_connection, DEFAULT_REGIONS, \
-    parse_aws_time, aws_get_all_instances
+    parse_aws_time, aws_get_all_instances, retry_aws_request
 from cloudtools.aws.spot import CANCEL_STATUS_CODES, IGNORABLE_STATUS_CODES
 
 log = logging.getLogger(__name__)
@@ -25,7 +25,7 @@ def sanity_check(regions):
         if req.state in ["open", "failed"]:
             if req.status.code in CANCEL_STATUS_CODES:
                 log.info("Cancelling request %s", req)
-                req.add_tag("moz-cancel-reason", req.status.code)
+                retry_aws_request(req.add_tag, "moz-cancel-reason", req.status.code)
                 req.cancel()
             elif req.status.code not in IGNORABLE_STATUS_CODES:
                 log.error("Uknown status for request %s: %s", req,
@@ -36,7 +36,7 @@ def sanity_check(regions):
                 req.instance_id not in instance_ids:
             log.info("Cancelling request %s: %s is not running", req,
                      req.instance_id)
-            req.add_tag("moz-cancel-reason", "no-running-instances")
+            retry_aws_request(req.add_tag, "moz-cancel-reason", "no-running-instances")
             req.cancel()
 
 
