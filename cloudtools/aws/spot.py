@@ -2,7 +2,7 @@ import logging
 import boto
 from datetime import datetime, timedelta
 from repoze.lru import lru_cache
-from . import get_aws_connection, aws_time_to_datetime
+from . import get_aws_connection, aws_time_to_datetime, retry_aws_request
 from ..slavealloc import get_classified_slaves
 from ..jacuzzi import get_allocated_slaves
 
@@ -85,7 +85,7 @@ def copy_spot_request_tags(i):
                      tag_value, i)
             tags[tag_name] = tag_value
     tags["moz-state"] = "ready"
-    i.connection.create_tags([i.id], tags)
+    retry_aws_request(i.connection.create_tags, [i.id], tags)
 
 
 @lru_cache(10)

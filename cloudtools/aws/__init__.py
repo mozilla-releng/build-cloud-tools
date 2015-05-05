@@ -4,9 +4,11 @@ import time
 import calendar
 import iso8601
 import json
+from redo import retrier
 from boto.ec2 import connect_to_region
 from boto.vpc import VPCConnection
 from boto.s3.connection import S3Connection
+from boto.exception import BotoServerError
 from repoze.lru import lru_cache
 from fabric.api import run
 
@@ -286,3 +288,20 @@ def get_region_dns_atom(region):
         "us-west-2": "usw2",
     }
     return mapping.get(region)
+
+
+def retry_aws_request(callable, *args, **kwargs):
+    """Calls callable(*args, **kwargs), and sleeps/retries on
+    RequestLimitExceeded errors"""
+    for _ in retrier():
+        try:
+            return callable(*args, **kwargs)
+        except BotoServerError, e:
+            if e.code == 'RequestLimitExceeded':
+                # Try again
+                log.debug("Got RequestLimitExceeded; retrying", exc_info=True)
+                continue
+            # Otherwise re-raise
+            raise
+    else:
+        raise Exception("Exceeded retries")
