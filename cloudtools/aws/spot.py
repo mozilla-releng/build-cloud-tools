@@ -132,9 +132,9 @@ def usable_spot_choice(choice, minutes=15):
     current_price = choice.current_price
     log.debug("Sanity checking %s in %s", instance_type, az)
 
-    # if price is higher than 90% of the bid price do not use the choice
-    if current_price > bid_price * 0.9:
-        log.debug("Price is higher than 90%% of ours, %s", choice)
+    # if price is higher than 80% of the bid price do not use the choice
+    if current_price > bid_price * 0.8:
+        log.debug("Price is higher than 80%% of ours, %s", choice)
         return False
 
     spot_requests = get_spot_requests(region, instance_type, az)
