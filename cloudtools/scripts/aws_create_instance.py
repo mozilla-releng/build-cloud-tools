@@ -20,6 +20,8 @@ from cloudtools.aws.vpc import get_subnet_id, ip_available
 from cloudtools.aws.ami import ami_cleanup, volume_to_ami, copy_ami, \
     get_ami
 
+from fabric.network import NetworkError
+
 log = logging.getLogger(__name__)
 
 
@@ -163,7 +165,17 @@ def create_instance(name, config, region, key_name, ssh_key, instance_data,
                                 ssh_key=ssh_key, instance_data=instance_data,
                                 deploypass=deploypass, reboot=reboot)
             break
+        except NetworkError as e:
+            # it takes a while for the machine to start/reboot so the
+            # NetworkError exception is quite common, just log the error,
+            # without the full stack trace
+            log.warn("cannot connect; instance may still be starting  %s (%s, %s) - %s,"
+                     "retrying in 10 sec ...", instance_data['hostname'], instance.id,
+                     instance.private_ip_address, e)
+            time.sleep(10)
+
         except:
+            # any other exception
             log.warn("problem assimilating %s (%s, %s), retrying in "
                      "10 sec ...", instance_data['hostname'], instance.id,
                      instance.private_ip_address, exc_info=True)
