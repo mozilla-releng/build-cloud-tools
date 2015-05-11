@@ -32,4 +32,18 @@ stacks:
     options:
       region: use1
 
+  # IAM Roles (global, but cloudformation needs a region)
+ 
+  IAMRelengAPI:
+    region: us-east-1
+    template: iam_relengapi.py
+    options:
+      prod: true
+        
+  IAMRelengAPIStaging:
+    region: us-east-1
+    template: iam_relengapi.py
+    options:
+      prod: false
+        
 # vim: set ts=2 sw=2:

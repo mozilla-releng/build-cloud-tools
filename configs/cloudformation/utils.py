@@ -16,3 +16,13 @@ def sgcidr(cidr, proto, from_port, to_port=None):
         'FromPort': from_port,
         'ToPort': to_port,
     }
+
+
+def policy(name, *statements):
+    return {
+        "PolicyName": name,
+        "PolicyDocument": {
+            "Version": "2012-10-17",
+            "Statement": statements,
+        }
+    }
