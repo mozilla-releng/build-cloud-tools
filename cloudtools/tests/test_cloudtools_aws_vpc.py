@@ -60,5 +60,5 @@ def test_get_avail_subnet(vpc):
     assert get_avail_subnet(
         "r1", ["id1", "id2", "id3", "id4"], "az1") == "id2"
     vpc.return_value.get_all_subnets.assert_called_once_with(
-        subnet_ids=["id1", "id2", "id3", "id4"])
+        subnet_ids=("id1", "id2", "id3", "id4"))
     assert get_avail_subnet("r1", ["id44"], "azx") is None
