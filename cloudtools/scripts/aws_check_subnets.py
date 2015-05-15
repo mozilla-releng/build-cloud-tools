@@ -74,8 +74,6 @@ def report_free_ips(grouped_subnets, warn_threshold, crit_threshold):
     exit_code = 0
     count_by_group = count_free_ips(grouped_subnets)
 
-    bad_groups = []
-
     for (az, name), count in sorted(count_by_group.items(), key=lambda x: x[1]):
         if count <= crit_threshold:
             print('CRITICAL: subnet {}/{} has only {} free ips (threshold is {})'.format(
