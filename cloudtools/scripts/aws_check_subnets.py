@@ -1,7 +1,12 @@
 #!/usr/bin/env python
 """
-Script for checking that there are enough free IP addresses in AWS subnets.
-Acts as a nagio
+Nagios check for checking that there are enough free IP addresses in AWS subnets.
+
+Return codes:
+    0 - everything OK!
+    1 - some availability zones below warning threshold
+    2 - some availability zones below critical threshold
+
 Sample nagios output:
 
     CRITICAL: subnet us-east-1c/test has only 2 free ips (threshold is 5)
