@@ -1,9 +1,5 @@
 us-west-2:
     vpc-cd63f2a4:
-        10.132.40.0/21:
-            name: test
-            routing_table: testers
-
         10.132.48.0/22:
             name: srv
             routing_table: masters
@@ -43,10 +39,6 @@ us-west-2:
 
 us-east-1:
     vpc-b42100df:
-        10.134.40.0/21:
-            name: test
-            routing_table: testers
-
         10.134.48.0/22:
             name: srv
             routing_table: masters
