@@ -221,7 +221,7 @@ puppet-master:
             - 10.130.0.0/16
             - 10.132.0.0/16
             - 10.134.0.0/16
-        
+
         # SSH from other masters
         - proto: tcp
           ports: [22]
@@ -342,6 +342,24 @@ VCSSync:
         - include: aws-manager-ssh
         - include: admin-access
         - include: observium
+        - include: global-ping
+    outbound:
+        - include: global-any
+
+signig-worker:
+    description: security group for signing workers
+    regions:
+        us-west-1: vpc-7a7dd613
+        us-west-2: vpc-cd63f2a4
+        us-east-1: vpc-b42100df
+    inbound:
+        # traffic from other masters
+        - proto: tcp
+          ports:
+            - 22  # ssh
+        - include: admin-access
+        - include: observium
+        - include: infra-puppetize
         - include: global-ping
     outbound:
         - include: global-any

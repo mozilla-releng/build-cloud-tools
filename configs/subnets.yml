@@ -36,6 +36,10 @@ us-west-2:
             name: test
             routing_table: testers
 
+        10.132.30.0/24:
+            name: signing
+            routing_table: signing
+
 
 us-east-1:
     vpc-b42100df:
@@ -71,8 +75,11 @@ us-east-1:
             name: bb
             routing_table: masters
 
-
         10.134.156.0/22:
             name: test
             routing_table: testers
             skip_azs: []
+
+        10.134.30.0/24:
+            name: signing
+            routing_table: signing
