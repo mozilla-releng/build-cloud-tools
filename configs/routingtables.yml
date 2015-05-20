@@ -14,6 +14,7 @@ us-west-2:
             205.251.192.0/18: IGW
             207.171.160.0/19: IGW
             aus4.mozilla.org: IGW
+            pulse.mozilla.org: IGW
 
             10.132.0.0/16: local
             0.0.0.0/0: VGW
@@ -32,6 +33,7 @@ us-west-2:
             207.171.160.0/19: IGW
 
             aus4.mozilla.org: IGW
+            pulse.mozilla.org: IGW
 
             # papertrail servers
             173.247.96.0/19: IGW
@@ -64,6 +66,7 @@ us-west-2:
             hg.mozilla.org: IGW
             git.mozilla.org: IGW
             aus4.mozilla.org: IGW
+            pulse.mozilla.org: IGW
 
             10.132.0.0/16: local
             0.0.0.0/0: VGW
@@ -90,6 +93,7 @@ us-west-2:
             hg.mozilla.org: IGW
             git.mozilla.org: IGW
             aus4.mozilla.org: IGW
+            pulse.mozilla.org: IGW
 
             10.132.0.0/16: local
             0.0.0.0/0: VGW
@@ -105,6 +109,7 @@ us-west-2:
             178.236.0.0/21: IGW
             205.251.192.0/18: IGW
             207.171.160.0/19: IGW
+            pulse.mozilla.org: IGW
 
             # For graphite
             carbon.hostedgraphite.com: IGW
@@ -161,6 +166,7 @@ us-east-1:
             207.171.160.0/19: IGW
 
             aus4.mozilla.org: IGW
+            pulse.mozilla.org: IGW
 
             # papertrail servers
             173.247.96.0/19: IGW
@@ -193,6 +199,7 @@ us-east-1:
             git.mozilla.org: IGW
             ftp-ssl.mozilla.org: IGW
             aus4.mozilla.org: IGW
+            pulse.mozilla.org: IGW
 
             10.134.0.0/16: local
             0.0.0.0/0: VGW
@@ -219,6 +226,7 @@ us-east-1:
             hg.mozilla.org: IGW
             git.mozilla.org: IGW
             aus4.mozilla.org: IGW
+            pulse.mozilla.org: IGW
 
             10.134.0.0/16: local
             0.0.0.0/0: VGW
@@ -245,6 +253,7 @@ us-east-1:
             hg.mozilla.org: IGW
             git.mozilla.org: IGW
             aus4.mozilla.org: IGW
+            pulse.mozilla.org: IGW
 
             10.134.0.0/16: local
             0.0.0.0/0: VGW
