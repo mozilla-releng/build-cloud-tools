@@ -161,9 +161,9 @@ def delete_old_amis(region, tags, keep_last, root_device_type="ebs",
 
 
 def get_ami(region, moz_instance_type, root_device_type=None):
-    """Returns a list of AMIs sorted by creation time, reversed.
-    root_device type can be either "ebs" or "instance-store"
-    virtualization_type can be either "hvm" or "paravirtual"""
+    """Return the most recently created AMI. root_device type can
+    be either "ebs" or "instance-store" virtualization_type can be
+    either "hvm" or "paravirtual"""
     spot_amis = get_spot_amis(region=region,
                               tags={"moz-type": moz_instance_type},
                               root_device_type=root_device_type)
