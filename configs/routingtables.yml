@@ -120,6 +120,7 @@ us-west-2:
             hg.mozilla.org: IGW
             git.mozilla.org: IGW
             aus4.mozilla.org: IGW
+            pulse.mozilla.org: IGW
 
             10.132.0.0/16: local
             0.0.0.0/0: VGW
@@ -138,6 +139,7 @@ us-west-2:
             207.171.160.0/19: IGW
 
             aus4.mozilla.org: IGW
+            pulse.mozilla.org: IGW
 
             # papertrail servers
             173.247.96.0/19: IGW
@@ -285,6 +287,7 @@ us-east-1:
             207.171.160.0/19: IGW
 
             aus4.mozilla.org: IGW
+            pulse.mozilla.org: IGW
 
             # papertrail servers
             173.247.96.0/19: IGW
