@@ -346,7 +346,7 @@ VCSSync:
     outbound:
         - include: global-any
 
-signig-worker:
+signing-worker:
     description: security group for signing workers
     regions:
         us-west-1: vpc-7a7dd613
