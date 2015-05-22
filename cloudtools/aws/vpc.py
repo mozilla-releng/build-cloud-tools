@@ -35,8 +35,10 @@ def get_all_subnets(region, subnet_ids):
 
 
 def get_avail_subnet(region, subnet_ids, availability_zone):
+    # Minimum IPs in a subnet to qualify it as usable
+    min_ips = 2
     subnets = [s for s in get_all_subnets(region, tuple(subnet_ids))
-               if s.available_ip_address_count > 0 and
+               if s.available_ip_address_count > min_ips and
                s.availability_zone == availability_zone]
     pending_spot_req = [sr for sr in get_active_spot_requests(region) if
                         sr.state == 'open']
@@ -47,7 +49,7 @@ def get_avail_subnet(region, subnet_ids, availability_zone):
         pending_req = [sr for sr in pending_spot_req if
                        sr.launch_specification.subnet_id == s.subnet_id]
         usable_ips = s.available_ip_address_count - len(pending_req)
-        if usable_ips > 0:
+        if usable_ips > min_ips:
             usable_subnets.append(UsableSubnet(s, usable_ips))
 
     if not usable_subnets:
