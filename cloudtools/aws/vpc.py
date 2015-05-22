@@ -47,7 +47,7 @@ def get_avail_subnet(region, subnet_ids, availability_zone):
     for s in subnets:
         # Subtract pending requests from available IP count
         pending_req = [sr for sr in pending_spot_req if
-                       sr.launch_specification.subnet_id == s.subnet_id]
+                       sr.launch_specification.subnet_id == s.id]
         usable_ips = s.available_ip_address_count - len(pending_req)
         if usable_ips > min_ips:
             usable_subnets.append(UsableSubnet(s, usable_ips))
