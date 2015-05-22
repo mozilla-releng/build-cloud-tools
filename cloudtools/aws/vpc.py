@@ -1,6 +1,9 @@
 import logging
+from collections import namedtuple
 from IPy import IP
+from repoze.lru import lru_cache
 from . import get_vpc, get_aws_connection
+from .spot import get_active_spot_requests
 
 log = logging.getLogger(__name__)
 
@@ -25,16 +28,34 @@ def ip_available(region, ip):
         return True
 
 
-def get_avail_subnet(region, subnet_ids, availability_zone=None):
+@lru_cache(100)
+def get_all_subnets(region, subnet_ids):
     vpc = get_vpc(region)
-    subnets = vpc.get_all_subnets(subnet_ids=subnet_ids)
-    subnets = [s for s in subnets if s.available_ip_address_count > 0]
-    if availability_zone:  # pragma: no branch
-        subnets = [s for s in subnets if s.availability_zone ==
-                   availability_zone]
-    subnets.sort(key=lambda s: s.available_ip_address_count)
-    if not subnets:
+    return vpc.get_all_subnets(subnet_ids=subnet_ids)
+
+
+def get_avail_subnet(region, subnet_ids, availability_zone):
+    # Minimum IPs in a subnet to qualify it as usable
+    min_ips = 2
+    subnets = [s for s in get_all_subnets(region, tuple(subnet_ids))
+               if s.available_ip_address_count > min_ips and
+               s.availability_zone == availability_zone]
+    pending_spot_req = [sr for sr in get_active_spot_requests(region) if
+                        sr.state == 'open']
+    usable_subnets = []
+    UsableSubnet = namedtuple("UsableSubnet", ["subnet", "usable_ips"])
+    for s in subnets:
+        # Subtract pending requests from available IP count
+        pending_req = [sr for sr in pending_spot_req if
+                       sr.launch_specification.subnet_id == s.subnet_id]
+        usable_ips = s.available_ip_address_count - len(pending_req)
+        if usable_ips > min_ips:
+            usable_subnets.append(UsableSubnet(s, usable_ips))
+
+    if not usable_subnets:
         log.debug("No free IP available in %s for subnets %s",
                   availability_zone, subnet_ids)
         return None
-    return subnets[-1].id
+    # sort by usable IP address count
+    usable_subnets.sort(key=lambda x: x.usable_ips, reverse=True)
+    return usable_subnets[0].subnet.id
