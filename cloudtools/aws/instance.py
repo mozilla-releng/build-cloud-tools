@@ -4,6 +4,7 @@ import logging
 import time
 import random
 import StringIO
+import redo
 from boto.ec2.blockdevicemapping import BlockDeviceMapping, BlockDeviceType
 from boto.ec2.networkinterface import NetworkInterfaceSpecification, \
     NetworkInterfaceCollection
@@ -194,6 +195,7 @@ def assimilate_windows(instance, config, instance_data):
     wait_for_status(instance, 'state', 'running', 'update')
 
 
+@redo.retriable(sleeptime=0, jitter=0, attempts=3)
 def unbundle_hg(hg_bundles):
     log.info("Cloning HG bundles")
     hg = "/tools/python27-mercurial/bin/hg"
@@ -211,6 +213,7 @@ def unbundle_hg(hg_bundles):
     log.info("Unbundling HG repos finished")
 
 
+@redo.retriable(sleeptime=0, jitter=0, attempts=3)
 def unpack_tarballs(tarballs):
     log.info("Unpacking tarballs")
     put("%s/s3-get" % AMI_CONFIGS_DIR, "/tmp/s3-get")
@@ -225,6 +228,7 @@ def unpack_tarballs(tarballs):
     log.info("Unpacking tarballs finished")
 
 
+@redo.retriable(sleeptime=0, jitter=0, attempts=3)
 def share_repos(hg_repos):
     log.info("Cloning HG repos")
     hg = "/tools/python27-mercurial/bin/hg"
