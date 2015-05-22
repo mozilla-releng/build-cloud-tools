@@ -2,7 +2,7 @@ import mock
 import pytest
 
 from cloudtools.aws.instance import create_block_device_mapping, \
-    tag_ondemand_instance
+    tag_ondemand_instance, pick_puppet_master
 
 
 def test_no_ebs_on_instance_store():
@@ -135,3 +135,12 @@ def test_tag_ondemand_instance():
         mock.call.add_tag("moz-state", "ready"),
     ]
     instance.assert_has_calls(expected_calls, any_order=True)
+
+
+def test_pick_puppet_master():
+    first_pick = pick_puppet_master(['m1', 'm2'])
+    assert first_pick in ('m1', 'm2')
+    second_pick = pick_puppet_master(['m1', 'm2'])
+    assert second_pick is first_pick
+    third_pick = pick_puppet_master(['m4', 'm5'])
+    assert third_pick in ('m4', 'm5')

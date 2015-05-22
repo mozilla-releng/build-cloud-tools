@@ -72,6 +72,21 @@ def run_instance(region, hostname, config, key_name, user='root',
     return instance
 
 
+_puppet_master_cache = {}
+
+
+def pick_puppet_master(masters):
+    """Pick a puppet master randomly, but in a stable fashion.  Given a choice
+    from the same set of masters on a subsequent call, this will return the
+    same master.  This helps to ensure that repeated puppetizations hit the
+    same master every time, preventing crossed wires due to delayed
+    synchronziation between masters."""
+    if masters != _puppet_master_cache.get('masters'):
+        _puppet_master_cache['masters'] = masters[:]
+        _puppet_master_cache['selected'] = random.choice(masters)
+    return _puppet_master_cache['selected']
+
+
 def assimilate_instance(instance, config, ssh_key, instance_data, deploypass,
                         chroot="", reboot=True):
     """Assimilate hostname into our collective
@@ -141,8 +156,8 @@ def assimilate_instance(instance, config, ssh_key, instance_data, deploypass,
     put(StringIO.StringIO("exit 0\n"),
         "{}/root/post-puppetize-hook.sh".format(chroot))
 
-    puppet_master = random.choice(instance_data["puppet_masters"])
-    log.info("Puppetizing %s, it may take a while...", hostname)
+    puppet_master = pick_puppet_master(instance_data["puppet_masters"])
+    log.info("Puppetizing %s against %s; this may take a while...", hostname, puppet_master)
     run_chroot("env PUPPET_SERVER=%s /root/puppetize.sh" % puppet_master)
 
     if "buildslave_password" in instance_data:
