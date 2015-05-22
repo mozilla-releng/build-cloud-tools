@@ -5,7 +5,7 @@
     "build/tools": "https://hg.mozilla.org/build/tools"
   },
   "s3_tarballs": {
-    "/builds/git-shared/repo": {"bucket": "mozilla-releng-tarballs-use1", "key": "git-shared-repo.tar"},
+    "/builds/git-shared/repo": {"bucket": "mozilla-releng-tarballs-use1", "key": "git-shared-repo-try.tar"},
     "/builds/hg-shared/try/.hg": {"bucket": "mozilla-releng-tarballs-use1", "key": "try.tar"}
   }
 }
