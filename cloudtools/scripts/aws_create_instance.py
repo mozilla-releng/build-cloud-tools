@@ -24,6 +24,10 @@ from fabric.network import NetworkError
 
 log = logging.getLogger(__name__)
 
+# this needs to be long enough for the puppetmasters to synchronize the issued
+# certificate and its revocation
+FAILURE_TIMEOUT = 60 * 20
+
 
 def verify(hosts, config, region, ignore_subnet_check=False):
     """ Check DNS entries and IP availability for hosts"""
@@ -170,16 +174,16 @@ def create_instance(name, config, region, key_name, ssh_key, instance_data,
             # NetworkError exception is quite common, just log the error,
             # without the full stack trace
             log.warn("cannot connect; instance may still be starting  %s (%s, %s) - %s,"
-                     "retrying in 10 sec ...", instance_data['hostname'], instance.id,
-                     instance.private_ip_address, e)
-            time.sleep(10)
+                     "retrying in %d sec ...", instance_data['hostname'], instance.id,
+                     instance.private_ip_address, e, FAILURE_TIMEOUT)
+            time.sleep(FAILURE_TIMEOUT)
 
         except:
             # any other exception
             log.warn("problem assimilating %s (%s, %s), retrying in "
-                     "10 sec ...", instance_data['hostname'], instance.id,
-                     instance.private_ip_address, exc_info=True)
-            time.sleep(10)
+                     "%d sec ...", instance_data['hostname'], instance.id,
+                     instance.private_ip_address, FAILURE_TIMEOUT, exc_info=True)
+            time.sleep(FAILURE_TIMEOUT)
         if max_attempts:
             attempt += 1
             keep_going = max_attempts >= attempt
