@@ -468,7 +468,7 @@ def main():
     instance_data = None
     deploypass = None
     dns_required = False
-    print(AMI_CONFIGS_DIR)
+
     try:
         ami_config = json.load(open("%s/%s.json" % (AMI_CONFIGS_DIR,
                                                     args.config)))[args.region]
