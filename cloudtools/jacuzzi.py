@@ -12,12 +12,14 @@ def get_allocated_slaves(buildername):
 
     if buildername is None:
         log.debug("getting set of all allocated slaves")
-        r = requests.get("{0}/allocated/all".format(JACUZZI_BASE_URL))
+        r = requests.get("{0}/allocated/all".format(JACUZZI_BASE_URL),
+                         timeout=5)
         _jacuzzi_allocated_cache[buildername] = frozenset(r.json()['machines'])
         return _jacuzzi_allocated_cache[buildername]
 
     log.debug("getting slaves allocated to %s", buildername)
-    r = requests.get("{0}/builders/{1}".format(JACUZZI_BASE_URL, buildername))
+    r = requests.get("{0}/builders/{1}".format(JACUZZI_BASE_URL, buildername),
+                     timeout=5)
     # Handle 404 specially
     if r.status_code == 404:
         _jacuzzi_allocated_cache[buildername] = None
