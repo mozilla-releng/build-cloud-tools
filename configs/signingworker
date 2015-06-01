@@ -1,0 +1,48 @@
+{
+    "us-east-1": {
+        "type": "signing-worker",
+        "domain": "srv.releng.use1.mozilla.com",
+        "ami": "ami-58246f30",
+        "subnet_ids": ["subnet-957710cc"],
+        "security_group_ids": ["sg-cf1027ab"],
+        "instance_type": "t2.micro",
+        "distro": "centos",
+        "ssh_key": "aws-releng",
+        "use_public_ip": true,
+        "instance_profile_name": "signing-worker",
+        "device_map": {
+            "/dev/xvda": {
+                "delete_on_termination": true,
+                "skip_resize": true,
+                "volume_type": "gp2",
+                "instance_dev": "/dev/xvda1"
+            }
+        },
+        "tags": {
+            "moz-type": "signing-worker"
+        }
+    },
+    "us-west-2": {
+        "type": "signing-worker",
+        "domain": "srv.releng.usw2.mozilla.com",
+        "ami": "ami-eb89acdb",
+        "subnet_ids": ["subnet-d50cb6a2"],
+        "security_group_ids": ["sg-ff8b939a"],
+        "instance_type": "t2.micro",
+        "distro": "centos",
+        "ssh_key": "aws-releng",
+        "use_public_ip": true,
+        "instance_profile_name": "signing-worker",
+        "device_map": {
+            "/dev/xvda": {
+                "delete_on_termination": true,
+                "skip_resize": true,
+                "volume_type": "gp2",
+                "instance_dev": "/dev/xvda1"
+            }
+        },
+        "tags": {
+            "moz-type": "signing-worker"
+        }
+    }
+}
