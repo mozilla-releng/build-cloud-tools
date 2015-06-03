@@ -4,9 +4,13 @@
 
 ### Fedora 22
 
-    sudo easy_install pip
-    sudo pip install boto
     sudo dnf install mariadb-devel python-devel procmail
-    git clone git@github.com:mozilla/build-cloud-tools.git cloud-tools
-    cd cloud-tools
-    sudo pip install -e .
+    mkdir ~/builds && cd ~/builds
+    # or to replicate the aws-manager servers:
+    # sudo mkdir /builds && sudo chown $(whoami) /builds && cd /builds
+    sudo easy_install virtualenv
+    virtualenv aws_manager
+    git clone git@github.com:mozilla/build-cloud-tools.git aws_manager/cloud-tools
+    source aws_manager/bin/activate
+    pip install boto
+    pip install -e aws_manager/cloud-tools
