@@ -12,5 +12,4 @@
     virtualenv aws_manager
     git clone git@github.com:mozilla/build-cloud-tools.git aws_manager/cloud-tools
     source aws_manager/bin/activate
-    pip install boto
     pip install -e aws_manager/cloud-tools
