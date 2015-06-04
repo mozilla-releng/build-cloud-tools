@@ -368,5 +368,6 @@ signing-worker:
         - include: observium
         - include: infra-puppetize
         - include: global-ping
+        - include: aws-manager-ssh
     outbound:
         - include: global-any
