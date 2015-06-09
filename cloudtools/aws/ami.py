@@ -12,28 +12,29 @@ log = logging.getLogger(__name__)
 
 
 def ami_cleanup(mount_point, distro, remove_extra=None):
-    remove_extra = remove_extra or []
-    remove = [
-        "root/*.sh",
-        "root/*.log",
-        "root/userdata",
-        "var/lib/puppet",
-        "etc/init.d/puppet"
-    ]
-    with cd(mount_point):
-        for e in remove + remove_extra:
-            run('rm -rf %s' % (e,))
-        run("sed -i -e 's/127.0.0.1.*/127.0.0.1 localhost/g' etc/hosts")
-        put("%s/fake_puppet.sh" % AMI_CONFIGS_DIR,
-            "usr/sbin/fake_puppet.sh", mirror_local_mode=True)
-        # replace puppet init with our script
-        if distro == "ubuntu":
-            put("%s/fake_puppet.conf" % AMI_CONFIGS_DIR,
-                "etc/init/puppet.conf", mirror_local_mode=True)
-            run("echo localhost > etc/hostname")
-        else:
-            run("ln -sf /usr/sbin/fake_puppet.sh etc/init.d/puppet")
-            run('echo "NETWORKING=yes" > etc/sysconfig/network')
+    if not distro.startswith('win'):
+        remove_extra = remove_extra or []
+        remove = [
+            "root/*.sh",
+            "root/*.log",
+            "root/userdata",
+            "var/lib/puppet",
+            "etc/init.d/puppet"
+        ]
+        with cd(mount_point):
+            for e in remove + remove_extra:
+                run('rm -rf %s' % (e,))
+            run("sed -i -e 's/127.0.0.1.*/127.0.0.1 localhost/g' etc/hosts")
+            put("%s/fake_puppet.sh" % AMI_CONFIGS_DIR,
+                "usr/sbin/fake_puppet.sh", mirror_local_mode=True)
+            # replace puppet init with our script
+            if distro == "ubuntu":
+                put("%s/fake_puppet.conf" % AMI_CONFIGS_DIR,
+                    "etc/init/puppet.conf", mirror_local_mode=True)
+                run("echo localhost > etc/hostname")
+            else:
+                run("ln -sf /usr/sbin/fake_puppet.sh etc/init.d/puppet")
+                run('echo "NETWORKING=yes" > etc/sysconfig/network')
 
 
 def volume_to_ami(volume, ami_name, arch, virtualization_type,
