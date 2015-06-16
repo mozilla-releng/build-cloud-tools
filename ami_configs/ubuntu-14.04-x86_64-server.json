@@ -1,0 +1,34 @@
+{
+    "us-east-1": {
+        "ami": "ami-10b68a78",
+        "instance_type": "c1.xlarge",
+        "arch": "x86_64",
+        "distro": "ubuntu",
+        "release": "trusty",
+        "target": {
+            "size": 8,
+            "fs_type": "ext4",
+            "mkfs_args": "-O ^has_journal",
+            "e2_label": "cloudimg-rootfs",
+            "aws_dev_name": "/dev/sdh",
+            "int_dev_name": "/dev/xvdh",
+            "mount_point": "/mnt1"
+        }
+    },
+    "us-west-2": {
+        "ami": "ami-595b7069",
+        "instance_type": "c1.xlarge",
+        "arch": "x86_64",
+        "distro": "ubuntu",
+        "release": "trusty",
+        "target": {
+            "size": 8,
+            "fs_type": "ext4",
+            "mkfs_args": "-O ^has_journal",
+            "e2_label": "cloudimg-rootfs",
+            "aws_dev_name": "/dev/sdh",
+            "int_dev_name": "/dev/xvdh",
+            "mount_point": "/mnt1"
+        }
+    }
+}

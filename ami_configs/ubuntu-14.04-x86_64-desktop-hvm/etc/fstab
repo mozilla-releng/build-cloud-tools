@@ -1,0 +1,5 @@
+LABEL=@ROOT_DEV_LABEL@   /         @FS_TYPE@   defaults,noatime,nodiratime,commit=30        1 1
+none       /proc     proc    defaults        0 0
+none       /sys      sysfs   defaults        0 0
+none       /dev/pts  devpts  gid=5,mode=620  0 0
+none       /dev/shm  tmpfs   defaults        0 0

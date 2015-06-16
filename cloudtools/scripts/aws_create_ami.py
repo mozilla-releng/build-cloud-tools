@@ -143,6 +143,8 @@ def create_ami(host_instance, args, config, instance_config, ssh_key,
     dated_target_name = "{}-{}".format(
         prefix, time.strftime("%Y-%m-%d-%H-%M", time.gmtime()))
 
+    if config.get('distro') in ('debian', 'ubuntu'):
+        ubuntu_release = config.get("release", "precise")
     int_dev_name = config['target']['int_dev_name']
     mount_dev = int_dev_name
     grub_dev = int_dev_name
@@ -196,12 +198,12 @@ def create_ami(host_instance, args, config, instance_config, ssh_key,
 
     # Step 2: install base system
     if config.get('distro') in ('debian', 'ubuntu'):
-        run("debootstrap precise %s "
+        run("debootstrap %s %s "
             "http://puppetagain.pub.build.mozilla.org/data/repos/apt/ubuntu/"
-            % mount_point)
+            % (ubuntu_release, mount_point))
         run('chroot %s mount -t proc none /proc' % mount_point)
         run('mount -o bind /dev %s/dev' % mount_point)
-        put('%s/releng-public.list' % AMI_CONFIGS_DIR,
+        put('%s/releng-public-%s.list' % (AMI_CONFIGS_DIR, ubuntu_release),
             '%s/etc/apt/sources.list' % mount_point)
         with lcd(config_dir):
             put('usr/sbin/policy-rc.d', '%s/usr/sbin/' % mount_point,
