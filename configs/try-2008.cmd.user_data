@@ -1,0 +1,72 @@
+<script>
+set FACTER_domain=try.releng.use1.mozilla.com
+
+set FACTER_hostname=try-2008-ec2-golden
+
+set FACTER_fqdn=try-2008-ec2-golden.try.releng.use1.mozilla.com
+
+set COMPUTERNAME=try-2008-ec2-golden
+
+setx FACTER_domain try.releng.use1.mozilla.com
+
+setx FACTER_hostname try-2008-ec2-golden
+
+setx FACTER_fqdn try-2008-ec2-golden.try.releng.use1.mozilla.com
+
+setx COMPUTERNAME try-2008-ec2-golden
+
+
+
+sc delete puppet 
+
+cscript.exe C:\ProgramData\Puppetlabs\puppet\var\puppettize_TEMP.vbs" 
+
+cd "C:\Program Files (x86)\Puppet Labs\Puppet\bin" 
+
+rem Get start time: 
+
+for /F "tokens=1-4 delims=:.," %%a in ("%time%") do ( 
+
+   set /A "start=(((%%a*60)+1%%b %% 100)*60+1%%c %% 100)*100+1%%d %% 100
+)
+ 
+Set /A elapsed=0 
+ 
+:RUN 
+ 
+IF %elapsed% lss 600 GOTO :COMMAND ( 
+
+IF %elapsed% gtr 600 GOTO :WAIT ( 
+ 
+:WAIT 
+
+TIMEOUT /T 300 
+ 
+:COMMAND 
+
+cmd /c puppet agent --test --detailed-exitcodes --server=puppet 
+
+IF %errorlevel% EQU 0 GOTO :RM_SCH_TASK 
+
+IF %errorlevel% EQU 2 GOTO :RM_SCH_TASK 
+ 
+rem Get end time: 
+
+for /F "tokens=1-4 delims=:.," %%a in ("%time%") do ( 
+
+   set /A "end=(((%%a*60)+1%%b %% 100)*60+1%%c %% 100)*100+1%%d %% 100" 
+)
+ 
+rem Get elapsed time: 
+
+set /A elapsed=((end-start)/10)/10 
+ 
+GOTO :RUN 
+ 
+:RM_SCH_TASK 
+
+schtasks /delete /TN RUNPUPPET /F 
+
+shutdown /r /t 0 /c "userdata run complete" /f /d p:4:1 
+
+</script>

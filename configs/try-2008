@@ -1,0 +1,60 @@
+{
+    "hostname": "try-2008-ec2-%03d",
+    "us-east-1": {
+        "type": "try-2008",
+        "domain": "try.releng.use1.mozilla.com",
+        "ami": "ami-1d47b276",
+        "subnet_ids": ["subnet-27a9834c", "subnet-39a98352", "subnet-3ea98355", "subnet-93b285e7", "subnet-e5bacacd", "subnet-cd83d28b"],
+        "security_group_ids": [
+            "sg-18a07677",
+            "sg-718b1214"
+        ],
+        "instance_type": "r3.xlarge",
+        "distro": "win2008",
+        "ssh_key": "aws-releng",
+        "user_data_file": "../../configs/try-2008.cmd.user_data",
+        "use_public_ip": true,
+        "instance_profile_name": "try-2008",
+        "device_map": {
+            "/dev/sda1": {
+                "delete_on_termination": true,
+                "skip_resize": true,
+                "volume_type": "gp2",
+                "size": 80,
+                "instance_dev": "C:"
+            }
+        },
+        "tags": {
+            "moz-type": "try-2008"
+        }
+    },
+    "us-west-2": {
+        "type": "try-2008",
+        "domain": "try.releng.usw2.mozilla.com",
+        "ami": "ami-9b8bb3ab",
+        "subnet_ids": ["subnet-ae48dac7", "subnet-a348daca", "subnet-a448dacd", "subnet-72b68206"],
+        "security_group_ids": [
+            "sg-3aaa095f",
+            "sg-84beade6"
+        ],
+        "instance_type": "r3.xlarge",
+        "distro": "win2008",
+        "ssh_key": "aws-releng",
+        "user_data_file": "../../configs/try-2008.cmd.user_data",
+        "use_public_ip": true,
+        "instance_profile_name": "try-2008",
+        "device_map": {
+            "/dev/sda1": {
+                "delete_on_termination": true,
+                "skip_resize": true,
+                "volume_type": "gp2",
+                "size": 80,
+                "instance_dev": "C:"
+            }
+        },
+        "tags": {
+            "moz-type": "try-2008"
+        }
+    }
+
+}
