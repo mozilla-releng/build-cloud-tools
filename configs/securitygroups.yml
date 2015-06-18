@@ -141,10 +141,13 @@ build:
         instances:
             tags:
                 - [moz-type, bld-linux64]
+                - [moz-type, b-2008]
                 - [Name, bld-linux64-ec2-*]
+                - [Name, b-2008-ec2-*]
         interfaces:
             tags:
                 - [moz-type, bld-linux64]
+                - [moz-type, b-2008]
     inbound:
         include: slave-vlan-inbound
     outbound:
@@ -160,10 +163,13 @@ try:
         instances:
             tags:
                 - [moz-type, try-linux64]
+                - [moz-type, try-2008]
                 - [Name, try-linux64-ec2-*]
+                - [Name, try-2008-ec2-*]
         interfaces:
             tags:
                 - [moz-type, try-linux64]
+                - [moz-type, try-2008]
     inbound:
         include: slave-vlan-inbound
     outbound:
