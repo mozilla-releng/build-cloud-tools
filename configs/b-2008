@@ -4,9 +4,16 @@
         "type": "b-2008",
         "domain": "build.releng.use1.mozilla.com",
         "ami": "ami-1d47b276",
-        "subnet_ids": ["subnet-2ba98340", "subnet-2da98346", "subnet-22a98349", "subnet-0822004e", "subnet-2da98346", "subnet-5bc7c62f", "subnet-7091d358"],
+        "subnet_ids": [
+            "subnet-2ba98340",
+            "subnet-2da98346",
+            "subnet-22a98349",
+            "subnet-0822004e",
+            "subnet-2da98346",
+            "subnet-5bc7c62f",
+            "subnet-7091d358"
+        ],
         "security_group_ids": [
-            "sg-18a07677",
             "sg-e758e982"
         ],
         "instance_type": "r3.xlarge",
@@ -32,10 +39,14 @@
         "type": "b-2008",
         "domain": "build.releng.usw2.mozilla.com",
         "ami": "ami-9b8bb3ab",
-        "subnet_ids": ["subnet-d748dabe", "subnet-a848dac1", "subnet-ad48dac4", "subnet-c74f48b3"],
+        "subnet_ids": [
+            "subnet-d748dabe",
+            "subnet-a848dac1",
+            "subnet-ad48dac4",
+            "subnet-c74f48b3"
+        ],
         "security_group_ids": [
-            "sg-f5ca0690",
-            "sg-84beade6"
+            "sg-f5ca0690"
         ],
         "instance_type": "r3.xlarge",
         "distro": "win2008",
@@ -56,5 +67,4 @@
             "moz-type": "b-2008"
         }
     }
-
 }
