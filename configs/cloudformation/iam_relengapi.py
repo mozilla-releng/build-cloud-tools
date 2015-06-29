@@ -34,8 +34,9 @@ def bucket_arn_tooltool(rgn):
     else:
         return "arn:aws:s3:::mozilla-releng-staging-%s-tooltool" % rgn
 
+
 def object_arn_archiver(rgn):
-    return bucket_arn_tooltool(rgn) + '/*'
+    return bucket_arn_archiver(rgn) + '/*'
 
 
 def bucket_arn_archiver(rgn):
@@ -43,6 +44,7 @@ def bucket_arn_archiver(rgn):
         return "arn:aws:s3:::mozilla-releng-%s-archiver" % rgn
     else:
         return "arn:aws:s3:::mozilla-releng-staging-%s-archiver" % rgn
+
 
 cft.resources.add(Resource(
     name, 'AWS::IAM::User',
@@ -85,14 +87,6 @@ cft.resources.add(Resource(
                     object_arn_tooltool('usw2')
                 ]
             }),
-        ]
-    })
-))
-
-cft.resources.add(Resource(
-    name, 'AWS::IAM::User',
-    Properties({
-        'Policies': [
             policy("archiverbucketaccess", {
                 "Effect": "Allow",
                 "Action": [
