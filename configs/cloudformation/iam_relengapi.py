@@ -24,15 +24,25 @@ cft = CloudFormationTemplate(
 name = 'RelengAPI' if is_prod else 'RelengAPIStage'
 
 
-def object_arn(rgn):
-    return bucket_arn(rgn) + '/*'
+def object_arn_tooltool(rgn):
+    return bucket_arn_tooltool(rgn) + '/*'
 
 
-def bucket_arn(rgn):
+def bucket_arn_tooltool(rgn):
     if is_prod:
         return "arn:aws:s3:::mozilla-releng-%s-tooltool" % rgn
     else:
         return "arn:aws:s3:::mozilla-releng-staging-%s-tooltool" % rgn
+
+def object_arn_archiver(rgn):
+    return bucket_arn_tooltool(rgn) + '/*'
+
+
+def bucket_arn_archiver(rgn):
+    if is_prod:
+        return "arn:aws:s3:::mozilla-releng-%s-archiver" % rgn
+    else:
+        return "arn:aws:s3:::mozilla-releng-staging-%s-archiver" % rgn
 
 cft.resources.add(Resource(
     name, 'AWS::IAM::User',
@@ -46,9 +56,9 @@ cft.resources.add(Resource(
                     "s3:ListBucketVersions",
                 ],
                 "Resource": [
-                    bucket_arn('use1'),
-                    bucket_arn('usw1'),
-                    bucket_arn('usw2')
+                    bucket_arn_tooltool('use1'),
+                    bucket_arn_tooltool('usw1'),
+                    bucket_arn_tooltool('usw2')
                 ]
             }),
             policy("tooltoolobjectaccess", {
@@ -70,9 +80,52 @@ cft.resources.add(Resource(
                     "s3:RestoreObject"
                 ],
                 "Resource": [
-                    object_arn('use1'),
-                    object_arn('usw1'),
-                    object_arn('usw2')
+                    object_arn_tooltool('use1'),
+                    object_arn_tooltool('usw1'),
+                    object_arn_tooltool('usw2')
+                ]
+            }),
+        ]
+    })
+))
+
+cft.resources.add(Resource(
+    name, 'AWS::IAM::User',
+    Properties({
+        'Policies': [
+            policy("archiverbucketaccess", {
+                "Effect": "Allow",
+                "Action": [
+                    "s3:ListBucket",
+                    "s3:ListBucketMultipartUploads",
+                    "s3:ListBucketVersions",
+                ],
+                "Resource": [
+                    bucket_arn_archiver('use1'),
+                    bucket_arn_archiver('usw2')
+                ]
+            }),
+            policy("archiverobjectaccess", {
+                "Effect": "Allow",
+                "Action": [
+                    "s3:AbortMultipartUpload",
+                    "s3:DeleteObject",
+                    "s3:DeleteObjectVersion",
+                    "s3:GetObject",
+                    "s3:GetObjectAcl",
+                    "s3:GetObjectTorrent",
+                    "s3:GetObjectVersion",
+                    "s3:GetObjectVersionAcl",
+                    "s3:GetObjectVersionTorrent",
+                    "s3:ListMultipartUploadParts",
+                    "s3:PutObject",
+                    "s3:PutObjectAcl",
+                    "s3:PutObjectVersionAcl",
+                    "s3:RestoreObject"
+                ],
+                "Resource": [
+                    object_arn_archiver('use1'),
+                    object_arn_archiver('usw2')
                 ]
             }),
         ]
