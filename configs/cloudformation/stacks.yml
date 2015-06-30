@@ -32,6 +32,18 @@ stacks:
     options:
       region: use1
 
+  ArchiverUsw2:
+    region: us-west-2
+    template: archiver.py
+    options:
+      region: usw2
+
+  ArchiverUse1:
+    region: us-east-1
+    template: archiver.py
+    options:
+      region: use1
+
   # IAM Roles (global, but cloudformation needs a region)
  
   IAMRelengAPI:
