@@ -8,9 +8,9 @@ See that file for a list of stacks that can be deployed.
 
 ## Deploying
 
-To deploy a stack, use the `aws_deploy_cloudformation` script in this repo:
+To deploy a stack, use the `aws_deploy_stack` script in this repo:
 
-    aws_deploy_cloudformation --wait MyStackName
+    aws_deploy_stack --wait MyStackName
 
 The script has a number of other options; see its `--help` for details.
 
