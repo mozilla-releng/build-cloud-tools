@@ -34,7 +34,7 @@ def test_invalid_request_id(conn):
         mock.call(request_ids=["id-1"]),
         mock.call()
     ]
-    conn.return_value.get_all_spot_instance_requests.assert_has_called(
+    conn.return_value.get_all_spot_instance_requests.assert_has_calls(
         expected_calls)
     assert cloudtools.aws.spot._spot_requests == {("r-1", "id-1"): req}
 
