@@ -1,0 +1,195 @@
+<powershell>
+# environment configuration
+$global:logRecipients = 'releng-puppet-mail@mozilla.com'
+$global:smtpServer = 'smtp.mail.scl3.mozilla.com'
+
+# runtime configuration
+$global:logDir = ('{{0}}\log' -f $env:SystemDrive)
+$global:runLog = [IO.Path]::Combine($global:logDir, ('userdata-run-{{0}}.log' -f [DateTime]::Now.ToString("yyyyMMdd-HHmm")))
+$global:puppetLog = [IO.Path]::Combine($global:logDir, 'puppet-agent-run.log')
+
+# create the log directory if it doesn't exist
+New-Item -ItemType Directory -Force -Path $global:logDir
+
+# logs to the userdata run log file, with timestamps
+function Write-Log {{
+  param (
+    [string] $message,
+    [string] $severity = 'INFO'
+  )
+  Add-Content -Path $global:runLog ('{{0}} [{{1}}] {{2}}' -f [DateTime]::Now.ToString("yyyy-MM-dd HH:mm:ss"), $severity, $message)
+}}
+
+# stops and disables the puppet service and deletes the RunPuppet scheduled task
+# sets the environment variables required for puppet to run
+# runs the puppettization vbscript followed by the puppet agent, writes puppet output to log folder
+function Run-Puppet {{
+  Write-Log -message 'stopping and disabling puppet service' -severity 'INFO'
+  Get-Service puppet | Stop-Service -PassThru | Set-Service -StartupType disabled
+
+  Write-Log -message 'deleting RunPuppet scheduled task' -severity 'INFO'
+  Unregister-ScheduledTask -TaskName 'RunPuppet' -Confirm:$false
+
+  Write-Log -message 'settting environment variables' -severity 'INFO'
+  [Environment]::SetEnvironmentVariable("FACTER_domain", "{domain}", "Process")
+  [Environment]::SetEnvironmentVariable("FACTER_hostname", "{hostname}", "Process")
+  [Environment]::SetEnvironmentVariable("FACTER_fqdn", ('{fqdn}'), "Process")
+  [Environment]::SetEnvironmentVariable("COMPUTERNAME", "{hostname}", "Machine")
+
+  Write-Log -message 'running puppettization script' -severity 'INFO'
+  cscript.exe ('{{0}}\Puppetlabs\puppet\var\puppettize_TEMP.vbs' -f $env:ProgramData)
+  
+  Write-Log -message ('running puppet agent, logging to: {{0}}' -f $global:puppetLog) -severity 'INFO'
+  $puppetArgs = @('agent', '--test', '--detailed-exitcodes', '--server', 'puppet', '--logdest', $global:puppetLog)
+  & 'puppet' $puppetArgs
+
+  Write-Log -message 'deleting RunPuppet scheduled task (again)' -severity 'INFO'
+  Unregister-ScheduledTask -TaskName 'RunPuppet' -Confirm:$false
+}}
+
+# determines if a successful puppet run has completed
+function Has-PuppetRunSuccessfully {{
+  # todo extend this logic to look for errors in puppet log and validate that the run is really complete
+  if (Test-Path $global:puppetLog) {{
+    return $true
+  }} else {{
+    return $false
+  }}
+}}
+
+# determines if the log aggregator is correctly set
+function Is-AggregatorConfiguredCorrectly {{
+  $conf = ('{{0}}\nxlog\conf\nxlog_target_aggregator.conf' -f ${{env:ProgramFiles(x86)}})
+  if ((Test-Path $conf) -and ((Get-Content $conf) | % {{ $_ -Match 'log-aggregator.srv.releng.{region_dns_atom}.mozilla.com' }}) -Contains $true) {{
+    return $true
+  }} else {{
+    return $false
+  }}
+}}
+
+# stops the local computer with the specified delay, logging the specified reason
+function Stop-ComputerWithDelay {{
+  param (
+    [string] $reason,
+    [int] $delayInSeconds = 10,
+    [switch] $restart
+  )
+  Write-Log -message ('shutting down with reason: {{0}}' -f $reason) -severity 'INFO'
+  if ($restart) {{
+    $stopArgs = @('-r', '-t', $delayInSeconds, '-c', $reason, '-f', '-d', 'p:4:1')
+  }} else {{
+    $stopArgs = @('-s', '-t', $delayInSeconds, '-c', $reason, '-f', '-d', 'p:4:1')
+  }}
+  & 'shutdown' $stopArgs
+}}
+
+# mails the specified logfile to the configured recipient(s)
+function Send-Log {{
+  param (
+    [string] $logfile,
+    [string] $subject
+  )
+  Send-MailMessage -To $global:logRecipients -Subject $subject -Body ([IO.File]::ReadAllText($logfile)) -SmtpServer $smtpServer -From ('{{0}}@{fqdn}' -f $env:UserName)
+}}
+
+# determines if the hostname is correctly set
+function Is-HostnameSetCorrectly {{
+  # todo: reinstate when we find a reliable way to set hostname
+  #Set-Hostname
+  #return $true
+  $hostname = [System.Net.Dns]::GetHostName()
+  if ("{hostname}" -ieq "$hostname") {{
+    return $true
+  }} else {{
+    Write-Log -message ('net dns hostname: {{0}}, expected: {hostname}' -f $hostname) -severity 'DEBUG'
+    Write-Log -message ('computer name env var: {{0}}, expected: {hostname}' -f $env:COMPUTERNAME) -severity 'DEBUG'
+    return $false
+  }}
+}}
+
+# set the hostname
+function Set-Hostname {{
+  [Environment]::SetEnvironmentVariable("COMPUTERNAME", "{hostname}", "Machine")
+  (Get-WmiObject Win32_ComputerSystem).Rename('{hostname}')
+  Write-Log -message 'hostname set to: {hostname}' -severity 'INFO'
+  $sysprepFile = ('{{0}}\Amazon\Ec2ConfigService\sysprep2008.xml' -f $env:ProgramFiles)
+  [xml] $xml = Get-Content($sysprepFile)
+  foreach ($settings in $xml.DocumentElement.settings) {{
+    if ($settings.pass -eq "specialize") {{
+      foreach ($component in $settings.component) {{
+        if ($component.name -eq "Microsoft-Windows-Shell-Setup") {{
+          if (-not $component.ComputerName) {{
+            $computerNameElement = $xml.CreateElement("ComputerName")
+            $computerNameElement.value = "{hostname}"
+            $component.AppendChild($computerNameElement)
+            Write-Log -message ('computer name inserted to: {{0}}' -f $sysprepFile) -severity 'DEBUG'
+          }} else {{
+            $component.ComputerName.value = "{hostname}"
+            Write-Log -message ('computer name updated in: {{0}}' -f $sysprepFile) -severity 'DEBUG'
+          }}
+        }}
+      }}
+    }}
+  }}
+  $xml.Save($sysprepFile)
+}}
+
+# determines if the primary dns suffix is correctly set
+function Is-DomainSetCorrectly {{
+  # todo: reinstate when we find a reliable way to set hostname
+  #Set-Domain
+  #return $true
+  $primaryDnsSuffix = (Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters\" -Name "NV Domain")."NV Domain"
+  if ("{domain}" -ieq "$primaryDnsSuffix") {{
+    return $true
+  }} else {{
+    Write-Log -message ('nv domain registry key: {{0}}, expected: {domain}' -f $primaryDnsSuffix) -severity 'DEBUG'
+    return $false
+  }}
+}}
+
+# set the primary DNS Suffix (for FQDN)
+function Set-Domain {{
+  Set-ItemProperty 'HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters\' -Name 'Domain' -Value '{domain}'
+  Set-ItemProperty 'HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters\' -Name 'NV Domain' -Value '{domain}'
+  Write-Log -message 'Primary DNS suffix set to: {domain}' -severity 'INFO'
+}}
+
+function Set-Aggregator {{
+  $conf = ('{{0}}\nxlog\conf\nxlog_target_aggregator.conf' -f ${{env:ProgramFiles(x86)}})
+  if (Test-Path $conf) {{
+    (Get-Content $conf) | 
+      Foreach-Object {{ $_ -replace "(Host [^ ]*)", 'Host log-aggregator.srv.releng.{region_dns_atom}.mozilla.com' }} | 
+        Set-Content $conf
+    Restart-Service nxlog
+    Write-Log -message 'log aggregator set to: log-aggregator.srv.releng.{region_dns_atom}.mozilla.com' -severity 'INFO'
+  }}
+}}
+
+$hostnameCorrect = (Is-HostnameSetCorrectly)
+$domainCorrect = (Is-DomainSetCorrectly)
+if ($hostnameCorrect -and $domainCorrect) {{
+  Write-Log -message 'correct hostname ({hostname}) detected' -severity 'INFO'
+  Write-Log -message 'correct domain ({domain}) detected' -severity 'INFO'
+  if (Has-PuppetRunSuccessfully) {{
+    Write-Log -message 'skipping puppet agent run, prior run detected' -severity 'INFO'
+    if (Is-AggregatorConfiguredCorrectly) {{
+      Write-Log -message 'correct log aggregator config detected' -severity 'INFO'
+    }} else {{
+      Set-Aggregator
+    }}
+  }} else {{
+    Run-Puppet
+    Send-Log -logfile $global:puppetLog -subject 'Puppet Agent Report for {fqdn}'
+    Stop-ComputerWithDelay -reason 'userdata golden puppet run complete'
+  }}
+}} else {{
+  if ($hostnameCorrect -ne $true) {{ Set-Hostname }}
+  if ($domainCorrect -ne $true) {{ Set-Domain }}
+  Stop-ComputerWithDelay -reason 'host name changed' -restart
+}}
+
+Send-Log -logfile ('{{0}}\Amazon\Ec2ConfigService\Logs\Ec2ConfigLog.txt' -f $env:ProgramFiles) -subject 'EC2 Config Report for {fqdn}'
+Send-Log -logfile $global:runLog -subject 'UserData Run Report for {fqdn}'
+</powershell>
+<persist>true</persist>
