@@ -22,7 +22,7 @@ function Write-Log {{
 
 # stops and disables the puppet service and deletes the RunPuppet scheduled task
 # sets the environment variables required for puppet to run
-# runs the puppettization vbscript followed by the puppet agent, writes puppet output to log folder
+# runs the puppetization vbscript followed by the puppet agent, writes puppet output to log folder
 function Run-Puppet {{
   Write-Log -message 'stopping and disabling puppet service' -severity 'INFO'
   Get-Service puppet | Stop-Service -PassThru | Set-Service -StartupType disabled
@@ -30,13 +30,13 @@ function Run-Puppet {{
   Write-Log -message 'deleting RunPuppet scheduled task' -severity 'INFO'
   Unregister-ScheduledTask -TaskName 'RunPuppet' -Confirm:$false
 
-  Write-Log -message 'settting environment variables' -severity 'INFO'
+  Write-Log -message 'setting environment variables' -severity 'INFO'
   [Environment]::SetEnvironmentVariable("FACTER_domain", "{domain}", "Process")
   [Environment]::SetEnvironmentVariable("FACTER_hostname", "{hostname}", "Process")
   [Environment]::SetEnvironmentVariable("FACTER_fqdn", ('{fqdn}'), "Process")
   [Environment]::SetEnvironmentVariable("COMPUTERNAME", "{hostname}", "Machine")
 
-  Write-Log -message 'running puppettization script' -severity 'INFO'
+  Write-Log -message 'running puppetization script' -severity 'INFO'
   cscript.exe ('{{0}}\Puppetlabs\puppet\var\puppettize_TEMP.vbs' -f $env:ProgramData)
   
   Write-Log -message ('running puppet agent, logging to: {{0}}' -f $global:puppetLog) -severity 'INFO'
@@ -94,9 +94,6 @@ function Send-Log {{
 
 # determines if the hostname is correctly set
 function Is-HostnameSetCorrectly {{
-  # todo: reinstate when we find a reliable way to set hostname
-  #Set-Hostname
-  #return $true
   $hostname = [System.Net.Dns]::GetHostName()
   if ("{hostname}" -ieq "$hostname") {{
     return $true
@@ -136,9 +133,6 @@ function Set-Hostname {{
 
 # determines if the primary dns suffix is correctly set
 function Is-DomainSetCorrectly {{
-  # todo: reinstate when we find a reliable way to set hostname
-  #Set-Domain
-  #return $true
   $primaryDnsSuffix = (Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters\" -Name "NV Domain")."NV Domain"
   if ("{domain}" -ieq "$primaryDnsSuffix") {{
     return $true
