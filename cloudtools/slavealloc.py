@@ -89,6 +89,22 @@ def slave_moz_type(slave):
        slave.get("trustlevel") == "try":
         return "tst-emulator64"
 
+    # b-2008
+    if slave.get("bitlength") == "64" and \
+       slave.get("environment") == "prod" and \
+       slave.get("distro") == "win2k8" and \
+       slave.get("purpose") == "build" and \
+       slave.get("trustlevel") == "core":
+        return "b-2008"
+
+    # try-2008
+    if slave.get("bitlength") == "64" and \
+       slave.get("environment") == "prod" and \
+       slave.get("distro") == "win2k8" and \
+       slave.get("purpose") == "build" and \
+       slave.get("trustlevel") == "try":
+        return "try-2008"
+
     return None
 
 
