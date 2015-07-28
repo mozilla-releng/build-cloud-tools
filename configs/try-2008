@@ -18,7 +18,7 @@
         "instance_type": "r3.xlarge",
         "distro": "win2008",
         "ssh_key": "aws-releng",
-        "user_data_file": "../../configs/try-2008.cmd.user_data",
+        "user_data_file": "../../configs/2008.user_data",
         "use_public_ip": true,
         "instance_profile_name": "try-2008",
         "device_map": {
@@ -50,7 +50,7 @@
         "instance_type": "r3.xlarge",
         "distro": "win2008",
         "ssh_key": "aws-releng",
-        "user_data_file": "../../configs/try-2008.cmd.user_data",
+        "user_data_file": "../../configs/2008.user_data",
         "use_public_ip": true,
         "instance_profile_name": "try-2008",
         "device_map": {
