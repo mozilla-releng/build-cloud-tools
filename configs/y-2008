@@ -1,7 +1,7 @@
 {
-    "hostname": "try-2008-ec2-%03d",
+    "hostname": "y-2008-ec2-%03d",
     "us-east-1": {
-        "type": "try-2008",
+        "type": "y-2008",
         "domain": "try.releng.use1.mozilla.com",
         "ami": "ami-1d47b276",
         "subnet_ids": [
@@ -20,7 +20,7 @@
         "ssh_key": "aws-releng",
         "user_data_file": "../../configs/2008.user_data",
         "use_public_ip": true,
-        "instance_profile_name": "try-2008",
+        "instance_profile_name": "y-2008",
         "device_map": {
             "/dev/sda1": {
                 "delete_on_termination": true,
@@ -31,11 +31,11 @@
             }
         },
         "tags": {
-            "moz-type": "try-2008"
+            "moz-type": "y-2008"
         }
     },
     "us-west-2": {
-        "type": "try-2008",
+        "type": "y-2008",
         "domain": "try.releng.usw2.mozilla.com",
         "ami": "ami-9b8bb3ab",
         "subnet_ids": [
@@ -52,7 +52,7 @@
         "ssh_key": "aws-releng",
         "user_data_file": "../../configs/2008.user_data",
         "use_public_ip": true,
-        "instance_profile_name": "try-2008",
+        "instance_profile_name": "y-2008",
         "device_map": {
             "/dev/sda1": {
                 "delete_on_termination": true,
@@ -63,7 +63,7 @@
             }
         },
         "tags": {
-            "moz-type": "try-2008"
+            "moz-type": "y-2008"
         }
     }
 }
