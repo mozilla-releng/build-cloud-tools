@@ -180,7 +180,8 @@ function Disable-PuppetService {{
   Get-Service puppet | Stop-Service -PassThru | Set-Service -StartupType disabled
 
   Write-Log -message 'deleting RunPuppet scheduled task' -severity 'INFO'
-  Unregister-ScheduledTask -TaskName 'RunPuppet' -Confirm:$false
+  $schtasksArgs = @('/delete', '/tn', 'RunPuppet', '/f')
+  & 'schtasks' $schtasksArgs
 }}
 
 function Run-Puppet {{
@@ -216,7 +217,8 @@ function Run-Puppet {{
   & 'puppet' $puppetArgs
 
   Write-Log -message 'deleting RunPuppet scheduled task (again)' -severity 'INFO'
-  Unregister-ScheduledTask -TaskName 'RunPuppet' -Confirm:$false
+  $schtasksArgs = @('/delete', '/tn', 'RunPuppet', '/f')
+  & 'schtasks' $schtasksArgs
 }}
 
 function Is-HostnameSetCorrectly {{
@@ -264,7 +266,7 @@ function Set-Hostname {{
         if ($component.name -eq "Microsoft-Windows-Shell-Setup") {{
           if (-not $component.ComputerName) {{
             $computerNameElement = $xml.CreateElement("ComputerName")
-            $computerNameElement.value = "$hostname"
+            $computerNameElement.AppendChild($xml.CreateTextNode("$hostname"))
             $component.AppendChild($computerNameElement)
             Write-Log -message ('computer name inserted to: {{0}}' -f $sysprepFile) -severity 'DEBUG'
           }} else {{
