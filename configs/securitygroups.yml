@@ -163,13 +163,13 @@ try:
         instances:
             tags:
                 - [moz-type, try-linux64]
-                - [moz-type, try-2008]
+                - [moz-type, y-2008]
                 - [Name, try-linux64-ec2-*]
-                - [Name, try-2008-ec2-*]
+                - [Name, y-2008-ec2-*]
         interfaces:
             tags:
                 - [moz-type, try-linux64]
-                - [moz-type, try-2008]
+                - [moz-type, y-2008]
     inbound:
         include: slave-vlan-inbound
     outbound:
