@@ -15,7 +15,7 @@
         "security_group_ids": [
             "sg-718b1214"
         ],
-        "instance_type": "r3.xlarge",
+        "instance_type": "c3.2xlarge",
         "distro": "win2008",
         "ssh_key": "aws-releng",
         "user_data_file": "../../configs/2008.user_data",
@@ -47,7 +47,7 @@
         "security_group_ids": [
             "sg-3aaa095f"
         ],
-        "instance_type": "r3.xlarge",
+        "instance_type": "c3.2xlarge",
         "distro": "win2008",
         "ssh_key": "aws-releng",
         "user_data_file": "../../configs/2008.user_data",
