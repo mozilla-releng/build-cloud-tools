@@ -366,7 +366,7 @@ $domainCorrect = (Is-DomainSetCorrectly -domainExpected $domain)
 if ($hostnameCorrect -and $domainCorrect) {{
   Write-Log -message ('correct hostname ({{0}}) detected' -f $hostname) -severity 'INFO'
   Write-Log -message ('correct domain ({{0}}) detected' -f $domain) -severity 'INFO'
-  if (Has-PuppetRunSuccessfully) {{
+  if (($hostname.Contains("-spot-")) -or (Has-PuppetRunSuccessfully)) {{
     Write-Log -message 'skipping puppet agent run, prior run detected' -severity 'INFO'
     if (Is-AggregatorConfiguredCorrectly -aggregator "$aggregator") {{
       Write-Log -message 'correct log aggregator config detected' -severity 'INFO'

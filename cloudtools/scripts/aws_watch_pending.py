@@ -22,7 +22,7 @@ from cloudtools.aws import (get_aws_connection, aws_get_running_instances,
                             aws_get_all_instances, filter_spot_instances,
                             filter_ondemand_instances, reduce_by_freshness,
                             distribute_in_region, load_instance_config,
-                            jacuzzi_suffix)
+                            jacuzzi_suffix, get_region_dns_atom)
 from cloudtools.aws.spot import get_spot_requests_for_moztype, \
     usable_spot_choice, get_available_slave_name, get_spot_choices
 from cloudtools.jacuzzi import filter_instances_by_slaveset
@@ -306,7 +306,12 @@ def do_request_instance(region, moz_instance_type, price, ami, instance_config,
         groups=instance_config[region].get("security_group_ids"))
     nc = NetworkInterfaceCollection(spec)
 
-    user_data = user_data_from_template(moz_instance_type, fqdn, region)
+    user_data = user_data_from_template(moz_instance_type, {
+        "hostname": name,
+        "domain": instance_config[region]["domain"],
+        "fqdn": fqdn,
+        "region_dns_atom": get_region_dns_atom(region)})
+
     bdm = create_block_device_mapping(
         ami, instance_config[region]['device_map'])
     if is_spot:

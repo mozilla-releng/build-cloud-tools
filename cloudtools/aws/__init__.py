@@ -141,10 +141,10 @@ def aws_get_all_instances(regions):
 
 @lru_cache(10)
 def get_user_data_tmpl(moz_instance_type):
-    cloud_init_config = os.path.join(INSTANCE_CONFIGS_DIR,
-                                     "%s.cloud-init" % moz_instance_type)
+    user_data_tmpl = os.path.join(INSTANCE_CONFIGS_DIR,
+                                  "%s.user-data" % moz_instance_type)
     try:
-        with open(cloud_init_config) as f:
+        with open(user_data_tmpl) as f:
             return f.read()
     except Exception:
         return None
