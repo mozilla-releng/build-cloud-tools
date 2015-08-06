@@ -18,7 +18,6 @@
         "instance_type": "c3.2xlarge",
         "distro": "win2008",
         "ssh_key": "aws-releng",
-        "user_data_file": "../../configs/2008.user_data",
         "use_public_ip": true,
         "instance_profile_name": "y-2008",
         "device_map": {
@@ -50,7 +49,6 @@
         "instance_type": "c3.2xlarge",
         "distro": "win2008",
         "ssh_key": "aws-releng",
-        "user_data_file": "../../configs/2008.user_data",
         "use_public_ip": true,
         "instance_profile_name": "y-2008",
         "device_map": {
