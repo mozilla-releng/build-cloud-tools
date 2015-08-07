@@ -116,6 +116,31 @@ function Send-Log {{
   Send-MailMessage -To $to -Subject $subject -Body ([IO.File]::ReadAllText($logfile)) -SmtpServer $smtpServer -From $from
 }}
 
+function Enable-UserdataPersist {{
+  <#
+  .Synopsis
+    Sets Ec2ConfigService Ec2HandleUserData to enabled in config.
+  .Description
+    Modifies Ec2ConfigService config file and logs settings at time of check.
+  .Parameter ec2SettingsFile
+    The full path to the config file for Ec2ConfigService.
+  #>
+  param (
+    [string] $ec2SettingsFile = "C:\Program Files\Amazon\Ec2ConfigService\Settings\Config.xml"
+  )
+  [xml]$xml = (Get-Content $ec2SettingsFile)
+  foreach ($plugin in $xml.DocumentElement.Plugins.Plugin) {{
+    Write-Log -message ('plugin state of {{0}} read as: {{1}}, in: {{2}}' -f $plugin.Name, $plugin.State, $ec2SettingsFile) -severity 'DEBUG'
+    if ($plugin.Name -eq "Ec2HandleUserData") {{
+      if ($plugin.State -ne "Enabled") {{
+        Write-Log -message ('changing state of Ec2HandleUserData plugin from: {{0}} to: Enabled, in: {{1}}' -f $plugin.State, $ec2SettingsFile) -severity 'INFO'
+        $plugin.State = "Enabled"
+      }}
+    }}
+  }}
+  $xml.Save($ec2SettingsFile)
+}}
+
 function Stop-ComputerWithDelay {{
   <#
   .Synopsis
@@ -387,6 +412,7 @@ if ($hostnameCorrect -and $domainCorrect) {{
   if ($domainCorrect -ne $true) {{ Set-Domain -domain $domain }}
   Stop-ComputerWithDelay -reason 'host name changed' -restart
 }}
+Enable-UserdataPersist
 
 Send-Log -logfile ('{{0}}\Amazon\Ec2ConfigService\Logs\Ec2ConfigLog.txt' -f $env:ProgramFiles) -subject ('EC2 Config Report for {{0}}.{{1}}' -f $hostname, $domain)
 Send-Log -logfile $global:runLog -subject ('UserData Run Report for {{0}}.{{1}}' -f $hostname, $domain)

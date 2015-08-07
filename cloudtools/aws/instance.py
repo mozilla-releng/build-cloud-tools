@@ -183,13 +183,9 @@ def assimilate_instance(instance, config, ssh_key, instance_data, deploypass,
 
 
 def assimilate_windows(instance, config, instance_data):
-    # Wait for the instance to stop, and then clear its userData and start it
-    # again
+    # Wait for the instance to stop, and then start it again
     log.info("waiting for instance to shut down")
     wait_for_status(instance, 'state', 'stopped', 'update')
-
-    log.info("clearing userData")
-    instance.modify_attribute("userData", None)
     log.info("starting instance")
     instance.start()
     log.info("waiting for instance to start")
