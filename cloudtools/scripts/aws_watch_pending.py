@@ -307,6 +307,7 @@ def do_request_instance(region, moz_instance_type, price, ami, instance_config,
     nc = NetworkInterfaceCollection(spec)
 
     user_data = user_data_from_template(moz_instance_type, {
+        "moz_instance_type": moz_instance_type,
         "hostname": name,
         "domain": instance_config[region]["domain"],
         "fqdn": fqdn,
