@@ -135,6 +135,14 @@ def aws_resume_instances(all_instances, moz_instance_type, start_count,
     return started
 
 
+def get_product_description(moz_instance_type):
+    # http://docs.aws.amazon.com/sdkforruby/api/Aws/EC2/Types/DescribeReservedInstancesOfferingsRequest.html
+    # https://boto3.readthedocs.org/en/latest/reference/services/ec2.html#EC2.Client.request_spot_instances
+    if moz_instance_type in ["y-2008", "b-2008"]:
+        return "Windows (Amazon VPC)"
+    return "Linux/UNIX (Amazon VPC)"
+
+
 def request_spot_instances(all_instances, moz_instance_type, start_count,
                            regions, region_priorities, spot_config, dryrun,
                            slaveset, latest_ami_percentage):
@@ -146,8 +154,8 @@ def request_spot_instances(all_instances, moz_instance_type, start_count,
 
     instance_config = load_instance_config(moz_instance_type)
     connections = [get_aws_connection(r) for r in regions]
-    spot_choices = get_spot_choices(connections, spot_rules,
-                                    "Linux/UNIX (Amazon VPC)")
+    product_description = get_product_description(moz_instance_type)
+    spot_choices = get_spot_choices(connections, spot_rules, product_description)
     if not spot_choices:
         log.warn("No spot choices for %s", moz_instance_type)
         return 0
