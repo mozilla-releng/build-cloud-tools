@@ -275,7 +275,7 @@ class AWSInstance(object):
            Unknown type TYPE
            where TYPE is the content of moz-type tag
            it returns an empty sting is moz-state is 'ready'"""
-        return "{0} ({1}, {2}) Unknown type: '{2}'".format(
+        return "{0} ({1}, {2}) Unknown type: '{3}'".format(
             self.get_name(), self.get_id(), self.get_region(),
             self._get_moz_type())
 
