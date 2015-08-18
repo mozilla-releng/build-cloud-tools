@@ -14,6 +14,18 @@ def test_bld_linux64():
     assert slave_moz_type(slave) == "bld-linux64"
 
 
+def test_av_linux64():
+    slave = {
+        "bitlength": "64",
+        "environment": "prod",
+        "distro": "centos6-mock",
+        "purpose": "build",
+        "trustlevel": "core",
+        "name": "av-linux64-spot-001"
+    }
+    assert slave_moz_type(slave) == "av-linux64"
+
+
 def test_try_linux64():
     slave = {
         "bitlength": "64",

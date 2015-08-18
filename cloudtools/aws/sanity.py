@@ -18,12 +18,12 @@ BUILDAPI_URL = "http://buildapi.pvt.build.mozilla.org/buildapi/recent/" \
     "{slave_name}"
 
 SLAVE_TAGS = ('try-linux64', 'tst-linux32', 'tst-linux64', 'tst-emulator64',
-              'bld-linux64')
+              'bld-linux64', 'av-linux64')
 
 KNOWN_TYPES = ('puppetmaster', 'buildbot-master', 'dev-linux64', 'infra',
                'bld-linux64', 'try-linux64', 'tst-linux32', 'tst-linux64',
                'tst-emulator64', 'tst-win64', 'dev', 'packager',
-               'vcssync', "signing")
+               'vcssync', "signing", 'av-linux64')
 
 EXPECTED_MAX_UPTIME = {
     "puppetmaster": "meh",
@@ -33,6 +33,7 @@ EXPECTED_MAX_UPTIME = {
     "vcssync": "meh",
     "dev-linux64": 8,
     "bld-linux64": 24,
+    "av-linux64": 24,
     "try-linux64": 12,
     "tst-linux32": 12,
     "tst-linux64": 12,
@@ -48,6 +49,7 @@ EXPECTED_MAX_DOWNTIME = {
     "vcssync": 0,
     "dev-linux64": 72,
     "bld-linux64": 72,
+    "av-linux64": 72,
     "try-linux64": 72,
     "tst-linux32": 72,
     "tst-linux64": 72,
