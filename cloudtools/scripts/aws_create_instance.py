@@ -15,7 +15,8 @@ from cloudtools.aws import get_aws_connection, get_vpc, \
     name_available, wait_for_status, get_region_dns_atom
 from cloudtools.dns import get_ip, get_ptr
 from cloudtools.aws.instance import assimilate_instance, \
-    make_instance_interfaces, user_data_from_template
+    make_instance_interfaces, user_data_from_template, \
+    pick_puppet_master
 from cloudtools.aws.vpc import get_subnet_id, ip_available
 from cloudtools.aws.ami import ami_cleanup, volume_to_ami, copy_ami, \
     get_ami
@@ -108,8 +109,9 @@ def create_instance(name, config, region, key_name, ssh_key, instance_data,
     keep_going, attempt = True, 1
     while keep_going:
         try:
+            puppet_master = pick_puppet_master(instance_data.get('puppet_masters'))
             user_data = user_data_from_template(config['type'], {
-                "puppet_server": instance_data.get('default_puppet_server'),
+                "puppet_server": puppet_master,
                 "fqdn": instance_data['hostname'],
                 "hostname": instance_data['name'],
                 "domain": instance_data['domain'],
