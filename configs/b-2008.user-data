@@ -53,7 +53,7 @@ param (
   # accept tokens from cloud-tools (change tokens to actual values if running outside cloud-tools)
   [string] $hostname = '{hostname}',
   [string] $domain = '{domain}',
-  [string] $puppetServer = '{puppet_server}',
+  #[string] $puppetServer = '{{puppet_server}}',
   [string] $aggregator = 'log-aggregator.srv.releng.{region_dns_atom}.mozilla.com',
 
   # runtime configuration
