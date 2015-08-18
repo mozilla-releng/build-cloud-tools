@@ -1,4 +1,4 @@
-# build-cloud-tools
+# build-cloud-tools [![Build Status](https://travis-ci.org/mozilla/build-cloud-tools.png)](https://travis-ci.org/mozilla/build-cloud-tools)
 
 ## Installation
 
