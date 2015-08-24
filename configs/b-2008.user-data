@@ -97,6 +97,7 @@ Import-Module Ec2UserdataUtils
 
 # create the log directory if it doesn't exist
 New-Item -ItemType Directory -Force -Path $logDir
+Disable-WindowsUpdate
 Disable-PuppetService
 $hostnameCorrect = (Is-HostnameSetCorrectly -hostnameExpected $hostname)
 $domainCorrect = (Is-DomainSetCorrectly -domainExpected $domain)
