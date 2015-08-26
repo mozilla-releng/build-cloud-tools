@@ -47,6 +47,15 @@ def slave_moz_type(slave):
     if slave.get("name") and "golden" in slave.get("name"):
         return "golden"
 
+    # av-linux64
+    if slave.get("name", "").startswith("av-linux64-") and \
+       slave.get("bitlength") == "64" and \
+       slave.get("environment") == "prod" and \
+       slave.get("distro") == "centos6-mock" and \
+       slave.get("purpose") == "build" and \
+       slave.get("trustlevel") == "core":
+        return "av-linux64"
+
     # bld-linux64
     if slave.get("bitlength") == "64" and \
        slave.get("environment") == "prod" and \

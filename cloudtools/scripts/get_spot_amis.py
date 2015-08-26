@@ -22,7 +22,7 @@ def main():
         regions = DEFAULT_REGIONS
     if not moz_instance_types:
         moz_instance_types = ["bld-linux64", "try-linux64", "tst-linux64",
-                              "tst-linux32", "tst-emulator64"]
+                              "tst-linux32", "tst-emulator64", "av-linux64"]
 
     for region in regions:
         for moz_instance_type in moz_instance_types:
