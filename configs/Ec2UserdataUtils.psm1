@@ -21,14 +21,17 @@ function Write-Log {
     [string] $severity = 'INFO',
     [string] $path = ('{0}\log\userdata-run.log' -f $env:SystemDrive)
   )
-  if (Test-Path $path) {
-    Add-Content -Path $path ('{0} [{1}] {2}' -f [DateTime]::Now.ToString("yyyy-MM-dd HH:mm:ss"), $severity, $message)
-  } else {
+  if (!(Test-Path $path)) {
+    [Environment]::SetEnvironmentVariable('OutputToConsole', 'true', 'Process')
+  }
+  $formattedMessage = ('{0} [{1}] {2}' -f [DateTime]::Now.ToString("yyyy-MM-dd HH:mm:ss"), $severity, $message)
+  Add-Content -Path $path -Value $formattedMessage
+  if ($env:OutputToConsole -eq 'true') {
     switch ($severity) 
     {
-      'DEBUG' { Write-Host ('{0} [{1}] {2}' -f [DateTime]::Now.ToString("yyyy-MM-dd HH:mm:ss"), $severity, $message) -ForegroundColor 'DarkGray' }
-      'ERROR' { Write-Host ('{0} [{1}] {2}' -f [DateTime]::Now.ToString("yyyy-MM-dd HH:mm:ss"), $severity, $message) -ForegroundColor 'Red' }
-      default { Write-Host ('{0} [{1}] {2}' -f [DateTime]::Now.ToString("yyyy-MM-dd HH:mm:ss"), $severity, $message) }
+      'DEBUG' { Write-Host -Object $formattedMessage -ForegroundColor 'DarkGray' }
+      'ERROR' { Write-Host -Object $formattedMessage -ForegroundColor 'Red' }
+      default { Write-Host -Object $formattedMessage }
     }
   }
 }
