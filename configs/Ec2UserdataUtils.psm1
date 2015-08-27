@@ -166,7 +166,7 @@ function Has-PuppetRunSuccessfully {
   param (
     [string] $puppetLog
   )
-  if ((Test-Path $puppetLog) -and (Does-FileContain -haystack $puppetLog -needle "Puppet (notice): Finished catalog run")) {
+  if ((Test-Path $puppetLog) -and (Does-FileContain -haystack $puppetLog -needle "Puppet \(notice\): Finished catalog run")) {
     return $true
   } else {
     return $false
