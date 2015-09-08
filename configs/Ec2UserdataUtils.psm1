@@ -387,3 +387,23 @@ function Set-Aggregator {
     Write-Log -message "log aggregator set to: $aggregator" -severity 'INFO'
   }
 }
+
+function Disable-Firewall {
+  <#
+  .Synopsis
+    Disables the Windows Firewall for the specified profile.
+  .Parameter profile
+    The profile to disable the firewall under. Defaults to CurrentProfile.
+  #>
+  param (
+    [string] $profile = 'AllProfiles'
+  )
+  Write-Log -message 'disabling Windows Firewall' -severity 'INFO'
+  $netshArgs = @('advfirewall', 'set', $profile, 'state', 'off')
+  & 'netsh' $netshArgs
+  #Set-ItemProperty -path HKLM:\Software\Policies\Microsoft\WindowsFirewall\DomainProfile -name EnableFirewall -value 0
+  #Set-ItemProperty -path HKLM:\Software\Policies\Microsoft\WindowsFirewall\PrivateProfile -name EnableFirewall -value 0
+  #Set-ItemProperty -path HKLM:\Software\Policies\Microsoft\WindowsFirewall\PublicProfile -name EnableFirewall -value 0
+  # setting the keys above has no effect due to a group policy setting. removing the section, has the desired effect.
+  Remove-Item -path HKLM:\Software\Policies\Microsoft\WindowsFirewall -recurse -force
+}
