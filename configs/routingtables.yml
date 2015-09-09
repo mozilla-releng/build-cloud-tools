@@ -32,6 +32,9 @@ us-west-2:
             207.171.160.0/19: IGW
 
             aus4.mozilla.org: IGW
+            upload.ffxbld.productdelivery.prod.mozaws.net: IGW
+            upload.trybld.productdelivery.prod.mozaws.net: IGW
+            upload.tbirdbld.productdelivery.prod.mozaws.net: IGW
 
             # papertrail servers
             173.247.96.0/19: IGW
@@ -90,6 +93,10 @@ us-west-2:
             hg.mozilla.org: IGW
             git.mozilla.org: IGW
             aus4.mozilla.org: IGW
+            upload.ffxbld.productdelivery.prod.mozaws.net: IGW
+            upload.tbirdbld.productdelivery.prod.mozaws.net: IGW
+            upload.ffxbld.productdelivery.stage.mozaws.net: IGW
+            upload.tbirdbld.productdelivery.stage.mozaws.net: IGW
 
             10.132.0.0/16: local
             0.0.0.0/0: VGW
@@ -115,6 +122,8 @@ us-west-2:
             hg.mozilla.org: IGW
             git.mozilla.org: IGW
             aus4.mozilla.org: IGW
+            upload.trybld.productdelivery.prod.mozaws.net: IGW
+            upload.trybld.productdelivery.stage.mozaws.net: IGW
 
             10.132.0.0/16: local
             0.0.0.0/0: VGW
@@ -161,6 +170,12 @@ us-east-1:
             207.171.160.0/19: IGW
 
             aus4.mozilla.org: IGW
+            upload.ffxbld.productdelivery.prod.mozaws.net: IGW
+            upload.trybld.productdelivery.prod.mozaws.net: IGW
+            upload.tbirdbld.productdelivery.prod.mozaws.net: IGW
+            upload.ffxbld.productdelivery.stage.mozaws.net: IGW
+            upload.trybld.productdelivery.stage.mozaws.net: IGW
+            upload.tbirdbld.productdelivery.stage.mozaws.net: IGW
 
             # papertrail servers
             173.247.96.0/19: IGW
@@ -219,6 +234,10 @@ us-east-1:
             hg.mozilla.org: IGW
             git.mozilla.org: IGW
             aus4.mozilla.org: IGW
+            upload.ffxbld.productdelivery.prod.mozaws.net: IGW
+            upload.tbirdbld.productdelivery.prod.mozaws.net: IGW
+            upload.ffxbld.productdelivery.stage.mozaws.net: IGW
+            upload.tbirdbld.productdelivery.stage.mozaws.net: IGW
 
             10.134.0.0/16: local
             0.0.0.0/0: VGW
@@ -245,6 +264,8 @@ us-east-1:
             hg.mozilla.org: IGW
             git.mozilla.org: IGW
             aus4.mozilla.org: IGW
+            upload.trybld.productdelivery.prod.mozaws.net: IGW
+            upload.trybld.productdelivery.stage.mozaws.net: IGW
 
             10.134.0.0/16: local
             0.0.0.0/0: VGW
