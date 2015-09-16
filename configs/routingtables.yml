@@ -14,6 +14,7 @@ us-west-2:
             205.251.192.0/18: IGW
             207.171.160.0/19: IGW
             aus4.mozilla.org: IGW
+            aus5.mozilla.org: IGW
 
             10.132.0.0/16: local
             0.0.0.0/0: VGW
@@ -32,6 +33,7 @@ us-west-2:
             207.171.160.0/19: IGW
 
             aus4.mozilla.org: IGW
+            aus5.mozilla.org: IGW
             upload.ffxbld.productdelivery.prod.mozaws.net: IGW
             upload.trybld.productdelivery.prod.mozaws.net: IGW
             upload.tbirdbld.productdelivery.prod.mozaws.net: IGW
@@ -67,6 +69,7 @@ us-west-2:
             hg.mozilla.org: IGW
             git.mozilla.org: IGW
             aus4.mozilla.org: IGW
+            aus5.mozilla.org: IGW
 
             10.132.0.0/16: local
             0.0.0.0/0: VGW
@@ -93,6 +96,7 @@ us-west-2:
             hg.mozilla.org: IGW
             git.mozilla.org: IGW
             aus4.mozilla.org: IGW
+            aus5.mozilla.org: IGW
             upload.ffxbld.productdelivery.prod.mozaws.net: IGW
             upload.tbirdbld.productdelivery.prod.mozaws.net: IGW
             upload.ffxbld.productdelivery.stage.mozaws.net: IGW
@@ -122,6 +126,7 @@ us-west-2:
             hg.mozilla.org: IGW
             git.mozilla.org: IGW
             aus4.mozilla.org: IGW
+            aus5.mozilla.org: IGW
             upload.trybld.productdelivery.prod.mozaws.net: IGW
             upload.trybld.productdelivery.stage.mozaws.net: IGW
 
@@ -142,6 +147,7 @@ us-west-2:
             207.171.160.0/19: IGW
 
             aus4.mozilla.org: IGW
+            aus5.mozilla.org: IGW
 
             # papertrail servers
             173.247.96.0/19: IGW
@@ -170,6 +176,7 @@ us-east-1:
             207.171.160.0/19: IGW
 
             aus4.mozilla.org: IGW
+            aus5.mozilla.org: IGW
             upload.ffxbld.productdelivery.prod.mozaws.net: IGW
             upload.trybld.productdelivery.prod.mozaws.net: IGW
             upload.tbirdbld.productdelivery.prod.mozaws.net: IGW
@@ -208,6 +215,7 @@ us-east-1:
             git.mozilla.org: IGW
             ftp-ssl.mozilla.org: IGW
             aus4.mozilla.org: IGW
+            aus5.mozilla.org: IGW
 
             10.134.0.0/16: local
             0.0.0.0/0: VGW
@@ -234,6 +242,7 @@ us-east-1:
             hg.mozilla.org: IGW
             git.mozilla.org: IGW
             aus4.mozilla.org: IGW
+            aus5.mozilla.org: IGW
             upload.ffxbld.productdelivery.prod.mozaws.net: IGW
             upload.tbirdbld.productdelivery.prod.mozaws.net: IGW
             upload.ffxbld.productdelivery.stage.mozaws.net: IGW
@@ -264,6 +273,7 @@ us-east-1:
             hg.mozilla.org: IGW
             git.mozilla.org: IGW
             aus4.mozilla.org: IGW
+            aus5.mozilla.org: IGW
             upload.trybld.productdelivery.prod.mozaws.net: IGW
             upload.trybld.productdelivery.stage.mozaws.net: IGW
 
@@ -297,6 +307,7 @@ us-east-1:
             207.171.160.0/19: IGW
 
             aus4.mozilla.org: IGW
+            aus5.mozilla.org: IGW
 
             # papertrail servers
             173.247.96.0/19: IGW
