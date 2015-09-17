@@ -301,9 +301,11 @@ function Set-Hostname {
             $computerNameElement.AppendChild($xml.CreateTextNode("$hostname"))
             $component.AppendChild($computerNameElement)
             Write-Log -message ('computer name inserted to: {0}' -f $sysprepFile) -severity 'DEBUG'
-          } else if ($component.ComputerName.InnerText -ne "$hostname") {
-            $component.ComputerName.InnerText = "$hostname"
-            Write-Log -message ('computer name updated in: {0}' -f $sysprepFile) -severity 'DEBUG'
+          } else {
+            if ($component.ComputerName.InnerText -ne "$hostname") {
+              $component.ComputerName.InnerText = "$hostname"
+              Write-Log -message ('computer name updated in: {0}' -f $sysprepFile) -severity 'DEBUG'
+            }
           }
         }
       }
