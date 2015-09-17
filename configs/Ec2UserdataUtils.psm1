@@ -409,3 +409,12 @@ function Disable-Firewall {
     Remove-Item -path $registryKey -recurse -force
   }
 }
+
+function Flush-EventLog {
+  <#
+  .Synopsis
+    Removes all entries from the event log. Used right before golden ami capture for a clean slate image.
+  #>
+  Write-Log -message 'flushing the Windows EventLog' -severity 'INFO'
+  wevtutil el | % { wevtutil cl $_ }
+}
