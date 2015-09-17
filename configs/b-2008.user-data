@@ -120,6 +120,7 @@ if ($hostnameCorrect -and $domainCorrect) {{
     #Run-Puppet -hostname $hostname -domain $domain -puppetServer $puppetServer -logdest $puppetLog
     Run-Puppet -hostname $hostname -domain $domain -logdest $puppetLog
     Send-Log -logfile $puppetLog -subject ('Puppet Agent Report for {{0}}.{{1}}' -f $hostname, $domain) -to $logRecipients -from $logSender
+    Flush-EventLog
     Stop-ComputerWithDelay -reason 'userdata golden puppet run complete'
   }}
 }} else {{
