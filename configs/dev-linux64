@@ -13,10 +13,14 @@
         "instance_profile_name": "try-linux64",
         "device_map": {
             "/dev/xvda": {
-                "size": 250,
                 "delete_on_termination": true,
                 "skip_resize": true,
                 "instance_dev": "/dev/xvda1"
+            },
+            "/dev/xvdb": {
+                "size": 150,
+                "delete_on_termination": true,
+                "skip_resize": true
             }
         }
     },
@@ -33,10 +37,14 @@
         "instance_profile_name": "try-linux64",
         "device_map": {
             "/dev/xvda": {
-                "size": 250,
                 "delete_on_termination": true,
                 "skip_resize": true,
                 "instance_dev": "/dev/xvda1"
+            },
+            "/dev/xvdb": {
+                "size": 150,
+                "delete_on_termination": true,
+                "skip_resize": true
             }
         }
     }
