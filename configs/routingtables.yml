@@ -37,6 +37,9 @@ us-west-2:
             upload.ffxbld.productdelivery.prod.mozaws.net: IGW
             upload.trybld.productdelivery.prod.mozaws.net: IGW
             upload.tbirdbld.productdelivery.prod.mozaws.net: IGW
+            upload.ffxbld.productdelivery.stage.mozaws.net: IGW
+            upload.trybld.productdelivery.stage.mozaws.net: IGW
+            upload.tbirdbld.productdelivery.stage.mozaws.net: IGW
 
             # papertrail servers
             173.247.96.0/19: IGW
