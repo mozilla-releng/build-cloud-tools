@@ -58,6 +58,146 @@ includes:
         - include: infra-puppetize
         - include: global-ping
 
+    outbound-http-https:
+        proto: tcp
+        ports: [80,443]
+        hosts:
+            - 0.0.0.0/0
+
+    outbound-git:
+        proto: tcp
+        ports: [9418,22]  # N.B. allows SSH too
+        hosts:
+            - 192.30.252.0/22 # github (https://api.github.com/meta)
+            - 198.145.11.235  # codeaurora
+
+    outbound-ssh-upload-build:
+        proto: tcp
+        ports: [22]
+        hosts:
+            - upload.tbirdbld.productdelivery.prod.mozaws.net
+            - upload.tbirdbld.productdelivery.stage.mozaws.net
+            - upload.ffxbld.productdelivery.prod.mozaws.net
+            - upload.ffxbld.productdelivery.stage.mozaws.net
+
+    outbound-ssh-upload-try:
+        proto: tcp
+        ports: [22]
+        hosts:
+            - upload.trybld.productdelivery.prod.mozaws.net
+            - upload.trybld.productdelivery.stage.mozaws.net
+
+    outbound-ssh-b2gupdate:
+        proto: tcp
+        ports: [22]
+        hosts:
+            - 184.73.70.191 # b2g update server (bug 786882)
+
+    outbound-amqp-amqps:
+        proto: tcp
+        ports: [5671, 5672]
+        hosts:
+            - orange-antelope.rmq.cloudamqp.com
+            - orange-antelope-01.rmq.cloudamqp.com
+            - orange-antelope-02.rmq.cloudamqp.com
+            - orange-antelope-03.rmq.cloudamqp.com
+
+    outbound-stun-tcp:
+        proto: tcp
+        ports: [42]
+        hosts:
+            - 23.21.150.121
+            - expo.mit.edu
+            - 216.93.246.14
+
+    outbound-stun-udp:
+        proto: udp
+        ports: [42]
+        hosts:
+            - 23.21.150.121
+            - expo.mit.edu
+            - 216.93.246.14
+
+    outbound-carbon:
+        proto: tcp
+        ports: [2003]
+        hosts:
+            - carbon.hostedgraphite.com
+            - mozilla.carbon.hostedgraphite.com
+
+    outbound-influx:
+        proto: tcp
+        ports: [8087]
+        hosts:
+            - goldiewilson-onepointtwentyone-1.c.influxdb.com
+
+    outbound-irc:
+        proto: tcp
+        ports: [6697]
+        hosts:
+            - 0.0.0.0/0
+
+    outbound-ntp:
+        proto: udp
+        ports: [123]
+        hosts:
+            - 0.0.0.0/0
+
+    outbound-papertrail:
+        proto: tcp
+        ports: [45266]
+        hosts:
+            - 67.214.208.0/20
+            - 173.247.96.0/19
+
+    outbound-mozilla:
+        # all outbound traffic to mozilla nets is filtered at the destination
+        proto: -1
+        hosts:
+            - 10.0.0.0/8
+
+    test-slave-vlan-outbound:
+        - include: outbound-mozilla
+        - include: outbound-http-https
+        - include: outbound-git
+        - include: outbound-amqp-amqps
+        - include: outbound-stun-tcp
+        - include: outbound-stun-udp
+        - include: outbound-carbon
+        - include: outbound-influx
+        - include: outbound-irc
+        - include: outbound-ntp
+        - include: global-ping
+
+    try-slave-vlan-outbound:
+        - include: outbound-mozilla
+        - include: outbound-http-https
+        - include: outbound-git
+        - include: outbound-ssh-upload-try
+        - include: outbound-ssh-b2gupdate
+        - include: outbound-amqp-amqps
+        - include: outbound-stun-tcp
+        - include: outbound-stun-udp
+        - include: outbound-carbon
+        - include: outbound-influx
+        - include: outbound-irc
+        - include: outbound-ntp
+        - include: global-ping
+
+    build-slave-vlan-outbound:
+        - include: outbound-mozilla
+        - include: outbound-http-https
+        - include: outbound-git
+        - include: outbound-ssh-upload-build
+        - include: outbound-amqp-amqps
+        - include: outbound-stun-tcp
+        - include: outbound-stun-udp
+        - include: outbound-carbon
+        - include: outbound-influx
+        - include: outbound-irc
+        - include: outbound-ntp
+        - include: global-ping
+
     slave-vlan-outbound:
         - include: global-any
 
@@ -131,6 +271,17 @@ tests:
     outbound:
         include: slave-vlan-outbound
 
+tests-new:
+    description: security group for test slaves, limited outbound
+    regions:
+        us-west-1: vpc-7a7dd613
+        us-west-2: vpc-cd63f2a4
+        us-east-1: vpc-b42100df
+    inbound:
+        include: slave-vlan-inbound
+    outbound:
+        include: test-slave-vlan-outbound
+
 build:
     description: security group for build slaves
     regions:
@@ -156,6 +307,17 @@ build:
     outbound:
         include: slave-vlan-outbound
 
+build-new:
+    description: security group for build slaves, limited outbound
+    regions:
+        us-west-1: vpc-7a7dd613
+        us-west-2: vpc-cd63f2a4
+        us-east-1: vpc-b42100df
+    inbound:
+        include: slave-vlan-inbound
+    outbound:
+        include: build-slave-vlan-outbound
+
 try:
     description: security group for try build slaves
     regions:
@@ -177,6 +339,17 @@ try:
         include: slave-vlan-inbound
     outbound:
         include: slave-vlan-outbound
+
+try-new:
+    description: security group for try build slaves, limited outbound
+    regions:
+        us-west-1: vpc-7a7dd613
+        us-west-2: vpc-cd63f2a4
+        us-east-1: vpc-b42100df
+    inbound:
+        include: slave-vlan-inbound
+    outbound:
+        include: try-slave-vlan-outbound
 
 buildbot-master:
     description: security group for buildbot masters
@@ -218,6 +391,7 @@ buildbot-master:
         - include: infra-puppetize
         - include: global-ping
     outbound:
+        # TODO: bug 1210137
         - include: global-any
 
 puppet-master:
@@ -252,6 +426,7 @@ puppet-master:
         - include: infra-puppetize
         - include: global-ping
     outbound:
+        # TODO: bug 1210137
         - include: global-any
 
 blobber:
@@ -269,6 +444,7 @@ blobber:
         - include: infra-puppetize
         - include: global-ping
     outbound:
+        # TODO: bug 1210137
         - include: global-any
 
 nagios:
@@ -304,6 +480,7 @@ proxxy-vpc-use1:
         - include: observium
         - include: global-ping
     outbound:
+        # TODO: bug 1210137
         - include: global-any
 
 proxxy-vpc-usw2:
@@ -324,6 +501,7 @@ proxxy-vpc-usw2:
         - include: observium
         - include: global-ping
     outbound:
+        # TODO: bug 1210137
         - include: global-any
 
 LogAggregators:
@@ -345,6 +523,7 @@ LogAggregators:
         - include: observium
         - include: global-ping
     outbound:
+        # TODO: bug 1210137
         - include: global-any
 
 VCSSync:
@@ -359,6 +538,7 @@ VCSSync:
         - include: observium
         - include: global-ping
     outbound:
+        # TODO: bug 1210137
         - include: global-any
 
 signing-worker:
@@ -379,4 +559,5 @@ signing-worker:
         - include: global-ping
         - include: aws-manager-ssh
     outbound:
+        # TODO: bug 1210137
         - include: global-any
