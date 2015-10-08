@@ -87,12 +87,6 @@ includes:
             - upload.trybld.productdelivery.prod.mozaws.net
             - upload.trybld.productdelivery.stage.mozaws.net
 
-    outbound-ssh-b2gupdate:
-        proto: tcp
-        ports: [22]
-        hosts:
-            - 184.73.70.191 # b2g update server (bug 786882)
-
     outbound-amqp-amqps:
         proto: tcp
         ports: [5671, 5672]
@@ -174,7 +168,6 @@ includes:
         - include: outbound-http-https
         - include: outbound-git
         - include: outbound-ssh-upload-try
-        - include: outbound-ssh-b2gupdate
         - include: outbound-amqp-amqps
         - include: outbound-stun-tcp
         - include: outbound-stun-udp
