@@ -116,8 +116,7 @@ includes:
         proto: tcp
         ports: [2003]
         hosts:
-            - carbon.hostedgraphite.com
-            - mozilla.carbon.hostedgraphite.com
+            - 0.0.0.0/0
 
     outbound-influx:
         proto: tcp
