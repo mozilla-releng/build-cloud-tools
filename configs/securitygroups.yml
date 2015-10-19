@@ -128,7 +128,10 @@ includes:
         proto: tcp
         ports: [6697]
         hosts:
-            - 0.0.0.0/0
+            - 54.72.42.192/32
+            - 54.219.165.167/32
+            - 54.85.60.193/32
+            - 63.245.216.214/32
 
     outbound-ntp:
         proto: udp
@@ -158,7 +161,6 @@ includes:
         - include: outbound-stun-udp
         - include: outbound-carbon
         - include: outbound-influx
-        - include: outbound-irc
         - include: outbound-ntp
         - include: global-ping
 
@@ -172,7 +174,6 @@ includes:
         - include: outbound-stun-udp
         - include: outbound-carbon
         - include: outbound-influx
-        - include: outbound-irc
         - include: outbound-ntp
         - include: global-ping
 
@@ -186,7 +187,6 @@ includes:
         - include: outbound-stun-udp
         - include: outbound-carbon
         - include: outbound-influx
-        - include: outbound-irc
         - include: outbound-ntp
         - include: global-ping
 
