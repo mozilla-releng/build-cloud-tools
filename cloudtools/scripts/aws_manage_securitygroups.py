@@ -5,6 +5,7 @@ import yaml
 import boto.ec2
 import dns.resolver
 import sys
+import time
 
 from cloudtools.yaml import process_includes
 
@@ -265,6 +266,8 @@ def main():
                     vpc_id=sg_config['regions'][region],
                     description=sg_config['description'],
                 )
+                log.info("Waiting for group to propagate")
+                time.sleep(5)
                 # Fetch it again so we get all the rules
                 log.info("Re-loading group %s", sg_name)
                 remote_sg = conn.get_all_security_groups(
