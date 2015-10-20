@@ -264,17 +264,6 @@ tests:
     inbound:
         include: slave-vlan-inbound
     outbound:
-        include: slave-vlan-outbound
-
-tests-new:
-    description: security group for test slaves, limited outbound
-    regions:
-        us-west-1: vpc-7a7dd613
-        us-west-2: vpc-cd63f2a4
-        us-east-1: vpc-b42100df
-    inbound:
-        include: slave-vlan-inbound
-    outbound:
         include: test-slave-vlan-outbound
 
 build:
@@ -300,17 +289,6 @@ build:
     inbound:
         include: slave-vlan-inbound
     outbound:
-        include: slave-vlan-outbound
-
-build-new:
-    description: security group for build slaves, limited outbound
-    regions:
-        us-west-1: vpc-7a7dd613
-        us-west-2: vpc-cd63f2a4
-        us-east-1: vpc-b42100df
-    inbound:
-        include: slave-vlan-inbound
-    outbound:
         include: build-slave-vlan-outbound
 
 try:
@@ -330,17 +308,6 @@ try:
             tags:
                 - [moz-type, try-linux64]
                 - [moz-type, y-2008]
-    inbound:
-        include: slave-vlan-inbound
-    outbound:
-        include: slave-vlan-outbound
-
-try-new:
-    description: security group for try build slaves, limited outbound
-    regions:
-        us-west-1: vpc-7a7dd613
-        us-west-2: vpc-cd63f2a4
-        us-east-1: vpc-b42100df
     inbound:
         include: slave-vlan-inbound
     outbound:
