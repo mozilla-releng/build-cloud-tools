@@ -60,6 +60,8 @@ us-west-2:
             178.236.0.0/21: IGW
             205.251.192.0/18: IGW
             207.171.160.0/19: IGW
+            # cloudfront for ftp/ftp-ssl/archive.m.o
+            54.192.0.0/16: IGW
 
             # For graphite
             carbon.hostedgraphite.com: IGW
@@ -88,6 +90,8 @@ us-west-2:
             178.236.0.0/21: IGW
             205.251.192.0/18: IGW
             207.171.160.0/19: IGW
+            # cloudfront for ftp/ftp-ssl/archive.m.o
+            54.192.0.0/16: IGW
 
             # For graphite
             carbon.hostedgraphite.com: IGW
@@ -117,6 +121,8 @@ us-west-2:
             178.236.0.0/21: IGW
             205.251.192.0/18: IGW
             207.171.160.0/19: IGW
+            # cloudfront for ftp/ftp-ssl/archive.m.o
+            54.192.0.0/16: IGW
 
             # For graphite
             carbon.hostedgraphite.com: IGW
@@ -203,6 +209,8 @@ us-east-1:
             178.236.0.0/21: IGW
             205.251.192.0/18: IGW
             207.171.160.0/19: IGW
+            # cloudfront for ftp/ftp-ssl/archive.m.o
+            54.192.0.0/16: IGW
 
             # For graphite
             carbon.hostedgraphite.com: IGW
@@ -231,6 +239,8 @@ us-east-1:
             178.236.0.0/21: IGW
             205.251.192.0/18: IGW
             207.171.160.0/19: IGW
+            # cloudfront for ftp/ftp-ssl/archive.m.o
+            54.192.0.0/16: IGW
 
             # For graphite
             carbon.hostedgraphite.com: IGW
@@ -261,6 +271,8 @@ us-east-1:
             178.236.0.0/21: IGW
             205.251.192.0/18: IGW
             207.171.160.0/19: IGW
+            # cloudfront for ftp/ftp-ssl/archive.m.o
+            54.192.0.0/16: IGW
 
             # For graphite
             carbon.hostedgraphite.com: IGW
