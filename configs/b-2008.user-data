@@ -60,7 +60,9 @@ param (
   [string] $logDir = ('{{0}}\log' -f $env:SystemDrive),
   [string] $smtpServer = 'smtp.mail.scl3.mozilla.com',
   [string] $logSender = ('{{0}}@{{1}}.{{2}}' -f $env:USERNAME, $hostname, $domain),
-  [string[]] $logRecipients = @('releng-puppet-mail@mozilla.com')
+  [string[]] $logRecipients = @('releng-puppet-mail@mozilla.com'),
+
+  [string] $buildUsername = 'cltbld'
 )
 # runtime configuration
 $runLog = [IO.Path]::Combine($logDir, 'userdata-run.log')
@@ -85,8 +87,13 @@ function Download-Module {{
   )
   $filename = $url.Substring($url.LastIndexOf('/') + 1)
   $moduleName = [IO.Path]::GetFileNameWithoutExtension($filename)
-  New-Item -ItemType Directory -Force -Path ('{{0}}\{{1}}' -f $modulesPath, $moduleName)
-  (New-Object Net.WebClient).DownloadFile($url, ('{{0}}\{{1}}\{{2}}' -f $modulesPath, $moduleName, $filename))
+  $modulePath = ('{{0}}\{{1}}' -f $modulesPath, $moduleName)
+  if (Test-Path $modulePath) {{
+    Remove-Module $moduleName -ErrorAction SilentlyContinue
+    Remove-Item -path $modulePath -recurse -force
+  }}
+  New-Item -ItemType Directory -Force -Path $modulePath
+  (New-Object Net.WebClient).DownloadFile($url, ('{{0}}\{{1}}' -f $modulePath, $filename))
 }}
 
 # download and import the Ec2UserdataUtils module
@@ -97,42 +104,26 @@ Import-Module Ec2UserdataUtils
 
 # create the log directory if it doesn't exist
 New-Item -ItemType Directory -Force -Path $logDir
+Set-Ec2ConfigPluginsState
+Set-Timezone
 Disable-Firewall 
 Disable-WindowsUpdate
-Disable-PuppetService
+
+Install-BasePrerequisites -aggregator $aggregator
+Rename-Admin
+
 $hostnameCorrect = (Is-HostnameSetCorrectly -hostnameExpected $hostname)
 $domainCorrect = (Is-DomainSetCorrectly -domainExpected $domain)
 if ($hostnameCorrect -and $domainCorrect) {{
-  Write-Log -message ('correct hostname ({{0}}) detected' -f $hostname) -severity 'INFO'
-  Write-Log -message ('correct domain ({{0}}) detected' -f $domain) -severity 'INFO'
-  if (($hostname.Contains("-spot-")) -or (Has-PuppetRunSuccessfully -puppetLog $puppetLog)) {{
-    Write-Log -message 'skipping puppet agent run, prior run detected' -severity 'INFO'
-    if (Is-AggregatorConfiguredCorrectly -aggregator "$aggregator") {{
-      Write-Log -message 'correct log aggregator config detected' -severity 'INFO'
-    }} else {{
-      Set-Aggregator -aggregator "$aggregator"
-    }}
-  }} else {{
-    if (Test-Path $puppetLog) {{
-      Write-Log -message 'incomplete puppet run detected' -severity 'INFO'
-    }}
-    # todo: swap hardcoded puppet url when puppet_server token is being correctly populated (golden)
-    #Run-Puppet -hostname $hostname -domain $domain -puppetServer $puppetServer -logdest $puppetLog
-    Run-Puppet -hostname $hostname -domain $domain -logdest $puppetLog
-    Send-Log -logfile $puppetLog -subject ('Puppet Agent Report for {{0}}.{{1}}' -f $hostname, $domain) -to $logRecipients -from $logSender
-    Flush-EventLog
-    Stop-ComputerWithDelay -reason 'userdata golden puppet run complete'
-  }}
+  #Run-BuildBot -username $buildUsername -password (New-SWRandomPassword -PasswordLength 16) -domain $domain
 }} else {{
-  if ($hostnameCorrect -ne $true) {{ Set-Hostname -hostname $hostname }}
-  if ($domainCorrect -ne $true) {{ Set-Domain -domain $domain }}
-  Stop-ComputerWithDelay -reason 'host name changed' -restart
+  Set-Hostname -hostname $hostname
+  Set-Domain -domain $domain
+  Stop-ComputerWithDelay -reason 'userdata run complete' -restart
 }}
-Enable-UserdataPersist
-
-Send-Log -logfile $runLog -subject ('UserData Run Report for {{0}}.{{1}}' -f $hostname, $domain) -to $logRecipients -from $logSender
-Move-Item -path $runLog -destination ([IO.Path]::Combine($logDir, ('userdata-run-{{0}}.log' -f [DateTime]::Now.ToString("yyyyMMdd-HHmm"))))
-Send-Log -logfile $ec2Log -subject ('EC2 Config Report for {{0}}.{{1}}' -f $hostname, $domain) -to $logRecipients -from $logSender
-Move-Item -path $ec2Log -destination ([IO.Path]::Combine($logDir, ('ec2config-run-{{0}}.log' -f [DateTime]::Now.ToString("yyyyMMdd-HHmm"))))
+Send-Log -logfile $runLog -subject ('UserData Run Report for {{0}}.{{1}}' -f $hostname, $domain) -to 'releng-puppet-mail@mozilla.com' -from $logSender
+Move-Item -path $runLog -destination ([IO.Path]::Combine($logDir, ('userdata-run-{{0}}.log' -f [DateTime]::Now.ToString("yyyyMMdd-HHmm"))))-ErrorAction SilentlyContinue
+Send-Log -logfile $ec2Log -subject ('EC2 Config Report for {{0}}.{{1}}' -f $hostname, $domain) -to 'releng-puppet-mail@mozilla.com' -from $logSender
+Move-Item -path $ec2Log -destination ([IO.Path]::Combine($logDir, ('ec2config-run-{{0}}.log' -f [DateTime]::Now.ToString("yyyyMMdd-HHmm"))))-ErrorAction SilentlyContinue
 </powershell>
 <persist>true</persist>
