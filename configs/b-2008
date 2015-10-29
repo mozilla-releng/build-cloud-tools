@@ -37,7 +37,7 @@
     "us-west-2": {
         "type": "b-2008",
         "domain": "build.releng.usw2.mozilla.com",
-        "ami": "ami-80a4d4ea",
+        "ami": "ami-b2091dd3",
         "subnet_ids": [
             "subnet-d748dabe",
             "subnet-a848dac1",
