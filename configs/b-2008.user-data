@@ -115,7 +115,7 @@ Rename-Admin
 $hostnameCorrect = (Is-HostnameSetCorrectly -hostnameExpected $hostname)
 $domainCorrect = (Is-DomainSetCorrectly -domainExpected $domain)
 if ($hostnameCorrect -and $domainCorrect) {{
-  if ($hostname.Contains("-golden-")) {{
+  if ($hostname.Contains("-golden")) {{
     #todo: run puppet
     Stop-ComputerWithDelay -reason 'userdata golden run complete'
   }} else {{
