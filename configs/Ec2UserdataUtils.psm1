@@ -521,10 +521,74 @@ function Disable-Firewall {
 function Flush-EventLog {
   <#
   .Synopsis
-    Removes all entries from the event log. Used right before golden ami capture for a clean slate image.
+    Removes all entries from the event log.
   #>
-  #Write-Log -message 'flushing the Windows EventLog' -severity 'INFO'
-  #wevtutil el | % { wevtutil cl $_ }
+  try {
+    $freespaceBefore = (Get-WmiObject win32_logicaldisk -filter ("DeviceID='{0}'" -f $env:SystemDrive) | select Freespace).FreeSpace/1GB
+    wevtutil el | % {
+      wevtutil cl $_
+    }
+    $freespaceAfter = (Get-WmiObject win32_logicaldisk -filter ("DeviceID='{0}'" -f $env:SystemDrive) | select Freespace).FreeSpace/1GB
+    Write-Log -message ("{0} :: flushed the Windows EventLog. free space before: {1:N1}gb, after: {2:N1}gb" -f $($MyInvocation.MyCommand.Name), $freespaceBefore, $freespaceAfter) -severity 'INFO'
+  } catch {
+    Write-Log -message ("{0} :: failed to flush the Windows EventLog. {1}" -f $($MyInvocation.MyCommand.Name), $_.Exception) -severity 'ERROR'
+  }
+}
+
+function Flush-RecycleBin {
+  try {
+    $freespaceBefore = (Get-WmiObject win32_logicaldisk -filter ("DeviceID='{0}'" -f $env:SystemDrive) | select Freespace).FreeSpace/1GB
+    ((New-Object -ComObject Shell.Application).Namespace(0xA)).Items() | % {
+      Remove-Item $_.Path -Recurse -Confirm:$false -force
+    }
+    $freespaceAfter = (Get-WmiObject win32_logicaldisk -filter ("DeviceID='{0}'" -f $env:SystemDrive) | select Freespace).FreeSpace/1GB
+    Write-Log -message ("{0} :: flushed the RecycleBin. free space before: {1:N1}gb, after: {2:N1}gb" -f $($MyInvocation.MyCommand.Name), $freespaceBefore, $freespaceAfter) -severity 'INFO'
+  } catch {
+    Write-Log -message ("{0} :: failed to flush the RecycleBin. {1}" -f $($MyInvocation.MyCommand.Name), $_.Exception) -severity 'ERROR'
+  }
+}
+
+function Flush-TempFiles {
+  try {
+    $freespaceBefore = (Get-WmiObject win32_logicaldisk -filter ("DeviceID='{0}'" -f $env:SystemDrive) | select Freespace).FreeSpace/1GB
+    Get-ChildItem -Path 'HKLM:\Software\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches' | % {
+      Set-ItemProperty -path $_.Name.Replace('HKEY_LOCAL_MACHINE', 'HKLM:')  -name StateFlags0012 -type DWORD -Value 2
+    }
+    & cleanmgr @('/sagerun:12')
+    do {
+      Start-Sleep 5
+    } while ((Get-WmiObject win32_process | Where-Object {$_.ProcessName -eq 'cleanmgr.exe'} | measure).count)
+    $freespaceAfter = (Get-WmiObject win32_logicaldisk -filter ("DeviceID='{0}'" -f $env:SystemDrive) | select Freespace).FreeSpace/1GB
+    Write-Log -message ("{0} :: flushed TempFiles. free space before: {1:N1}gb, after: {2:N1}gb" -f $($MyInvocation.MyCommand.Name), $freespaceBefore, $freespaceAfter) -severity 'INFO'
+  } catch {
+    Write-Log -message ("{0} :: failed to flush TempFiles. {1}" -f $($MyInvocation.MyCommand.Name), $_.Exception) -severity 'ERROR'
+  }
+}
+
+function Flush-BuildFiles {
+  param (
+    [string[]] $paths = @('C:\builds\moz2_slave', 'C:\builds\slave', 'C:\builds\hg-shared')
+  )
+  try {
+    $freespaceBefore = (Get-WmiObject win32_logicaldisk -filter ("DeviceID='{0}'" -f $env:SystemDrive) | select Freespace).FreeSpace/1GB
+    foreach ($path in $paths) {
+      Get-ChildItem -Path $path | % {
+        Remove-Item -path $_ -recurse -force
+      }
+    }
+    $freespaceAfter = (Get-WmiObject win32_logicaldisk -filter ("DeviceID='{0}'" -f $env:SystemDrive) | select Freespace).FreeSpace/1GB
+    Write-Log -message ("{0} :: flushed BuildFiles. free space before: {1:N1}gb, after: {2:N1}gb" -f $($MyInvocation.MyCommand.Name), $freespaceBefore, $freespaceAfter) -severity 'INFO'
+  } catch {
+    Write-Log -message ("{0} :: failed to flush BuildFiles. {1}" -f $($MyInvocation.MyCommand.Name), $_.Exception) -severity 'ERROR'
+  }
+}
+
+function Prep-Golden {
+  #todo: run puppet
+  Flush-EventLog
+  Flush-RecycleBin
+  Flush-TempFiles
+  Flush-BuildFiles
 }
 
 function Set-PagefileSize {
