@@ -113,12 +113,12 @@ Rename-Admin
 if ((!(Is-HostnameSetCorrectly -hostnameExpected $hostname)) -or (!(Is-DomainSetCorrectly -domainExpected $domain))) {{
   Set-Hostname -hostname $hostname
   Set-Domain -domain $domain
-}}
-if ($hostname.Contains("-golden")) {{
-  Prep-Golden
-  Stop-ComputerWithDelay -reason 'userdata run complete, shutting down'
-}} else {{
-  Stop-ComputerWithDelay -reason 'userdata run complete, restarting' -restart
+  if ($hostname.Contains("-golden")) {{
+    Prep-Golden
+    Stop-ComputerWithDelay -reason 'userdata run complete, shutting down'
+  }} else {{
+    Stop-ComputerWithDelay -reason 'userdata run complete, restarting' -restart
+  }}
 }}
 Send-Log -logfile $runLog -subject ('UserData Run Report for {{0}}.{{1}}' -f $hostname, $domain) -to 'releng-puppet-mail@mozilla.com' -from $logSender
 Move-Item -path $runLog -destination ([IO.Path]::Combine($logDir, ('userdata-run-{{0}}.log' -f [DateTime]::Now.ToString("yyyyMMdd-HHmm"))))-ErrorAction SilentlyContinue
