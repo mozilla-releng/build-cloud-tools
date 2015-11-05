@@ -385,6 +385,7 @@ function Set-Hostname {
     [string] $hostname
   )
   [Environment]::SetEnvironmentVariable("COMPUTERNAME", "$hostname", "Machine")
+  $env:COMPUTERNAME = $hostname
   (Get-WmiObject Win32_ComputerSystem).Rename("$hostname")
   Write-Log -message ('hostname set to: {0}' -f $hostname) -severity 'INFO'
   $sysprepFile = ('{0}\Amazon\Ec2ConfigService\sysprep2008.xml' -f $env:ProgramFiles)
@@ -447,6 +448,7 @@ function Set-Domain {
     [string] $domain
   )
   [Environment]::SetEnvironmentVariable("USERDOMAIN", "$domain", "Machine")
+  $env:USERDOMAIN = $domain
   Set-ItemProperty 'HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters\' -Name 'Domain' -Value "$domain"
   Set-ItemProperty 'HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters\' -Name 'NV Domain' -Value "$domain"
   Write-Log -message ('Primary DNS suffix set to: {0}' -f $domain) -severity 'INFO'
@@ -567,13 +569,24 @@ function Flush-TempFiles {
 
 function Flush-BuildFiles {
   param (
-    [string[]] $paths = @('C:\builds\moz2_slave', 'C:\builds\slave', 'C:\builds\hg-shared')
+    [string[]] $paths = @(
+      ('{0}\builds\moz2_slave' -f $env:SystemDrive),
+      ('{0}\builds\slave' -f $env:SystemDrive),
+      ('{0}\builds\hg-shared' -f $env:SystemDrive),
+      ('{0}\Users\cltbld\Desktop' -f $env:SystemDrive),
+      ('{0}\Users\cltbld\AppData\Roaming\Mozilla' -f $env:SystemDrive),
+      ('{0}\Users\Administrator\Desktop' -f $env:SystemDrive)
+    )
   )
   try {
     $freespaceBefore = (Get-WmiObject win32_logicaldisk -filter ("DeviceID='{0}'" -f $env:SystemDrive) | select Freespace).FreeSpace/1GB
     foreach ($path in $paths) {
-      Get-ChildItem -Path $path | % {
-        Remove-Item -path $_ -recurse -force
+      if (Test-Path $path -PathType Container) {
+        foreach ($child in (Get-ChildItem -Path $path)) {
+          if (Test-Path $child) {
+            Remove-Item -path $child -recurse -force
+          }
+        }
       }
     }
     $freespaceAfter = (Get-WmiObject win32_logicaldisk -filter ("DeviceID='{0}'" -f $env:SystemDrive) | select Freespace).FreeSpace/1GB
@@ -583,12 +596,67 @@ function Flush-BuildFiles {
   }
 }
 
+function Clone-Repository {
+  param (
+    [string] $source,
+    [string] $target
+  )
+  process {
+    & hg @('clone', '-U', $source, $target)
+    $exitCode = $LastExitCode
+    if (($?) -and (Test-Path $target)) {
+      Write-Log -message ("{0} :: {1} cloned to {2}" -f $($MyInvocation.MyCommand.Name), $source, $target) -severity 'INFO'
+    } else {
+      Write-Log -message ("{0} :: hg clone of {1} to {2} failed with exit code: {3}" -f $($MyInvocation.MyCommand.Name), $source, $target, $exitCode) -severity 'ERROR'
+    }
+  }
+}
+
+function Get-SourceCaches {
+  param (
+    [string] $moztype,
+    [string] $cachePath = ('{0}\builds' -f $env:SystemDrive),
+    [hashtable] $sharedRepos = @{ 'https://hg.mozilla.org/build/mozharness' = ('{0}\hg-shared\build\mozharness' -f $cachePath); 'https://hg.mozilla.org/build/tools' = ('{0}\hg-shared\build\tools' -f $cachePath) },
+    [hashtable] $buildRepos = @{ 'https://hg.mozilla.org/integration/mozilla-inbound' = ('{0}\hg-shared\integration\mozilla-inbound' -f $cachePath) },
+    [hashtable] $tryRepos = @{ 'https://hg.mozilla.org/try' = ('{0}\hg-shared\try' -f $cachePath) }
+  )
+  begin {
+    Write-Log -message ("{0} :: Function started" -f $($MyInvocation.MyCommand.Name)) -severity 'DEBUG'
+  }
+  process {
+    foreach ($repo in $sharedRepos.GetEnumerator()) {
+      Clone-Repository -source $repo.Name -target $repo.Value
+    }
+    switch ($moztype[0]) {
+      'b' {
+        foreach ($repo in $buildRepos.GetEnumerator()) {
+          Clone-Repository -source $repo.Name -target $repo.Value
+        }
+        break
+      }
+      'y' {
+        foreach ($repo in $tryRepos.GetEnumerator()) {
+          Clone-Repository -source $repo.Name -target $repo.Value
+        }
+        break
+      }
+    }
+  }
+  end {
+    Write-Log -message ("{0} :: Function ended" -f $($MyInvocation.MyCommand.Name)) -severity 'DEBUG'
+  }
+}
+
 function Prep-Golden {
+  param (
+    [string] $moztype
+  )
   #todo: run puppet
   Flush-EventLog
   Flush-RecycleBin
   Flush-TempFiles
   Flush-BuildFiles
+  Get-SourceCaches -moztype $moztype
 }
 
 function Set-PagefileSize {
@@ -938,7 +1006,7 @@ function Install-BundleClone {
 
 function Enable-BundleClone {
   param (
-    [string] $hgrc = [IO.Path]::Combine($env:USERPROFILE, '.hgrc'),
+    [string] $hgrc = [IO.Path]::Combine([IO.Path]::Combine([IO.Path]::Combine(('{0}\' -f $env:SystemDrive), 'mozilla-build'), 'hg'), 'Mercurial.ini'),
     [string] $path = [IO.Path]::Combine([IO.Path]::Combine([IO.Path]::Combine(('{0}\' -f $env:SystemDrive), 'mozilla-build'), 'hg'), 'bundleclone.py'),
     [string] $domain = $env:USERDOMAIN
   )
@@ -1267,11 +1335,13 @@ function Install-MozillaBuildAndPrerequisites {
 
 function Install-BasePrerequisites {
   param (
-    [string] $aggregator = 'log-aggregator.srv.releng.use1.mozilla.com'
+    [string] $aggregator = 'log-aggregator.srv.releng.use1.mozilla.com',
+    [string] $domain = 'log-aggregator.srv.releng.use1.mozilla.com'
   )
   Write-Log -message ("{0} :: installing chocolatey" -f $($MyInvocation.MyCommand.Name)) -severity 'INFO'
   Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
   Install-RelOpsPrerequisites -aggregator $aggregator
+  Enable-BundleClone -hgrc ('{0}\Users\cltbld\.hgrc' -f $env:SystemDrive) -domain $aggregator
   #Install-MozillaBuildAndPrerequisites
   #Install-BuildBot
   #Install-ToolTool
