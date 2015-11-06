@@ -582,10 +582,8 @@ function Flush-BuildFiles {
     $freespaceBefore = (Get-WmiObject win32_logicaldisk -filter ("DeviceID='{0}'" -f $env:SystemDrive) | select Freespace).FreeSpace/1GB
     foreach ($path in $paths) {
       if (Test-Path $path -PathType Container) {
-        foreach ($child in (Get-ChildItem -Path $path)) {
-          if (Test-Path $child) {
-            Remove-Item -path $child -recurse -force
-          }
+        Get-ChildItem -Path $path | % {
+          Remove-Item -path $_.FullName -force -recurse
         }
       }
     }
@@ -616,9 +614,16 @@ function Get-SourceCaches {
   param (
     [string] $moztype,
     [string] $cachePath = ('{0}\builds' -f $env:SystemDrive),
-    [hashtable] $sharedRepos = @{ 'https://hg.mozilla.org/build/mozharness' = ('{0}\hg-shared\build\mozharness' -f $cachePath); 'https://hg.mozilla.org/build/tools' = ('{0}\hg-shared\build\tools' -f $cachePath) },
-    [hashtable] $buildRepos = @{ 'https://hg.mozilla.org/integration/mozilla-inbound' = ('{0}\hg-shared\integration\mozilla-inbound' -f $cachePath) },
-    [hashtable] $tryRepos = @{ 'https://hg.mozilla.org/try' = ('{0}\hg-shared\try' -f $cachePath) }
+    [hashtable] $sharedRepos = @{
+      'https://hg.mozilla.org/build/mozharness' = ('{0}\hg-shared\build\mozharness' -f $cachePath);
+      'https://hg.mozilla.org/build/tools' = ('{0}\hg-shared\build\tools' -f $cachePath)
+    },
+    [hashtable] $buildRepos = @{
+      'https://hg.mozilla.org/integration/mozilla-inbound' = ('{0}\hg-shared\integration\mozilla-inbound' -f $cachePath)
+    },
+    [hashtable] $tryRepos = @{
+      'https://hg.mozilla.org/try' = ('{0}\hg-shared\try' -f $cachePath)
+    }
   )
   begin {
     Write-Log -message ("{0} :: Function started" -f $($MyInvocation.MyCommand.Name)) -severity 'DEBUG'
