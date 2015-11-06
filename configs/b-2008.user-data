@@ -114,7 +114,7 @@ if ((!(Is-HostnameSetCorrectly -hostnameExpected $hostname)) -or (!(Is-DomainSet
   Set-Hostname -hostname $hostname
   Set-Domain -domain $domain
   if ($hostname.Contains("-golden")) {{
-    Prep-Golden
+    Prep-Golden -moztype $hostname.Replace('-ec2-golden', '')
   }} else {{
     Stop-ComputerWithDelay -reason 'userdata run complete, restarting' -restart
   }}

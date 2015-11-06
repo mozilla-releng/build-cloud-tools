@@ -3,7 +3,7 @@
     "us-east-1": {
         "type": "b-2008",
         "domain": "build.releng.use1.mozilla.com",
-        "ami": "ami-8df98be7",
+        "ami": "ami-d394e8b9",
         "subnet_ids": [
             "subnet-2ba98340",
             "subnet-2da98346",
@@ -26,7 +26,7 @@
                 "delete_on_termination": true,
                 "skip_resize": true,
                 "volume_type": "gp2",
-                "size": 80,
+                "size": 120,
                 "instance_dev": "C:"
             }
         },
@@ -37,7 +37,7 @@
     "us-west-2": {
         "type": "b-2008",
         "domain": "build.releng.usw2.mozilla.com",
-        "ami": "ami-48465129",
+        "ami": "ami-c29d8aa3",
         "subnet_ids": [
             "subnet-d748dabe",
             "subnet-a848dac1",
@@ -57,7 +57,7 @@
                 "delete_on_termination": true,
                 "skip_resize": true,
                 "volume_type": "gp2",
-                "size": 80,
+                "size": 120,
                 "instance_dev": "C:"
             }
         },
