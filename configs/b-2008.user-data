@@ -116,13 +116,13 @@ if ((!(Is-HostnameSetCorrectly -hostnameExpected $hostname)) -or (!(Is-DomainSet
 }}
 if ($hostname.Contains("-golden")) {{
   Prep-Golden -moztype $hostname.Replace('-ec2-golden', '')
-  #Stop-ComputerWithDelay -reason 'userdata golden run complete, shutting down'
+  Stop-ComputerWithDelay -reason 'userdata golden run complete, shutting down'
+  Send-Log -logfile $runLog -subject ('UserData Run Report for {{0}}.{{1}}' -f $hostname, $domain) -to 'releng-puppet-mail@mozilla.com' -from $logSender
+  Send-Log -logfile $ec2Log -subject ('EC2 Config Report for {{0}}.{{1}}' -f $hostname, $domain) -to 'releng-puppet-mail@mozilla.com' -from $logSender
 }} else {{
   Stop-ComputerWithDelay -reason 'userdata run complete, restarting' -restart
 }}
-Send-Log -logfile $runLog -subject ('UserData Run Report for {{0}}.{{1}}' -f $hostname, $domain) -to 'releng-puppet-mail@mozilla.com' -from $logSender
 Move-Item -path $runLog -destination ([IO.Path]::Combine($logDir, ('userdata-run-{{0}}.log' -f [DateTime]::Now.ToString("yyyyMMdd-HHmm"))))-ErrorAction SilentlyContinue
-Send-Log -logfile $ec2Log -subject ('EC2 Config Report for {{0}}.{{1}}' -f $hostname, $domain) -to 'releng-puppet-mail@mozilla.com' -from $logSender
 Move-Item -path $ec2Log -destination ([IO.Path]::Combine($logDir, ('ec2config-run-{{0}}.log' -f [DateTime]::Now.ToString("yyyyMMdd-HHmm"))))-ErrorAction SilentlyContinue
 </powershell>
 <persist>true</persist>

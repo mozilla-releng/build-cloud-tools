@@ -594,8 +594,6 @@ function Flush-BuildFiles {
   } catch {
     Write-Log -message ("{0} :: failed to flush BuildFiles. {1}" -f $($MyInvocation.MyCommand.Name), $_.Exception) -severity 'ERROR'
   }
-  Write-Log -message ("{0} :: Wiping free space" -f $($MyInvocation.MyCommand.Name)) -severity 'INFO'
-  & cipher @(('/w:{0}' -f $env:SystemDrive))
 }
 
 function Clone-Repository {
@@ -686,6 +684,8 @@ function Prep-Golden {
     Flush-TempFiles
     Flush-BuildFiles
     Get-SourceCaches -moztype $moztype
+    Write-Log -message ("{0} :: Wiping free space" -f $($MyInvocation.MyCommand.Name)) -severity 'INFO'
+    & cipher @(('/w:{0}' -f $env:SystemDrive))
   }
   end {
     Write-Log -message ("{0} :: Function ended" -f $($MyInvocation.MyCommand.Name)) -severity 'DEBUG'
