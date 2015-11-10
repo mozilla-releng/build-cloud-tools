@@ -572,7 +572,9 @@ function Flush-BuildFiles {
     [string[]] $paths = @(
       ('{0}\builds\moz2_slave' -f $env:SystemDrive),
       ('{0}\builds\slave' -f $env:SystemDrive),
-      ('{0}\builds\hg-shared' -f $env:SystemDrive),
+      ('{0}\builds\hg-shared\build' -f $env:SystemDrive),
+      ('{0}\builds\hg-shared\integration' -f $env:SystemDrive),
+      # note that the absence of hg-shared\try is deliberate here. reinstate at your own peril.
       ('{0}\Users\cltbld\Desktop' -f $env:SystemDrive),
       ('{0}\Users\cltbld\AppData\Roaming\Mozilla' -f $env:SystemDrive),
       ('{0}\Users\Administrator\Desktop' -f $env:SystemDrive)
@@ -592,6 +594,8 @@ function Flush-BuildFiles {
   } catch {
     Write-Log -message ("{0} :: failed to flush BuildFiles. {1}" -f $($MyInvocation.MyCommand.Name), $_.Exception) -severity 'ERROR'
   }
+  Write-Log -message ("{0} :: Wiping free space" -f $($MyInvocation.MyCommand.Name)) -severity 'INFO'
+  & cipher @(('/w:{0}' -f $env:SystemDrive))
 }
 
 function Clone-Repository {
@@ -599,14 +603,30 @@ function Clone-Repository {
     [string] $source,
     [string] $target
   )
+  begin {
+    Write-Log -message ("{0} :: Function started" -f $($MyInvocation.MyCommand.Name)) -severity 'DEBUG'
+  }
   process {
-    & hg @('clone', '-U', $source, $target)
-    $exitCode = $LastExitCode
-    if (($?) -and (Test-Path $target)) {
-      Write-Log -message ("{0} :: {1} cloned to {2}" -f $($MyInvocation.MyCommand.Name), $source, $target) -severity 'INFO'
+    if ((Test-Path $target -PathType Container) -and (Test-Path ('{0}\.hg' -f $target) -PathType Container)) {
+      & hg @('pull', '-R', $target)
+      $exitCode = $LastExitCode
+      if ($?) {
+        Write-Log -message ("{0} :: {1} local repository updated at {2}" -f $($MyInvocation.MyCommand.Name), $source, $target) -severity 'INFO'
+      } else {
+        Write-Log -message ("{0} :: hg local repository update of {1} at {2} failed with exit code: {3}" -f $($MyInvocation.MyCommand.Name), $source, $target, $exitCode) -severity 'ERROR'
+      }
     } else {
-      Write-Log -message ("{0} :: hg clone of {1} to {2} failed with exit code: {3}" -f $($MyInvocation.MyCommand.Name), $source, $target, $exitCode) -severity 'ERROR'
+      & hg @('clone', '-U', $source, $target)
+      $exitCode = $LastExitCode
+      if (($?) -and (Test-Path $target)) {
+        Write-Log -message ("{0} :: {1} cloned to {2}" -f $($MyInvocation.MyCommand.Name), $source, $target) -severity 'INFO'
+      } else {
+        Write-Log -message ("{0} :: hg clone of {1} to {2} failed with exit code: {3}" -f $($MyInvocation.MyCommand.Name), $source, $target, $exitCode) -severity 'ERROR'
+      }
     }
+  }
+  end {
+    Write-Log -message ("{0} :: Function ended" -f $($MyInvocation.MyCommand.Name)) -severity 'DEBUG'
   }
 }
 
@@ -656,12 +676,20 @@ function Prep-Golden {
   param (
     [string] $moztype
   )
-  #todo: run puppet
-  Flush-EventLog
-  Flush-RecycleBin
-  Flush-TempFiles
-  Flush-BuildFiles
-  Get-SourceCaches -moztype $moztype
+  begin {
+    Write-Log -message ("{0} :: Function started" -f $($MyInvocation.MyCommand.Name)) -severity 'DEBUG'
+  }
+  process {
+    #todo: run puppet
+    Flush-EventLog
+    Flush-RecycleBin
+    Flush-TempFiles
+    Flush-BuildFiles
+    Get-SourceCaches -moztype $moztype
+  }
+  end {
+    Write-Log -message ("{0} :: Function ended" -f $($MyInvocation.MyCommand.Name)) -severity 'DEBUG'
+  }
 }
 
 function Set-PagefileSize {
@@ -1346,7 +1374,8 @@ function Install-BasePrerequisites {
   Write-Log -message ("{0} :: installing chocolatey" -f $($MyInvocation.MyCommand.Name)) -severity 'INFO'
   Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
   Install-RelOpsPrerequisites -aggregator $aggregator
-  Enable-BundleClone -hgrc ('{0}\Users\cltbld\.hgrc' -f $env:SystemDrive) -domain $aggregator
+  #Enable-BundleClone -hgrc ('{0}\Users\cltbld\.hgrc' -f $env:SystemDrive) -domain $aggregator
+  Enable-BundleClone -domain $aggregator
   #Install-MozillaBuildAndPrerequisites
   #Install-BuildBot
   #Install-ToolTool
