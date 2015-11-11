@@ -572,9 +572,7 @@ function Flush-BuildFiles {
     [string[]] $paths = @(
       ('{0}\builds\moz2_slave' -f $env:SystemDrive),
       ('{0}\builds\slave' -f $env:SystemDrive),
-      ('{0}\builds\hg-shared\build' -f $env:SystemDrive),
-      ('{0}\builds\hg-shared\integration' -f $env:SystemDrive),
-      # note that the absence of hg-shared\try is deliberate here. reinstate at your own peril.
+      ('{0}\builds\hg-shared' -f $env:SystemDrive),
       ('{0}\Users\cltbld\Desktop' -f $env:SystemDrive),
       ('{0}\Users\cltbld\AppData\Roaming\Mozilla' -f $env:SystemDrive),
       ('{0}\Users\Administrator\Desktop' -f $env:SystemDrive)
@@ -635,12 +633,6 @@ function Get-SourceCaches {
     [hashtable] $sharedRepos = @{
       'https://hg.mozilla.org/build/mozharness' = ('{0}\hg-shared\build\mozharness' -f $cachePath);
       'https://hg.mozilla.org/build/tools' = ('{0}\hg-shared\build\tools' -f $cachePath)
-    },
-    [hashtable] $buildRepos = @{
-      'https://hg.mozilla.org/integration/mozilla-inbound' = ('{0}\hg-shared\integration\mozilla-inbound' -f $cachePath)
-    },
-    [hashtable] $tryRepos = @{
-      'https://hg.mozilla.org/try' = ('{0}\hg-shared\try' -f $cachePath)
     }
   )
   begin {
@@ -649,20 +641,6 @@ function Get-SourceCaches {
   process {
     foreach ($repo in $sharedRepos.GetEnumerator()) {
       Clone-Repository -source $repo.Name -target $repo.Value
-    }
-    switch ($moztype[0]) {
-      'b' {
-        foreach ($repo in $buildRepos.GetEnumerator()) {
-          Clone-Repository -source $repo.Name -target $repo.Value
-        }
-        break
-      }
-      'y' {
-        foreach ($repo in $tryRepos.GetEnumerator()) {
-          Clone-Repository -source $repo.Name -target $repo.Value
-        }
-        break
-      }
     }
   }
   end {
@@ -684,7 +662,7 @@ function Prep-Golden {
     Flush-TempFiles
     Flush-BuildFiles
     Get-SourceCaches -moztype $moztype
-    
+
     # looks like this takes too long to run in cron golden.
     #Write-Log -message ("{0} :: Wiping free space" -f $($MyInvocation.MyCommand.Name)) -severity 'INFO'
     #& cipher @(('/w:{0}' -f $env:SystemDrive))
