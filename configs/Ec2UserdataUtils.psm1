@@ -684,8 +684,10 @@ function Prep-Golden {
     Flush-TempFiles
     Flush-BuildFiles
     Get-SourceCaches -moztype $moztype
-    Write-Log -message ("{0} :: Wiping free space" -f $($MyInvocation.MyCommand.Name)) -severity 'INFO'
-    & cipher @(('/w:{0}' -f $env:SystemDrive))
+    
+    # looks like this takes too long to run in cron golden.
+    #Write-Log -message ("{0} :: Wiping free space" -f $($MyInvocation.MyCommand.Name)) -severity 'INFO'
+    #& cipher @(('/w:{0}' -f $env:SystemDrive))
   }
   end {
     Write-Log -message ("{0} :: Function ended" -f $($MyInvocation.MyCommand.Name)) -severity 'DEBUG'
