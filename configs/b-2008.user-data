@@ -110,15 +110,18 @@ Disable-Firewall
 Disable-WindowsUpdate
 Install-BasePrerequisites -aggregator $aggregator
 Rename-Admin
+if ($hostname.Contains("-golden")) {{
+  Prep-Golden -moztype $hostname.Replace('-ec2-golden', '')
+}}
 if ((!(Is-HostnameSetCorrectly -hostnameExpected $hostname)) -or (!(Is-DomainSetCorrectly -domainExpected $domain))) {{
   Set-Hostname -hostname $hostname
   Set-Domain -domain $domain
+  if (!($hostname.Contains("-golden"))) {{
+    Stop-ComputerWithDelay -reason 'userdata run complete, host renamed' -restart
+  }}
 }}
 if ($hostname.Contains("-golden")) {{
-  Prep-Golden -moztype $hostname.Replace('-ec2-golden', '')
-  Stop-ComputerWithDelay -reason 'userdata golden run complete, shutting down'
-}} else {{
-  Stop-ComputerWithDelay -reason 'userdata run complete, restarting' -restart
+  Stop-ComputerWithDelay -reason 'userdata golden run complete'
 }}
 if (!($hostname.Contains("-spot-"))) {{
   Send-Log -logfile $runLog -subject ('UserData Run Report for {{0}}.{{1}}' -f $hostname, $domain) -to 'releng-puppet-mail@mozilla.com' -from $logSender
