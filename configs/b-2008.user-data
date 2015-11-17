@@ -111,7 +111,10 @@ Disable-WindowsUpdate
 Install-BasePrerequisites -aggregator $aggregator
 Rename-Admin
 if ($hostname.Contains("-golden")) {{
-  Prep-Golden -moztype $hostname.Replace('-ec2-golden', '')
+  Prep-Golden
+}}
+if ($hostname.Contains("-ec2-")) {{
+  Get-SourceCaches
 }}
 if ((!(Is-HostnameSetCorrectly -hostnameExpected $hostname)) -or (!(Is-DomainSetCorrectly -domainExpected $domain))) {{
   Set-Hostname -hostname $hostname

@@ -33,21 +33,25 @@ function Write-Log {
       $foregroundColor = 'DarkGray'
       $entryType = 'SuccessAudit'
       $eventId = 2
+      break
     }
     'WARN' {
       $foregroundColor = 'Yellow'
       $entryType = 'Warning'
       $eventId = 3
+      break
     }
     'ERROR' {
       $foregroundColor = 'Red'
       $entryType = 'Error'
       $eventId = 4
+      break
     }
     default {
       $foregroundColor = 'White'
       $entryType = 'Information'
       $eventId = 1
+      break
     }
   }
   if ($env:OutputToConsole -eq 'true') {
@@ -557,6 +561,8 @@ function Flush-TempFiles {
       Set-ItemProperty -path $_.Name.Replace('HKEY_LOCAL_MACHINE', 'HKLM:')  -name StateFlags0012 -type DWORD -Value 2
     }
     & cleanmgr @('/sagerun:12')
+    Remove-Item -Force ('{0}\Users\Administrator\AppData\Roaming\Microsoft\Windows\Recent*.lnk' -f $env:SystemDrive)
+    Remove-Item -Force ('{0}\Users\cltbld\AppData\Roaming\Microsoft\Windows\Recent*.lnk' -f $env:SystemDrive)
     do {
       Start-Sleep 5
     } while ((Get-WmiObject win32_process | Where-Object {$_.ProcessName -eq 'cleanmgr.exe'} | measure).count)
@@ -607,9 +613,9 @@ function Clone-Repository {
       & hg @('pull', '-R', $target)
       $exitCode = $LastExitCode
       if ($?) {
-        Write-Log -message ("{0} :: {1} local repository updated at {2}" -f $($MyInvocation.MyCommand.Name), $source, $target) -severity 'INFO'
+        Write-Log -message ("{0} :: {1} pulled to {2}" -f $($MyInvocation.MyCommand.Name), $source, $target) -severity 'INFO'
       } else {
-        Write-Log -message ("{0} :: hg local repository update of {1} at {2} failed with exit code: {3}" -f $($MyInvocation.MyCommand.Name), $source, $target, $exitCode) -severity 'ERROR'
+        Write-Log -message ("{0} :: hg pull of {1} to {2} failed with exit code: {3}" -f $($MyInvocation.MyCommand.Name), $source, $target, $exitCode) -severity 'ERROR'
       }
     } else {
       & hg @('clone', '-U', $source, $target)
@@ -628,18 +634,38 @@ function Clone-Repository {
 
 function Get-SourceCaches {
   param (
-    [string] $moztype,
     [string] $cachePath = ('{0}\builds' -f $env:SystemDrive),
     [hashtable] $sharedRepos = @{
       'https://hg.mozilla.org/build/mozharness' = ('{0}\hg-shared\build\mozharness' -f $cachePath);
       'https://hg.mozilla.org/build/tools' = ('{0}\hg-shared\build\tools' -f $cachePath)
+    },
+    [hashtable] $buildRepos = @{
+      'https://hg.mozilla.org/integration/mozilla-inbound' = ('{0}\hg-shared\integration\mozilla-inbound' -f $cachePath)
+    },
+    [hashtable] $tryRepos = @{
+      'https://hg.mozilla.org/mozilla-central' = ('{0}\hg-shared\try' -f $cachePath)
     }
   )
   begin {
     Write-Log -message ("{0} :: Function started" -f $($MyInvocation.MyCommand.Name)) -severity 'DEBUG'
   }
   process {
-    foreach ($repo in $sharedRepos.GetEnumerator()) {
+    switch ($env:ComputerName[0]) 
+    {
+      'b' {
+        $repos = $sharedRepos + $buildRepos
+        break
+      }
+      'y' {
+        $repos = $sharedRepos + $tryRepos
+        break
+      }
+      default {
+        $repos = $sharedRepos
+        break
+      }
+    }
+    foreach ($repo in $repos.GetEnumerator()) {
       Clone-Repository -source $repo.Name -target $repo.Value
     }
   }
@@ -649,9 +675,6 @@ function Get-SourceCaches {
 }
 
 function Prep-Golden {
-  param (
-    [string] $moztype
-  )
   begin {
     Write-Log -message ("{0} :: Function started" -f $($MyInvocation.MyCommand.Name)) -severity 'DEBUG'
   }
@@ -661,8 +684,6 @@ function Prep-Golden {
     Flush-RecycleBin
     Flush-TempFiles
     Flush-BuildFiles
-    Get-SourceCaches -moztype $moztype
-
     # looks like this takes too long to run in cron golden.
     #Write-Log -message ("{0} :: Wiping free space" -f $($MyInvocation.MyCommand.Name)) -severity 'INFO'
     #& cipher @(('/w:{0}' -f $env:SystemDrive))
@@ -1349,13 +1370,13 @@ function Install-MozillaBuildAndPrerequisites {
 function Install-BasePrerequisites {
   param (
     [string] $aggregator = 'log-aggregator.srv.releng.use1.mozilla.com',
-    [string] $domain = 'log-aggregator.srv.releng.use1.mozilla.com'
+    [string] $domain = 'releng.use1.mozilla.com'
   )
   Write-Log -message ("{0} :: installing chocolatey" -f $($MyInvocation.MyCommand.Name)) -severity 'INFO'
   Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
   Install-RelOpsPrerequisites -aggregator $aggregator
   #Enable-BundleClone -hgrc ('{0}\Users\cltbld\.hgrc' -f $env:SystemDrive) -domain $aggregator
-  Enable-BundleClone -domain $aggregator
+  Enable-BundleClone -domain $domain
   #Install-MozillaBuildAndPrerequisites
   #Install-BuildBot
   #Install-ToolTool
