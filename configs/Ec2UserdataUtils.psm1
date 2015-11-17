@@ -1381,6 +1381,8 @@ function Install-BasePrerequisites {
   #Install-BuildBot
   #Install-ToolTool
   Set-AutoLogin
+  Set-RegistryValue -path 'HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem' -key 'NtfsDisableLastAccessUpdate' -value 1
+  Set-RegistryValue -path 'HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem' -key 'NtfsMemoryUsage' -value 2
 }
 
 function Set-Timezone {
