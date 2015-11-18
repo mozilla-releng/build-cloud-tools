@@ -114,7 +114,7 @@ if ($hostname.Contains("-golden")) {{
   Prep-Golden
 }}
 if ($hostname.Contains("-ec2-")) {{
-  Get-SourceCaches
+  Get-SourceCaches -hostname $hostname
 }}
 if ((!(Is-HostnameSetCorrectly -hostnameExpected $hostname)) -or (!(Is-DomainSetCorrectly -domainExpected $domain))) {{
   Set-Hostname -hostname $hostname
