@@ -634,6 +634,7 @@ function Clone-Repository {
 
 function Get-SourceCaches {
   param (
+    [string] $hostname = $env:ComputerName,
     [string] $cachePath = ('{0}\builds' -f $env:SystemDrive),
     [hashtable] $sharedRepos = @{
       'https://hg.mozilla.org/build/mozharness' = ('{0}\hg-shared\build\mozharness' -f $cachePath);
@@ -650,7 +651,7 @@ function Get-SourceCaches {
     Write-Log -message ("{0} :: Function started" -f $($MyInvocation.MyCommand.Name)) -severity 'DEBUG'
   }
   process {
-    switch ($env:ComputerName[0]) 
+    switch ($hostname[0]) 
     {
       'b' {
         $repos = $sharedRepos + $buildRepos
