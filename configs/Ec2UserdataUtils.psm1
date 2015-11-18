@@ -1053,6 +1053,7 @@ function Enable-BundleClone {
     } else {
       $ec2region = 'us-east-1'
     }
+    Set-IniValue -file $hgrc -section 'extensions' -key 'share' -value ''
     Set-IniValue -file $hgrc -section 'extensions' -key 'bundleclone' -value $path
     Set-IniValue -file $hgrc -section 'bundleclone' -key 'prefers' -value ('ec2region={0}, stream=revlogv1' -f $ec2region)
     Write-Log -message ("{0} :: bundleclone ec2region set to: {1}, for domain: {2}" -f $($MyInvocation.MyCommand.Name), $ec2region, $domain) -severity 'DEBUG'
