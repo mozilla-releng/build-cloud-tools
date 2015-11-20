@@ -112,6 +112,8 @@ Install-BasePrerequisites -aggregator $aggregator
 Rename-Admin
 if ($hostname.Contains("-golden")) {{
   Prep-Golden
+}} elseif ($hostname -match "(b|y)-2[0-9]{{3}}-ec2-[a-z].*") {{
+  Prep-Loaner
 }}
 if ($hostname.Contains("-ec2-")) {{
   Get-SourceCaches -hostname $hostname
