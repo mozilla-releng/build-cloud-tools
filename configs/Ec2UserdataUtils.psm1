@@ -726,11 +726,13 @@ function Prep-Loaner {
     Flush-TempFiles
     Flush-BuildFiles
     Flush-Secrets
-    $password = ([Guid]::NewGuid()).ToString().Substring(0, 8)
+    $password = (New-SWRandomPassword)
     Set-IniValue -file ('{0}\uvnc bvba\UltraVnc\ultravnc.ini' -f $env:ProgramFiles) -section 'ultravnc' -key 'passwd' -value $password
     Set-IniValue -file ('{0}\uvnc bvba\UltraVnc\ultravnc.ini' -f $env:ProgramFiles) -section 'ultravnc' -key 'passwd2' -value $password
     ([ADSI]'WinNT://./root').SetPassword("$password")
+    ([ADSI]'WinNT://./root').SetInfo()
     ([ADSI]'WinNT://./cltbld').SetPassword("$password")
+    ([ADSI]'WinNT://./cltbld').SetInfo()
     Write-Log -message ('{0} :: password set to: {1}' -f $($MyInvocation.MyCommand.Name), $password) -severity 'INFO'
     Set-RegistryValue -path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\WinLogon' -key 'AutoAdminLogon' -value 0
     Write-Log -message ("{0} :: Wiping free space" -f $($MyInvocation.MyCommand.Name)) -severity 'INFO'
@@ -1650,7 +1652,7 @@ function New-SWRandomPassword {
     
     # Specifies an array of strings containing charactergroups from which the password will be generated.
     # At least one char from each group (string) will be used.
-    [String[]]$InputStrings = @('abcdefghijkmnpqrstuvwxyz', 'ABCEFGHJKLMNPQRSTUVWXYZ', '23456789', '!"#%&'),
+    [String[]]$InputStrings = @('abcdefghijkmnpqrstuvwxyz', 'ABCEFGHJKLMNPQRSTUVWXYZ', '23456789', '!@$#%&'),
 
     # Specifies a string containing a character group from which the first character in the password will be generated.
     # Useful for systems which requires first char in password to be alphabetic.
