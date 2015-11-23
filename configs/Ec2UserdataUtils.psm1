@@ -612,10 +612,13 @@ function Flush-Secrets {
       if (Test-Path $path -PathType Container) {
         Get-ChildItem -Path $path | % {
           Remove-Item -path $_.FullName -force -recurse
+          Write-Log -message ("{0} :: purged {1}" -f $($MyInvocation.MyCommand.Name), $_.FullName) -severity 'DEBUG'
         }
       }
     }
     Write-Log -message ("{0} :: flushed secrets" -f $($MyInvocation.MyCommand.Name)) -severity 'INFO'
+    #& cipher @(('/w:{0}' -f $env:SystemDrive))
+    #Write-Log -message ("{0} :: free space wiped" -f $($MyInvocation.MyCommand.Name)) -severity 'INFO'
   } catch {
     Write-Log -message ("{0} :: failed to flush secrets. {1}" -f $($MyInvocation.MyCommand.Name), $_.Exception) -severity 'ERROR'
   }
@@ -702,7 +705,6 @@ function Prep-Golden {
   }
   process {
     #todo: run puppet
-    Flush-EventLog
     Flush-RecycleBin
     Flush-TempFiles
     Flush-BuildFiles
@@ -720,23 +722,37 @@ function Prep-Loaner {
     Write-Log -message ("{0} :: Function started" -f $($MyInvocation.MyCommand.Name)) -severity 'DEBUG'
   }
   process {
-    #todo: run puppet
-    Flush-EventLog
-    Flush-RecycleBin
-    Flush-TempFiles
-    Flush-BuildFiles
-    Flush-Secrets
+    if (Get-EventLog -logName 'Application' -source 'Userdata' -message 'Prep-Loaner :: Function ended' -newest 1 -ErrorAction SilentlyContinue) {
+      Write-Log -message ("{0} :: detected prior run. skipping loaner setup" -f $($MyInvocation.MyCommand.Name)) -severity 'DEBUG'
+    } else {
+      #todo: run puppet
+      Flush-RecycleBin
+      Flush-TempFiles
+      Flush-BuildFiles
+      Flush-Secrets
+      Set-RandomPassword
+      Set-RegistryValue -path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\WinLogon' -key 'AutoAdminLogon' -value 0
+    }
+  }
+  end {
+    Write-Log -message ("{0} :: Function ended" -f $($MyInvocation.MyCommand.Name)) -severity 'DEBUG'
+  }
+}
+
+function Set-RandomPassword {
+  begin {
+    Write-Log -message ("{0} :: Function started" -f $($MyInvocation.MyCommand.Name)) -severity 'DEBUG'
+  }
+  process {
+    $vncini = ('{0}\uvnc bvba\UltraVnc\ultravnc.ini' -f $env:ProgramFiles)
     $password = (New-SWRandomPassword)
-    Set-IniValue -file ('{0}\uvnc bvba\UltraVnc\ultravnc.ini' -f $env:ProgramFiles) -section 'ultravnc' -key 'passwd' -value $password
-    Set-IniValue -file ('{0}\uvnc bvba\UltraVnc\ultravnc.ini' -f $env:ProgramFiles) -section 'ultravnc' -key 'passwd2' -value $password
+    Set-IniValue -file $vncini -section 'ultravnc' -key 'passwd' -value $password
+    Set-IniValue -file $vncini -section 'ultravnc' -key 'passwd2' -value $password
     ([ADSI]'WinNT://./root').SetPassword("$password")
     ([ADSI]'WinNT://./root').SetInfo()
     ([ADSI]'WinNT://./cltbld').SetPassword("$password")
     ([ADSI]'WinNT://./cltbld').SetInfo()
     Write-Log -message ('{0} :: password set to: {1}' -f $($MyInvocation.MyCommand.Name), $password) -severity 'INFO'
-    Set-RegistryValue -path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\WinLogon' -key 'AutoAdminLogon' -value 0
-    Write-Log -message ("{0} :: Wiping free space" -f $($MyInvocation.MyCommand.Name)) -severity 'INFO'
-    & cipher @(('/w:{0}' -f $env:SystemDrive))
   }
   end {
     Write-Log -message ("{0} :: Function ended" -f $($MyInvocation.MyCommand.Name)) -severity 'DEBUG'
@@ -1041,7 +1057,7 @@ function Set-IniValue {
           Write-Log -message ("{0} :: failed to set ini value. {1}" -f $($MyInvocation.MyCommand.Name), $_.Exception) -severity 'ERROR'
         }
       } else {
-        Write-Log -message ("{0} :: detected key: {1} with value: '{2}'." -f $($MyInvocation.MyCommand.Name), $key, $config[$section][$key]) -severity 'DEBUG'
+        Write-Log -message ("{0} :: detected key: {1}" -f $($MyInvocation.MyCommand.Name), $key, $config[$section][$key]) -severity 'DEBUG'
         if ($config[$section][$key] -ne $value) {
           try {
             $config[$section].Set_Item($key, $value)

@@ -126,6 +126,7 @@ if ((!(Is-HostnameSetCorrectly -hostnameExpected $hostname)) -or (!(Is-DomainSet
   }}
 }}
 if ($hostname.Contains("-golden")) {{
+  Flush-EventLog
   Stop-ComputerWithDelay -reason 'userdata golden run complete'
 }}
 if (!($hostname.Contains("-spot-"))) {{
