@@ -522,6 +522,7 @@ function Disable-Firewall {
     Write-Log -message 'removing Windows Firewall registry entries' -severity 'INFO'
     Remove-Item -path $registryKey -recurse -force
   }
+  Disable-Service -serviceName 'WinDefend'
 }
 
 function Flush-EventLog {
