@@ -1451,6 +1451,12 @@ function Install-BasePrerequisites {
   Set-AutoLogin
   Set-RegistryValue -path 'HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem' -key 'NtfsDisableLastAccessUpdate' -value 1
   Set-RegistryValue -path 'HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem' -key 'NtfsMemoryUsage' -value 2
+
+  # start hacks
+  Create-SymbolicLink -link 'C:\mozilla-buildpython27' -target 'C:\mozilla-build\python27'
+  Create-SymbolicLink -link 'C:\mozilla-buildbuildbotve' -target 'C:\mozilla-build\buildbotve'
+  # Add-PathToPath -path ('{0}\Microsoft Visual Studio 12.0\VC\bin' -f ${env:ProgramFiles(x86)}) -target 'Machine'
+  # end hacks
 }
 
 function Set-Timezone {
