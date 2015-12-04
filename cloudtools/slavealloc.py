@@ -114,6 +114,14 @@ def slave_moz_type(slave):
        slave.get("trustlevel") == "try":
         return "y-2008"
 
+    # y-2008 (try-2008)
+    if slave.get("bitlength") == "32" and \
+       slave.get("environment") == "prod" and \
+       slave.get("distro") == "win7" and \
+       slave.get("purpose") == "tests" and \
+       slave.get("trustlevel") == "try":
+        return "t-w732"
+
     return None
 
 
