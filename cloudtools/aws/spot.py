@@ -4,7 +4,6 @@ from datetime import datetime, timedelta
 from repoze.lru import lru_cache
 from . import get_aws_connection, aws_time_to_datetime, retry_aws_request
 from ..slavealloc import get_classified_slaves
-from ..jacuzzi import get_allocated_slaves
 
 CANCEL_STATUS_CODES = ["capacity-oversubscribed", "price-too-low",
                        "capacity-not-available"]
@@ -175,7 +174,7 @@ def usable_spot_choice(choice, minutes=15):
 _avail_slave_names = {}
 
 
-def get_available_slave_name(region, moz_instance_type, slaveset, is_spot,
+def get_available_slave_name(region, moz_instance_type, is_spot,
                              all_instances):
     key = (region, moz_instance_type, is_spot)
     if key in _avail_slave_names:
@@ -183,10 +182,7 @@ def get_available_slave_name(region, moz_instance_type, slaveset, is_spot,
         if not _avail_slave_names[key]:
             return None
 
-        if slaveset:
-            usable = _avail_slave_names[key].intersection(slaveset)
-        else:
-            usable = _avail_slave_names[key] - set(get_allocated_slaves(None))
+        usable = _avail_slave_names[key]
         if not usable:
             return None
         name = usable.pop()
@@ -202,7 +198,7 @@ def get_available_slave_name(region, moz_instance_type, slaveset, is_spot,
         used_names = all_used_names.union(used_spot_names)
         _avail_slave_names[key] = all_slave_names[moz_instance_type][region] -\
             used_names
-        return get_available_slave_name(region, moz_instance_type, slaveset,
+        return get_available_slave_name(region, moz_instance_type,
                                         is_spot, all_instances)
 
 

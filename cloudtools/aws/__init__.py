@@ -20,7 +20,6 @@ DEFAULT_REGIONS = ['us-east-1', 'us-west-2']
 # Number of seconds from an instance's launch time for it to be considered
 # 'fresh'
 FRESH_INSTANCE_DELAY = 20 * 60
-FRESH_INSTANCE_DELAY_JACUZZI = 10 * 60
 
 
 @lru_cache(10)
@@ -191,33 +190,25 @@ def filter_instances_launched_since(instances, launched_since):
     return retval
 
 
-def aws_get_fresh_instances(instances, slaveset):
-    if slaveset:
-        # jaccuzied slaves, use shorter delay
-        since = time.time() - FRESH_INSTANCE_DELAY_JACUZZI
-    else:
-        since = time.time() - FRESH_INSTANCE_DELAY
+def aws_get_fresh_instances(instances):
+    since = time.time() - FRESH_INSTANCE_DELAY
     return filter_instances_launched_since(instances, since)
 
 
-def reduce_by_freshness(count, instances, moz_instance_type, slaveset):
-    fresh = aws_get_fresh_instances(instances, slaveset)
+def reduce_by_freshness(count, instances, moz_instance_type):
+    fresh = aws_get_fresh_instances(instances)
     num_fresh = len(fresh)
-    log.debug("%i running (%i fresh), slaveset %s", len(instances), num_fresh,
-              slaveset)
+    log.debug("%i running (%i fresh)", len(instances), num_fresh,)
     # TODO: This logic is probably too simple
     # Reduce the number of required slaves by the number of freshly
     # started instaces, plus 10% of those that have been running a
     # while
     reduce_by = num_fresh
-    if not slaveset:
-        # if not in jacuzzi, reduce by 10% of already running instances
-        num_old = len(instances) - num_fresh
-        reduce_by += num_old / 10
+    num_old = len(instances) - num_fresh
+    reduce_by += num_old / 10
     # log.debug("reducing required count for %s %s %s "
-    log.debug("reducing required count for %s by %i (need: %i, running: %i) "
-              "slaveset: %s", moz_instance_type, reduce_by, count,
-              len(instances), slaveset)
+    log.debug("reducing required count for %s by %i (need: %i, running: %i) ",
+              moz_instance_type, reduce_by, count, len(instances))
     return max(0, count - reduce_by)
 
 
@@ -246,13 +237,6 @@ def distribute_in_region(count, regions, region_priorities):
 def load_instance_config(moz_instance_type):
     return json.load(open(os.path.join(INSTANCE_CONFIGS_DIR,
                                        moz_instance_type)))
-
-
-def jacuzzi_suffix(slaveset):
-    if slaveset:
-        return "jacuzzied"
-    else:
-        return "not_jacuzzied"
 
 
 def get_buildslave_instances(region, moz_types):
