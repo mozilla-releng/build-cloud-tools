@@ -6,8 +6,6 @@ import requests
 from sqlalchemy.engine.reflection import Inspector
 from collections import defaultdict
 
-from .jacuzzi import get_allocated_slaves
-
 log = logging.getLogger(__name__)
 ACTIVITY_BOOTING, ACTIVITY_STOPPED = ("booting", "stopped")
 
@@ -50,10 +48,8 @@ def map_builders(pending, builder_map):
     for pending_buildername, _ in pending:
         for buildername_exp, moz_instance_type in builder_map.items():
             if re.match(buildername_exp, pending_buildername):
-                slaveset = get_allocated_slaves(pending_buildername)
-                log.debug("%s instance type %s slaveset %s",
-                          pending_buildername, moz_instance_type, slaveset)
-                type_map[moz_instance_type, slaveset] += 1
+                log.debug("%s instance type %s", pending_buildername, moz_instance_type)
+                type_map[moz_instance_type] += 1
                 break
         else:
             log.debug("%s has pending jobs, but no instance types defined",

@@ -2,9 +2,9 @@ import pytest
 import mock
 
 from cloudtools.aws import aws_get_fresh_instances, FRESH_INSTANCE_DELAY, \
-    FRESH_INSTANCE_DELAY_JACUZZI, filter_instances_launched_since, \
+    filter_instances_launched_since, \
     reduce_by_freshness, distribute_in_region, aws_get_running_instances, \
-    jacuzzi_suffix, aws_filter_instances, filter_spot_instances, \
+    aws_filter_instances, filter_spot_instances, \
     filter_ondemand_instances, get_buildslave_instances
 
 
@@ -49,20 +49,9 @@ def test_aws_get_fresh_instances():
         with mock.patch("cloudtools.aws.filter_instances_launched_since") \
                 as m_fils:
             m_time.return_value = now_ts
-            aws_get_fresh_instances(None, None)
+            aws_get_fresh_instances(None)
             m_fils.assert_called_once_with(
                 None, now_ts - FRESH_INSTANCE_DELAY)
-
-
-def test_aws_get_fresh_jacuzzy_instances():
-    now_ts = 10 * 1000
-    with mock.patch("time.time") as m_time:
-        with mock.patch("cloudtools.aws.filter_instances_launched_since") \
-                as m_fils:
-            m_time.return_value = now_ts
-            aws_get_fresh_instances(None, "fake_slaveset")
-            m_fils.assert_called_once_with(
-                None, now_ts - FRESH_INSTANCE_DELAY_JACUZZI)
 
 
 def test_filter_instances_launched_since(example_instances):
@@ -90,26 +79,7 @@ def test_reduce_by_freshness():
     t_fresh = 1414809843 - FRESH_INSTANCE_DELAY + 10
     with mock.patch("time.time") as m_time:
         m_time.return_value = t_fresh
-        assert reduce_by_freshness(100, instances, "meh_type", None) == 87
-
-
-def test_reduce_by_freshness_jacuzzi():
-    instances = []
-    # reduce by 100% of fresh (10) and 0% of old
-    for i in range(10):
-        i = mock.Mock()
-        i.launch_time = "2014-11-01T02:44:03.000Z"
-        instances.append(i)
-    for i in range(30):
-        i = mock.Mock()
-        i.launch_time = "2013-11-01T02:44:03.000Z"
-        instances.append(i)
-    # fresh launch_time converted to UNIX time
-    t_fresh = 1414809843 - FRESH_INSTANCE_DELAY_JACUZZI + 10
-    with mock.patch("time.time") as m_time:
-        m_time.return_value = t_fresh
-        assert reduce_by_freshness(
-            100, instances, "meh_type", "fake_slaveset") == 90
+        assert reduce_by_freshness(100, instances, "meh_type") == 87
 
 
 def test_basic():
@@ -158,14 +128,6 @@ def test_intersection():
     regions = ["a", "b", "c"]
     region_priorities = {"a": 20, "d": 30}
     assert distribute_in_region(count, regions, region_priorities) == {"a": 10}
-
-
-def test_jacuzzied():
-    assert jacuzzi_suffix(slaveset=["a"]) == "jacuzzied"
-
-
-def test_not_jacuzzied():
-    assert jacuzzi_suffix(slaveset=None) == "not_jacuzzied"
 
 
 def test_aws_get_running_instances(example_instances):

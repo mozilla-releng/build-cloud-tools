@@ -22,10 +22,9 @@ from cloudtools.aws import (get_aws_connection, aws_get_running_instances,
                             aws_get_all_instances, filter_spot_instances,
                             filter_ondemand_instances, reduce_by_freshness,
                             distribute_in_region, load_instance_config,
-                            jacuzzi_suffix, get_region_dns_atom)
+                            get_region_dns_atom)
 from cloudtools.aws.spot import get_spot_requests_for_moztype, \
     usable_spot_choice, get_available_slave_name, get_spot_choices
-from cloudtools.jacuzzi import filter_instances_by_slaveset
 from cloudtools.aws.ami import get_ami, get_spot_amis
 from cloudtools.aws.vpc import get_avail_subnet
 from cloudtools.buildbot import find_pending, map_builders
@@ -101,7 +100,7 @@ def find_prev_latest_amis_needed(latest_ami_percentage, latest_ami_count,
 
 
 def aws_resume_instances(all_instances, moz_instance_type, start_count,
-                         regions, region_priorities, dryrun, slaveset):
+                         regions, region_priorities, dryrun):
     """Create up to `start_count` on-demand instances"""
 
     start_count_per_region = distribute_in_region(start_count, regions,
@@ -120,7 +119,7 @@ def aws_resume_instances(all_instances, moz_instance_type, start_count,
                     price=None, availability_zone=None,
                     ami=ami, instance_config=instance_config,
                     instance_type=instance_config[region]["instance_type"],
-                    slaveset=slaveset, is_spot=False, dryrun=dryrun,
+                    is_spot=False, dryrun=dryrun,
                     all_instances=all_instances)
                 if r:
                     started += 1
@@ -145,7 +144,7 @@ def get_product_description(moz_instance_type):
 
 def request_spot_instances(all_instances, moz_instance_type, start_count,
                            regions, region_priorities, spot_config, dryrun,
-                           slaveset, latest_ami_percentage):
+                           latest_ami_percentage):
     started = 0
     spot_rules = spot_config.get("rules", {}).get(moz_instance_type)
     if not spot_rules:
@@ -241,7 +240,6 @@ def request_spot_instances(all_instances, moz_instance_type, start_count,
                     ami=to_start_entry["ami"],
                     instance_config=instance_config, dryrun=dryrun,
                     spot_choice=choice,
-                    slaveset=slaveset,
                     all_instances=all_instances,
                 )
                 started += launched
@@ -253,7 +251,7 @@ def request_spot_instances(all_instances, moz_instance_type, start_count,
 
 
 def do_request_spot_instances(amount, region, moz_instance_type, ami,
-                              instance_config, spot_choice, slaveset,
+                              instance_config, spot_choice,
                               all_instances, dryrun):
     started = 0
     for _ in range(amount):
@@ -264,7 +262,7 @@ def do_request_spot_instances(amount, region, moz_instance_type, ami,
                 price=spot_choice.bid_price,
                 availability_zone=spot_choice.availability_zone,
                 ami=ami, instance_config=instance_config,
-                instance_type=spot_choice.instance_type, slaveset=slaveset,
+                instance_type=spot_choice.instance_type,
                 is_spot=True, dryrun=dryrun, all_instances=all_instances)
             if r:
                 started += 1
@@ -281,14 +279,14 @@ def do_request_spot_instances(amount, region, moz_instance_type, ami,
 
 
 def do_request_instance(region, moz_instance_type, price, ami, instance_config,
-                        instance_type, availability_zone, slaveset, is_spot,
+                        instance_type, availability_zone, is_spot,
                         all_instances, dryrun):
-    name = get_available_slave_name(region, moz_instance_type, slaveset,
+    name = get_available_slave_name(region, moz_instance_type,
                                     is_spot=is_spot,
                                     all_instances=all_instances)
     if not name:
         log.debug("No slave name available for %s, %s, %s" % (
-            region, moz_instance_type, slaveset))
+            region, moz_instance_type))
         return False
 
     subnet_id = get_avail_subnet(region, instance_config[region]["subnet_ids"],
@@ -343,11 +341,9 @@ def do_request_instance(region, moz_instance_type, price, ami, instance_config,
             life_cycle_type="spot" if is_spot else "ondemand",
             virtualization=ami.virtualization_type,
             root_device_type=ami.root_device_type,
-            jacuzzi_type=jacuzzi_suffix(slaveset),
         )
         name = "started.{region}.{moz_instance_type}.{instance_type}" \
-            ".{life_cycle_type}.{virtualization}.{root_device_type}" \
-            ".{jacuzzi_type}"
+            ".{life_cycle_type}.{virtualization}.{root_device_type}"
         gr_log.add(name.format(**template_values), 1, collect=True)
     return rv
 
@@ -430,7 +426,7 @@ def aws_watch_pending(dburl, regions, builder_map, region_priorities,
     log.debug("processing %i pending jobs", len(pending))
     gr_log.add("pending", len(pending))
 
-    # Mapping of (instance types, slaveset) to # of instances we want to
+    # Mapping of instance types to # of instances we want to
     # creates
     # Map pending builder names to instance types
     pending_builder_map = map_builders(pending, builder_map)
@@ -442,40 +438,29 @@ def aws_watch_pending(dburl, regions, builder_map, region_priorities,
     to_create_spot = pending_builder_map
     to_create_ondemand = defaultdict(int)
 
-    # For each moz_instance_type, slaveset, find how many are currently
+    # For each moz_instance_type find how many are currently
     # running, and scale our count accordingly
     all_instances = aws_get_all_instances(regions)
     cloudtools.graphite.generate_instance_stats(all_instances)
 
     # Reduce the requirements, pay attention to freshess and running instances
     to_delete = set()
-    for (moz_instance_type, slaveset), count in to_create_spot.iteritems():
-        running = filter_instances_by_slaveset(
-            aws_get_running_instances(all_instances, moz_instance_type),
-            slaveset)
+    for moz_instance_type, count in to_create_spot.iteritems():
+        running = aws_get_running_instances(all_instances, moz_instance_type)
         spot_running = filter_spot_instances(running)
-        to_create_spot[moz_instance_type, slaveset] = reduce_by_freshness(
-            count, spot_running, moz_instance_type, slaveset)
+        to_create_spot[moz_instance_type] = reduce_by_freshness(
+            count, spot_running, moz_instance_type)
 
-        if to_create_spot[moz_instance_type, slaveset] == 0:
-            log.debug("removing requirement for %s %s %s", "spot",
-                      moz_instance_type, slaveset)
-            to_delete.add((moz_instance_type, slaveset))
+        if to_create_spot[moz_instance_type] == 0:
+            log.debug("removing requirement for %s %s", "spot",
+                      moz_instance_type)
+            to_delete.add((moz_instance_type))
 
-        # If slaveset is not None, and all our slaves are running, we should
-        # remove it from the set of things to try and start instances for
-        if slaveset and \
-                slaveset.issubset(
-                    set(i.tags.get('Name') for i in spot_running)):
-            log.debug("removing %s %s since all the slaves are running",
-                      moz_instance_type, slaveset)
-            to_delete.add((moz_instance_type, slaveset))
+    for moz_instance_type in to_delete:
+        del to_create_spot[moz_instance_type]
 
-    for moz_instance_type, slaveset in to_delete:
-        del to_create_spot[moz_instance_type, slaveset]
-
-    for (moz_instance_type, slaveset), count in to_create_spot.iteritems():
-        log.debug("need %i spot %s for slaveset %s", count, moz_instance_type, slaveset)
+    for (moz_instance_type), count in to_create_spot.iteritems():
+        log.debug("need %i spot %s", count, moz_instance_type)
         # Cap by our global limits if applicable
         if spot_config and 'global' in spot_config.get('limits', {}):
             global_limit = spot_config['limits']['global'].get(moz_instance_type)
@@ -493,21 +478,18 @@ def aws_watch_pending(dburl, regions, builder_map, region_priorities,
             all_instances,
             moz_instance_type=moz_instance_type, start_count=count,
             regions=regions, region_priorities=region_priorities,
-            spot_config=spot_config, dryrun=dryrun, slaveset=slaveset,
+            spot_config=spot_config, dryrun=dryrun,
             latest_ami_percentage=latest_ami_percentage)
         count -= started
-        log.debug("%s - started %i spot instances for slaveset %s; need %i",
-                  moz_instance_type, started, slaveset, count)
-        gr_log.add("need.{moz_instance_type}.{jacuzzi_type}".format(
-            moz_instance_type=moz_instance_type,
-            jacuzzi_type=jacuzzi_suffix(slaveset)), count, collect=True)
+        log.debug("%s - started %i spot instances; need %i",
+                  moz_instance_type, started, count)
 
         # Add leftover to ondemand
-        to_create_ondemand[moz_instance_type, slaveset] += count
+        to_create_ondemand[moz_instance_type] += count
 
-    for (moz_instance_type, slaveset), count in to_create_ondemand.iteritems():
-        log.debug("need %i ondemand %s for slaveset %s", count,
-                  moz_instance_type, slaveset)
+    for moz_instance_type, count in to_create_ondemand.iteritems():
+        log.debug("need %i ondemand %s", count,
+                  moz_instance_type)
         # Cap by our global limits if applicable
         if ondemand_config and 'global' in ondemand_config.get('limits', {}):
             global_limit = ondemand_config['limits']['global'].get(moz_instance_type)
@@ -527,10 +509,10 @@ def aws_watch_pending(dburl, regions, builder_map, region_priorities,
         # there are any
         started = aws_resume_instances(all_instances, moz_instance_type, count,
                                        regions, region_priorities,
-                                       dryrun, slaveset)
+                                       dryrun)
         count -= started
-        log.debug("%s - started %i instances for slaveset %s; need %i",
-                  moz_instance_type, started, slaveset, count)
+        log.debug("%s - started %i instances; need %i",
+                  moz_instance_type, started, count)
 
 
 def main():
