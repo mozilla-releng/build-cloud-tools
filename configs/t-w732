@@ -3,7 +3,7 @@
     "us-east-1": {
         "type": "t-w732",
         "domain": "test.releng.use1.mozilla.com",
-        "ami": "ami-xxxxxxxx",
+        "ami": "ami-16e4b17c",
         "subnet_ids": ["subnet-5bafe92c", "subnet-e40e0786", "subnet-ff3542d7",
                        "subnet-49981462", "subnet-f22fb5ab", "subnet-b8643190",
                        "subnet-fb97bc8f", "subnet-5cd0d828", "subnet-3835cc52",
@@ -14,7 +14,7 @@
         "security_group_ids": [
             "sg-f0f1239f"
         ],
-        "instance_type": "c3.2xlarge",
+        "instance_type": "g2.2xlarge",
         "distro": "win7",
         "ssh_key": "aws-releng",
         "use_public_ip": true,
@@ -35,7 +35,7 @@
     "us-west-2": {
         "type": "t-w732",
         "domain": "test.releng.usw2.mozilla.com",
-        "ami": "ami-xxxxxxxx",
+        "ami": "ami-50fbe431",
         "subnet_ids": ["subnet-aecba8c7", "subnet-56082710", "subnet-40b36d19",
                        "subnet-a4cba8cd", "subnet-871471e2", "subnet-737f9216",
                        "subnet-46932831", "subnet-41932836", "subnet-be89a2ca",
@@ -43,7 +43,7 @@
                        "subnet-e4464a90", "subnet-b91471dc", "subnet-45b36d1c",
                        "subnet-ec464a98"],
         "security_group_ids": ["sg-8b9f7ce4"],
-        "instance_type": "c3.2xlarge",
+        "instance_type": "g2.2xlarge",
         "distro": "win7",
         "ssh_key": "aws-releng",
         "use_public_ip": true,

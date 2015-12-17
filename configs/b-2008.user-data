@@ -115,7 +115,7 @@ if ($hostname.Contains("-golden")) {{
 }} elseif ($hostname -match "(b|y)-2[0-9]{{3}}-ec2-[a-z].*") {{
   Prep-Loaner
 }}
-if ($hostname.Contains("-ec2-")) {{
+if ($hostname.Contains("-2008-ec2-")) {{
   Get-SourceCaches -hostname $hostname
 }}
 if ((!(Is-HostnameSetCorrectly -hostnameExpected $hostname)) -or (!(Is-DomainSetCorrectly -domainExpected $domain))) {{
