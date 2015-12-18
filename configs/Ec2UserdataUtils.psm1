@@ -231,9 +231,13 @@ function Disable-WindowsUpdate {
   #>
   $autoUpdateSettings = (New-Object -com "Microsoft.Update.AutoUpdate").Settings
   if ($autoUpdateSettings.NotificationLevel -ne 1) {
-    Write-Log -message 'disabling Windows Update notifications' -severity 'INFO'
-    $autoUpdateSettings.NotificationLevel=1
-    $autoUpdateSettings.Save()
+    try {
+      $autoUpdateSettings.NotificationLevel=1
+      $autoUpdateSettings.Save()
+      Write-Log -message ("{0} :: disabled Windows Update notifications" -f $($MyInvocation.MyCommand.Name)) -severity 'INFO'
+    } catch {
+      Write-Log -message ("{0} :: failed to disable Windows Update notifications" -f $($MyInvocation.MyCommand.Name), $_.Exception) -severity 'ERROR'
+    }
   } else {
     Write-Log -message 'detected disabled Windows Update notifications' -severity 'DEBUG'
   }
@@ -469,7 +473,7 @@ function Is-AggregatorConfiguredCorrectly {
   param (
     [string] $aggregator
   )
-  $conf = ('{0}\nxlog\conf\nxlog_target_aggregator.conf' -f ${env:ProgramFiles(x86)})
+  $conf = ('{0}\nxlog\conf\nxlog_target_aggregator.conf' -f @{$true=${env:ProgramFiles(x86)};$false=$env:ProgramFiles}[(Test-Path Env:\'ProgramFiles(x86)')])
   if ((Test-Path $conf) -and (Does-FileContain -haystack $conf -needle $aggregator)) {
     return $true
   } else {
@@ -489,15 +493,15 @@ function Set-Aggregator {
   param (
     [string] $aggregator
   )
-  $conf = ('{0}\nxlog\conf\nxlog_target_aggregator.conf' -f ${env:ProgramFiles(x86)})
+  $conf = ('{0}\nxlog\conf\nxlog_target_aggregator.conf' -f @{$true=${env:ProgramFiles(x86)};$false=$env:ProgramFiles}[(Test-Path Env:\'ProgramFiles(x86)')])
   if (Test-Path $conf) {
     (Get-Content $conf) | Foreach-Object { $_ -replace "(Host .*)", "Host $aggregator" } | Set-Content $conf
     (Get-Content $conf) | Foreach-Object { $_ -replace "(Port .*)", "Port 1514" } | Set-Content $conf
     Write-Log -message "log aggregator set to: $aggregator" -severity 'INFO'
   }
-  $conf = ('{0}\nxlog\conf\nxlog.conf' -f ${env:ProgramFiles(x86)})
+  $conf = ('{0}\nxlog\conf\nxlog.conf' -f @{$true=${env:ProgramFiles(x86)};$false=$env:ProgramFiles}[(Test-Path Env:\'ProgramFiles(x86)')])
   if (Test-Path $conf) {
-    (Get-Content $conf) | Foreach-Object { $_ -replace "(define ROOT .*)", ('define ROOT {0}\nxlog' -f ${env:ProgramFiles(x86)}) } | Set-Content $conf
+    (Get-Content $conf) | Foreach-Object { $_ -replace "(define ROOT .*)", ('define ROOT {0}\nxlog' -f @{$true=${env:ProgramFiles(x86)};$false=$env:ProgramFiles}[(Test-Path Env:\'ProgramFiles(x86)')]) } | Set-Content $conf
     (Get-Content $conf) | Foreach-Object { $_ -replace "(include .*)", 'include %ROOT%\conf\nxlog_*.conf' } | Set-Content $conf
     Write-Log -message "nxlog include config adjusted" -severity 'INFO'
   }
@@ -1353,7 +1357,7 @@ function Install-DirectX10 {
     Write-Log -message ("{0} :: Function started" -f $($MyInvocation.MyCommand.Name)) -severity 'DEBUG'
   }
   process {
-    if (Test-Path ('{0}\Microsoft DirectX SDK (June 2010)\Utilities\bin\dx_setenv.cmd' -f ${env:ProgramFiles(x86)})) {
+    if (Test-Path ('{0}\Microsoft DirectX SDK (June 2010)\Utilities\bin\dx_setenv.cmd' -f @{$true=${env:ProgramFiles(x86)};$false=$env:ProgramFiles}[(Test-Path Env:\'ProgramFiles(x86)')])) {
       Write-Log -message ('{0} ::DirectX install detected' -f $($MyInvocation.MyCommand.Name)) -severity 'DEBUG'
     } else {
       try {
@@ -1379,7 +1383,7 @@ function Install-RelOpsPrerequisites {
   param (
     [string] $aggregator
   )
-  #Install-Package -id 'nxlog' -version '2.8.1248' -testPath ('{0}\nxlog\conf\nxlog.conf' -f ${env:ProgramFiles(x86)})
+  #Install-Package -id 'nxlog' -version '2.8.1248' -testPath ('{0}\nxlog\conf\nxlog.conf' -f @{$true=${env:ProgramFiles(x86)};$false=$env:ProgramFiles}[(Test-Path Env:\'ProgramFiles(x86)')])
   Configure-NxLog -aggregator $aggregator
   if (Install-Package -id 'sublimetext3' -version '3.0.0.3083' -testPath ('{0}\Sublime Text 3\sublime_text.exe' -f $env:ProgramFiles)) {
     foreach ($ftype in @('txtfile', 'inifile')) {
@@ -1411,8 +1415,8 @@ function Install-MozillaBuildAndPrerequisites {
     Add-WindowsFeature -Name 'NET-Framework-Core' -IncludeAllSubFeature # prerequisite for June 2010 DirectX SDK is to install ".NET Framework 3.5 (includes .NET 2.0 and 3.0)"
   }
   Install-DirectX10
-  Install-Package -id 'visualstudiocommunity2013' -version '12.0.21005.1' -testPath ('{0}\Microsoft Visual Studio 12.0\Common7\IDE\devenv.exe' -f ${env:ProgramFiles(x86)})
-  Install-Package -id 'windows-sdk-8.1' -version '8.100.26654.0' -testPath ('{0}\Microsoft Visual Studio 12.0\Common7\IDE\devenv.exe' -f ${env:ProgramFiles(x86)})
+  Install-Package -id 'visualstudiocommunity2013' -version '12.0.21005.1' -testPath ('{0}\Microsoft Visual Studio 12.0\Common7\IDE\devenv.exe' -f @{$true=${env:ProgramFiles(x86)};$false=$env:ProgramFiles}[(Test-Path Env:\'ProgramFiles(x86)')])
+  Install-Package -id 'windows-sdk-8.1' -version '8.100.26654.0' -testPath ('{0}\Microsoft Visual Studio 12.0\Common7\IDE\devenv.exe' -f @{$true=${env:ProgramFiles(x86)};$false=$env:ProgramFiles}[(Test-Path Env:\'ProgramFiles(x86)')])
   if(Install-Package -id 'mozillabuild' -version '2.0.0' -testPath ('{0}\mozilla-build\yasm\yasm.exe' -f $env:SystemDrive)) {
     Create-SymbolicLink -link ('{0}\mozilla-build\python27' -f $env:SystemDrive) -target ('{0}\mozilla-build\python' -f $env:SystemDrive)
     if (!(Test-Path 'c:\mozilla-build\python\Lib\site-packages\pywin32-218-py2.7-win32.egg' -PathType Container)) {
@@ -1458,7 +1462,7 @@ function Install-BasePrerequisites {
   # start hacks
   Create-SymbolicLink -link 'C:\mozilla-buildpython27' -target 'C:\mozilla-build\python27'
   Create-SymbolicLink -link 'C:\mozilla-buildbuildbotve' -target 'C:\mozilla-build\buildbotve'
-  # Add-PathToPath -path ('{0}\Microsoft Visual Studio 12.0\VC\bin' -f ${env:ProgramFiles(x86)}) -target 'Machine'
+  # Add-PathToPath -path ('{0}\Microsoft Visual Studio 12.0\VC\bin' -f @{$true=${env:ProgramFiles(x86)};$false=$env:ProgramFiles}[(Test-Path Env:\'ProgramFiles(x86)')]) -target 'Machine'
   # end hacks
 }
 
@@ -1470,14 +1474,25 @@ function Set-Timezone {
   & 'tzutil' $a
 }
 
+function Get-EventlogOsTemplate {
+  if ($env:ComputerName.Contains('-w732-')) {
+    return 'nxlog_source_eventlog_win7_ec2.conf'
+  } elseif ($env:ComputerName.Contains('-w10-')) {
+    return 'nxlog_source_eventlog_win10_ec2.conf'
+  } else {
+    return 'nxlog_source_eventlog_win2008_ec2.conf'
+  }
+}
+
 function Configure-NxLog {
   param (
-    [string] $version = '12020ace67f4', # latest: 'default'
+    [string] $version = 'c0fe5210f89a', # latest: 'tip'
     [string] $url = ('https://hg.mozilla.org/build/puppet/raw-file/{0}/modules/nxlog/templates' -f $version), # latest: 'default'
-    [string] $target = ('{0}\nxlog\conf' -f ${env:ProgramFiles(x86)}),
-    [string[]] $files = @('nxlog.conf', 'nxlog_source_eventlog_win2008_ec2.conf', 'nxlog_route_eventlog_aggregator.conf', 'nxlog_target_aggregator.conf', 'nxlog_transform_syslog.conf'),
+    [string] $target = ('{0}\nxlog\conf' -f @{$true=${env:ProgramFiles(x86)};$false=$env:ProgramFiles}[(Test-Path Env:\'ProgramFiles(x86)')]),
+    [string[]] $files = @('nxlog.conf', 'nxlog_route_eventlog_aggregator.conf', 'nxlog_target_aggregator.conf', 'nxlog_transform_syslog.conf'),
     [string] $aggregator
   )
+  $files += Get-EventlogOsTemplate
   foreach ($file in $files) {
     $remote = ('{0}/{1}.erb' -f $url, $file)
     $local = ('{0}\{1}' -f $target, $file)
@@ -1678,7 +1693,7 @@ function New-SWRandomPassword {
     
     # Specifies an array of strings containing charactergroups from which the password will be generated.
     # At least one char from each group (string) will be used.
-    [String[]]$InputStrings = @('abcdefghijkmnpqrstuvwxyz', 'ABCEFGHJKLMNPQRSTUVWXYZ', '23456789', '!@$#%&'),
+    [String[]]$InputStrings = @('abcdefghijkmnpqrstuvwxyz', 'ABCEFGHJKLMNPQRSTUVWXYZ', '23456789', '!@$#&'),
 
     # Specifies a string containing a character group from which the first character in the password will be generated.
     # Useful for systems which requires first char in password to be alphabetic.
