@@ -3,7 +3,7 @@
     "us-east-1": {
         "type": "tst-linux64",
         "domain": "test.releng.use1.mozilla.com",
-        "ami": "ami-e48e1e8d",
+        "ami": "ami-385c4459",
         "subnet_ids": ["subnet-5bafe92c", "subnet-e40e0786", "subnet-ff3542d7",
                        "subnet-49981462", "subnet-f22fb5ab", "subnet-b8643190",
                        "subnet-fb97bc8f", "subnet-5cd0d828", "subnet-3835cc52",
@@ -31,7 +31,7 @@
     "us-west-2": {
         "type": "tst-linux64",
         "domain": "test.releng.usw2.mozilla.com",
-        "ami": "ami-e00a80d0",
+        "ami": "ami-385c4459",
         "subnet_ids": ["subnet-aecba8c7", "subnet-56082710", "subnet-40b36d19",
                        "subnet-a4cba8cd", "subnet-871471e2", "subnet-737f9216",
                        "subnet-46932831", "subnet-41932836", "subnet-be89a2ca",
