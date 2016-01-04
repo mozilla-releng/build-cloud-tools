@@ -4,6 +4,7 @@ import logging
 import time
 import random
 import StringIO
+import pipes
 import redo
 from boto.ec2.blockdevicemapping import BlockDeviceMapping, BlockDeviceType
 from boto.ec2.networkinterface import NetworkInterfaceSpecification, \
@@ -161,7 +162,16 @@ def assimilate_instance(instance, config, ssh_key, instance_data, deploypass,
 
     puppet_master = pick_puppet_master(instance_data["puppet_masters"])
     log.info("Puppetizing %s against %s; this may take a while...", hostname, puppet_master)
-    run_chroot("env PUPPET_SERVER=%s /root/puppetize.sh" % puppet_master)
+    # export PUPPET_EXTRA_OPTIONS to pass extra parameters to puppet agent
+    if os.environ.get("PUPPET_EXTRA_OPTIONS"):
+        puppet_extra_options = "PUPPET_EXTRA_OPTIONS=%s" % \
+            pipes.quote(os.environ["PUPPET_EXTRA_OPTIONS"])
+        # in case we pass --environment, make sure we use proper puppet masters
+        puppet_master = pick_puppet_master(instance_data["dev_puppet_masters"])
+    else:
+        puppet_extra_options = ""
+    run_chroot("env PUPPET_SERVER=%s %s /root/puppetize.sh" %
+               (puppet_master, puppet_extra_options))
 
     if "buildslave_password" in instance_data:
         # Set up a stub buildbot.tac
