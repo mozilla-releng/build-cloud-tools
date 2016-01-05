@@ -8,7 +8,7 @@
                        "subnet-49981462", "subnet-f22fb5ab", "subnet-b8643190",
                        "subnet-fb97bc8f", "subnet-5cd0d828", "subnet-3835cc52",
                        "subnet-ae35ccc4", "subnet-4f981464", "subnet-ed35cc87",
-                       "subnet-42f0c078", "subnet-844b7ec2", "subnet-8f32cbe5",
+                       "subnet-844b7ec2", "subnet-8f32cbe5",
                        "subnet-f42fb5ad", "subnet-a11d08c3", "subnet-5032d235",
                        "subnet-7ca5f03a", "subnet-5332d236"],
         "security_group_ids": ["sg-f0f1239f"],
