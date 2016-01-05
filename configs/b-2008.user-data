@@ -108,7 +108,7 @@ Set-Ec2ConfigPluginsState
 Set-Timezone
 Disable-Firewall 
 Disable-WindowsUpdate
-Install-BasePrerequisites -aggregator $aggregator
+Install-BasePrerequisites -aggregator $aggregator -domain $domain
 Rename-Admin
 if ($hostname.Contains("-golden")) {{
   Prep-Golden
