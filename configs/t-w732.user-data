@@ -124,7 +124,7 @@ if (!(Is-HostnameSetCorrectly -hostnameExpected $hostname)) {{
 if ($hostname.Contains("-golden")) {{
   Prep-Golden -puppetServer $puppetServer -logdest $puppetLog -deployPass $deployPass
   Flush-EventLog
-  #Stop-ComputerWithDelay -reason 'userdata golden run complete'
+  Stop-ComputerWithDelay -reason 'userdata golden run complete'
 }} elseif ($hostname -match "(b|y)-2[0-9]{{3}}-ec2-[a-z].*") {{
   Prep-Loaner -deployPass $deployPass
 }}
