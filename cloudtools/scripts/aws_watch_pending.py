@@ -285,8 +285,8 @@ def do_request_instance(region, moz_instance_type, price, ami, instance_config,
                                     is_spot=is_spot,
                                     all_instances=all_instances)
     if not name:
-        log.debug("No slave name available for %s, %s, %s" % (
-            region, moz_instance_type))
+        log.debug("No slave name available for %s, %s",
+                  region, moz_instance_type)
         return False
 
     subnet_id = get_avail_subnet(region, instance_config[region]["subnet_ids"],
