@@ -415,11 +415,11 @@ function Is-HostnameSetCorrectly {
   param (
     [string] $hostnameExpected
   )
-  $hostnameActual = [System.Net.Dns]::GetHostName()
-  if ("$hostnameExpected" -ieq "$hostnameActual") {
+  $netDnsHostname = [System.Net.Dns]::GetHostName()
+  if (("$hostnameExpected" -ieq "$netDnsHostname") -and ("$hostnameExpected" -ieq "$env:COMPUTERNAME")) {
     return $true
   } else {
-    Write-Log -message ('net dns hostname: {0}, expected: {1}' -f $hostnameActual, $hostnameExpected) -severity 'DEBUG'
+    Write-Log -message ('net dns hostname: {0}, expected: {1}' -f $netDnsHostname, $hostnameExpected) -severity 'DEBUG'
     Write-Log -message ('computer name env var: {0}, expected: {1}' -f $env:COMPUTERNAME, $hostnameExpected) -severity 'DEBUG'
     return $false
   }
@@ -816,6 +816,7 @@ function Set-RandomPassword {
     ([ADSI]'WinNT://./root').SetInfo()
     ([ADSI]'WinNT://./cltbld').SetPassword("$password")
     ([ADSI]'WinNT://./cltbld').SetInfo()
+    Set-RegistryValue -path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\WinLogon' -key 'DefaultPassword' -value "$password"
     Write-Log -message ('{0} :: password set to: {1}' -f $($MyInvocation.MyCommand.Name), $password) -severity 'INFO'
   }
   end {
