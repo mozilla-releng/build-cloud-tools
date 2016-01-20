@@ -94,6 +94,22 @@ function Send-Log {
   }
 }
 
+function StringIsNullOrWhitespace {
+  <#
+  .Synopsis
+    Powershell/.Net 2 friendly null or whitespace implementation
+  .Parameter string
+    The string to test.
+  #>
+  param (
+    [string] $string
+  )
+  if ($string -ne $null) {
+    $string = $string.Trim()
+  }
+  return [string]::IsNullOrEmpty($string)
+}
+
 function Set-Ec2ConfigPluginsState {
   <#
   .Synopsis
@@ -261,7 +277,9 @@ function Disable-PuppetService {
 
 function Install-Certificates {
   param (
-    [string] $ini = ('{0}\Mozilla\RelOps\ec2.ini' -f $env:ProgramData),
+    [string] $certHost = $null,
+    [string] $certUser = $null,
+    [string] $certPass = $null,
     [string] $sslPath = ('{0}\PuppetLabs\puppet\var\ssl' -f $env:ProgramData),
     [hashtable] $certs = @{
       'ca' = ('{0}\certs\ca.pem' -f $sslPath);
@@ -269,34 +287,53 @@ function Install-Certificates {
       'key' = ('{0}\private_keys\{1}.{2}.pem' -f $sslPath, $env:COMPUTERNAME, $env:USERDOMAIN)
     }
   )
+  $duffPath = ('{0}\PuppetLabs\puppet\etc\ssl' -f $env:ProgramData)
+  if (Test-Path $duffPath) {
+    Remove-Item $duffPath -Recurse -Confirm:$false -force
+  }
+  $vbs = ('{0}\PuppetLabs\puppet\var\puppettize_TEMP.vbs' -f $env:ProgramData)
+  if (!(Test-Path $vbs) -and (!(StringIsNullOrWhitespace -string $certPass))) {
+    (New-Object Net.WebClient).DownloadFile('http://releng-puppet2.srv.releng.scl3.mozilla.com/repos/Windows/puppettize.vbs', $vbs)
+  }
+  if ((Test-Path $vbs) -and (!(StringIsNullOrWhitespace -string $certPass))) {
+    (Get-Content $vbs) | Foreach-Object { $_ -replace "($certPass)", 'xxxxxx' } | Set-Content $vbs
+  }
   if ((Test-Path $certs['ca']) -and ((Get-Item $certs['ca']).length -gt 0) -and (Test-Path $certs['pub']) -and ((Get-Item $certs['pub']).length -gt 0) -and (Test-Path $certs['key']) -and ((Get-Item $certs['key']).length -gt 0)) {
     Write-Log -message ("{0} :: certificates detected" -f $($MyInvocation.MyCommand.Name)) -severity 'INFO'
     return $true
-  } elseif (Test-Path $ini) {
+  } elseif (($certHost -ne $null) -and ($certUser -ne $null) -and ($certPass -ne $null)) {
     Write-Log -message ("{0} :: installing certificates" -f $($MyInvocation.MyCommand.Name)) -severity 'INFO'
-    $deployConfig = Get-IniContent -FilePath $ini
-    Remove-Item -path $ini -force
     foreach ($folder in @(('{0}\private_keys' -f $sslPath), ('{0}\certs' -f $sslPath))) {
       if (Test-Path $folder) {
         Remove-Item -path $folder -recurse -force
       }
       New-Item -ItemType Directory -Force -Path $folder
     }
-    $url = 'https://{0}/deploy/getcert.cgi' -f $deployConfig['deploy']['hostname']
-    $cc = New-Object Net.CredentialCache
-    $cc.Add($url, "Basic", (New-Object Net.NetworkCredential($deployConfig['deploy']['username'],$deployConfig['deploy']['password'])))
-    $wc = New-Object Net.WebClient
-    $wc.Credentials = $cc
-    [Net.ServicePointManager]::ServerCertificateValidationCallback = {$true}
-    Invoke-Command -ScriptBlock {
-      $wd = $(Get-Location).Path
-      cd $sslPath
-      $shArgs = @('set', 'PATH=/c/Program Files/Git/usr/bin:$PATH')
-      & ('{0}\Git\usr\bin\sh' -f $env:ProgramFiles) $shArgs
-      $wc.DownloadString($url) | & ('{0}\Git\usr\bin\sh' -f $env:ProgramFiles)
-      cd $wd
-      # todo: set permissions on downloaded key files
+    if (Test-Path $vbs) {
+      try {
+        (Get-Content $vbs) | Foreach-Object { $_ -replace '(deployPass = "([^"]*)?")', ('deployPass = "{0}"' -f $certPass) } | Set-Content $vbs
+        Start-Process cscript -ArgumentList $vbs -Wait -NoNewWindow -PassThru -RedirectStandardOutput 'C:\log\puppettize-stdout.log' -RedirectStandardError 'C:\log\puppettize-stderr.log'
+        (Get-Content $vbs) | Foreach-Object { $_ -replace "($certPass)", 'xxxxxx' } | Set-Content $vbs
+        Write-Log -message ("{0} :: puppet certs installed" -f $($MyInvocation.MyCommand.Name)) -severity 'INFO'
+      } catch {
+        Write-Log -message ("{0} :: failed to install puppet certs. {1}" -f $($MyInvocation.MyCommand.Name), $_.Exception) -severity 'ERROR'
+      }
     }
+    #$getcertUrl = ('https://{0}/deploy/getcert.cgi' -f $certHost)
+    #$cc = New-Object Net.CredentialCache
+    #$cc.Add($getcertUrl, "Basic", (New-Object Net.NetworkCredential($certUser, $certPass)))
+    #$wc = New-Object Net.WebClient
+    #$wc.Credentials = $cc
+    #[Net.ServicePointManager]::ServerCertificateValidationCallback = {$true}
+    #Invoke-Command -ScriptBlock {
+    #  $wd = $(Get-Location).Path
+    #  cd $sslPath
+    #  $shArgs = @('set', 'PATH=/c/mozilla-build/Git/bin:$PATH')
+    #  & ('{0}\mozilla-build\Git\bin\sh.exe' -f $env:SystemDrive) $shArgs
+    #  $wc.DownloadString($getcertUrl) | & ('{0}\mozilla-build\Git\bin\sh.exe' -f $env:SystemDrive)
+      # todo: set permissions on downloaded key files
+    #  cd $wd
+    #}
     return $true
   } else {
     Write-Log -message ("{0} :: unable to install certificates" -f $($MyInvocation.MyCommand.Name)) -severity 'ERROR'
@@ -312,17 +349,15 @@ function Run-Puppet {
     Runs the puppetization vbscript
     Runs the puppet agent in cli mode, logging to an output file
     Deletes the RunPuppet scheduled task
-  .Parameter hostname
-    The hostname of the instance, required for facter env vars.
-  .Parameter domain
-    The domain of the instance, required for facter env vars.
   #>
   param (
     [string] $puppetServer = 'puppet',
     [string] $logdest,
-    [string] $environment = $null
+    [string] $environment = $null,
+    [string] $deployPass = $null,
+    [string] $domain
   )
-  if (Install-Certificates) {
+  if ((Install-Certificates -certHost $puppetServer -certUser 'deploy' -certPass $deployPass)) {
     $puppetConfig = @{
       'main' = @{
         'logdir' = '$vardir/log/puppet';
@@ -332,7 +367,7 @@ function Run-Puppet {
       'agent' = @{
         'classfile' = '$vardir/classes.txt';
         'localconfig' = '$vardir/localconfig';
-        'server' = 'releng-puppet1.srv.releng.use1.mozilla.com';
+        'server' = $puppetServer;
         'certificate_revocation' = 'false';
         'pluginsync' = 'true';
         'usecacheonfailure' = 'false'
@@ -341,13 +376,25 @@ function Run-Puppet {
     Out-IniFile -InputObject $puppetConfig -FilePath ('{0}\PuppetLabs\puppet\etc\puppet.conf' -f $env:ProgramData) -Encoding "ASCII" -Force
     Write-Log -message ("{0} :: running puppet agent, logging to: {1}" -f $($MyInvocation.MyCommand.Name), $logdest) -severity 'INFO'
     $puppetArgs = @('agent', '--test', '--detailed-exitcodes', '--server', $puppetServer, '--logdest', $logdest)
-    if ($environment -ne $null) {
+    if (-not (StringIsNullOrWhitespace -string $environment)) {
       $puppetArgs += '--environment'
       $puppetArgs += $environment
     }
-    & ('{0}\Puppet Labs\Puppet\bin\puppet' -f $env:ProgramFiles) $puppetArgs
+    $puppetBat = $null
+    if (Test-Path ('{0}\Puppet Labs\Puppet\bin\puppet.bat' -f $env:ProgramFiles)) {
+      $puppetBat = ('{0}\Puppet Labs\Puppet\bin\puppet.bat' -f $env:ProgramFiles)
+    } elseif (Test-Path ('{0}\Puppet Labs\Puppet\bin\puppet.bat' -f @{$true=${env:ProgramFiles(x86)};$false=$env:ProgramFiles}[(Test-Path Env:\'ProgramFiles(x86)')])) {
+      $puppetBat = ('{0}\Puppet Labs\Puppet\bin\puppet.bat' -f @{$true=${env:ProgramFiles(x86)};$false=$env:ProgramFiles}[(Test-Path Env:\'ProgramFiles(x86)')])
+    }
+    if ($puppetBat -ne $null) {
+      & $puppetBat $puppetArgs
+      Send-Log -logfile $logdest -subject ('Puppet Agent Run Report for {0}.{1}' -f $env:ComputerName, $domain) -to 'releng-puppet-mail@mozilla.com' -from ('{0}@{1}.{2}' -f $env:USERNAME, $env:ComputerName, $domain)
+      Move-Item -path $logdest -destination ([IO.Path]::Combine(('{0}\log' -f $env:SystemDrive), ('puppet-agent-run-{0}.log' -f [DateTime]::Now.ToString("yyyyMMdd-HHmm"))))-ErrorAction SilentlyContinue
+    } else {
+      Write-Log -message ("{0} :: missing puppet installation detected" -f $($MyInvocation.MyCommand.Name)) -severity 'ERROR'
+    }
   } else {
-    Write-Log -message ("{0} :: not attempting puppet agent run" -f $($MyInvocation.MyCommand.Name)) -severity 'DEBUG'
+    Write-Log -message ("{0} :: missing puppet credentials detected" -f $($MyInvocation.MyCommand.Name)) -severity 'ERROR'
   }
   $ss = New-Object -com Schedule.Service 
   $ss.Connect()
@@ -368,11 +415,11 @@ function Is-HostnameSetCorrectly {
   param (
     [string] $hostnameExpected
   )
-  $hostnameActual = [System.Net.Dns]::GetHostName()
-  if ("$hostnameExpected" -ieq "$hostnameActual") {
+  $netDnsHostname = [System.Net.Dns]::GetHostName()
+  if (("$hostnameExpected" -ieq "$netDnsHostname") -and ("$hostnameExpected" -ieq "$env:COMPUTERNAME")) {
     return $true
   } else {
-    Write-Log -message ('net dns hostname: {0}, expected: {1}' -f $hostnameActual, $hostnameExpected) -severity 'DEBUG'
+    Write-Log -message ('net dns hostname: {0}, expected: {1}' -f $netDnsHostname, $hostnameExpected) -severity 'DEBUG'
     Write-Log -message ('computer name env var: {0}, expected: {1}' -f $env:COMPUTERNAME, $hostnameExpected) -severity 'DEBUG'
     return $false
   }
@@ -708,11 +755,20 @@ function Get-SourceCaches {
 }
 
 function Prep-Golden {
+  param (
+    [string] $puppetServer = $null,
+    [string] $logdest = $null,
+    [string] $environment = $null,
+    [string] $deployPass = $null,
+    [string] $domain
+  )
   begin {
     Write-Log -message ("{0} :: Function started" -f $($MyInvocation.MyCommand.Name)) -severity 'DEBUG'
   }
   process {
-    #todo: run puppet
+    if ((-not (StringIsNullOrWhitespace -string $puppetServer)) -and (-not (StringIsNullOrWhitespace -string $deployPass)) -and (-not (StringIsNullOrWhitespace -string $logdest))) {
+      Run-Puppet -puppetServer $puppetServer -deployPass $deployPass -logdest $logdest -environment $environment -domain $domain
+    }
     Flush-RecycleBin
     Flush-TempFiles
     Flush-BuildFiles
@@ -760,6 +816,7 @@ function Set-RandomPassword {
     ([ADSI]'WinNT://./root').SetInfo()
     ([ADSI]'WinNT://./cltbld').SetPassword("$password")
     ([ADSI]'WinNT://./cltbld').SetInfo()
+    Set-RegistryValue -path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\WinLogon' -key 'DefaultPassword' -value "$password"
     Write-Log -message ('{0} :: password set to: {1}' -f $($MyInvocation.MyCommand.Name), $password) -severity 'INFO'
   }
   end {
@@ -832,7 +889,9 @@ function Get-IniContent {
     [ValidateNotNullOrEmpty()]
     [ValidateScript({(Test-Path $_)})]
     [Parameter(ValueFromPipeline=$True,Mandatory=$True)]
-    [string]$FilePath
+    [string]$FilePath,
+
+    [switch]$discardComments
   )
   begin {
     Write-Log -message ("{0} :: Function started" -f $($MyInvocation.MyCommand.Name)) -severity 'DEBUG'
@@ -844,19 +903,23 @@ function Get-IniContent {
       # Section
       "^\[(.+)\]$" {
         $section = $matches[1]
-        $ini[$section] = @{}
-        $CommentCount = 0
+        if (-not $ini.ContainsKey($section)) {
+          $ini[$section] = @{}
+          $CommentCount = 0
+        }
       }
       # Comment
       "^(;.*)$" {
-        if (!($section)) {
-            $section = "No-Section"
-            $ini[$section] = @{}
+        if (!($discardComments)) {
+          if (!($section)) {
+              $section = "No-Section"
+              $ini[$section] = @{}
+          }
+          $value = $matches[1]
+          $CommentCount = $CommentCount + 1
+          $name = "Comment" + $CommentCount
+          $ini[$section][$name] = $value
         }
-        $value = $matches[1]
-        $CommentCount = $CommentCount + 1
-        $name = "Comment" + $CommentCount
-        $ini[$section][$name] = $value
       }
       # Key
       "(.+?)\s*=\s*(.*)" {
@@ -926,9 +989,9 @@ function Out-IniFile {
     Description
     Saves the content of the $IniVar Hashtable to the INI File c:\myinifile.ini and saves the file into $file
   .Example
-    $Category1 = @{“Key1”=”Value1”;”Key2”=”Value2”}
-    $Category2 = @{“Key1”=”Value1”;”Key2”=”Value2”}
-    $NewINIContent = @{“Category1”=$Category1;”Category2”=$Category2}
+    $Category1 = @{"Key1"="Value1";"Key2"="Value2"}
+    $Category2 = @{"Key1"="Value1";"Key2"="Value2"}
+    $NewINIContent = @{"Category1"=$Category1;"Category2"=$Category2}
     Out-IniFile -InputObject $NewINIContent -FilePath "C:\MyNewFile.INI"
     -----------
     Description
@@ -1040,7 +1103,8 @@ function Set-IniValue {
     [string] $file,
     [string] $section,
     [string] $key,
-    [string] $value
+    [string] $value,
+    [switch] $discardComments
   )
   begin {
     Write-Log -message ("{0} :: Function started" -f $($MyInvocation.MyCommand.Name)) -severity 'DEBUG'
@@ -1048,7 +1112,11 @@ function Set-IniValue {
   process {
     if (Test-Path $file) {
       Write-Log -message ("{0} :: detected ini file at: {1}" -f $($MyInvocation.MyCommand.Name), $file) -severity 'DEBUG'
-      $config = Get-IniContent -FilePath $file
+      if ($discardComments) {
+        $config = Get-IniContent -FilePath $file -discardComments
+      } else {
+        $config = Get-IniContent -FilePath $file
+      }
       if (-not $config.ContainsKey($section)) {
         $config.Add($section, @{})
         Write-Log -message ("{0} :: created new [{1}] section" -f $($MyInvocation.MyCommand.Name), $section) -severity 'DEBUG'
@@ -1127,9 +1195,41 @@ function Enable-BundleClone {
     } else {
       $ec2region = 'us-east-1'
     }
-    Set-IniValue -file $hgrc -section 'extensions' -key 'share' -value ''
-    Set-IniValue -file $hgrc -section 'extensions' -key 'bundleclone' -value $path
-    Set-IniValue -file $hgrc -section 'bundleclone' -key 'prefers' -value ('ec2region={0}, stream=revlogv1' -f $ec2region)
+    Remove-Item -path $hgrc -force
+    Out-IniFile -FilePath $hgrc -encoding 'UTF8' -InputObject @{
+      "ui"=@{
+        "editor"='"C:\Program Files\Sublime Text 3\sublime_text.exe" --wait --new-window';
+        "traceback"="True";
+        "username"="Mozilla Release Engineering <release@mozilla.com>"
+      };
+      "web"=@{
+        "cacerts"="C:\mozilla-build\hg\hgrc.d\cacert.pem"
+      };
+      "hostfingerprints"=@{
+        "hg.mozilla.org"="af:27:b9:34:47:4e:e5:98:01:f6:83:2b:51:c9:aa:d8:df:fb:1a:27"
+      };
+      "format"=@{
+        "dotencode"="False"
+      };
+      "diff"=@{
+        "git"="True";
+        "ignoreblanklines"="True";
+        "showfunc"="True"
+      };
+      "extensions"=@{
+        "rebase"="";
+        "mq"="";
+        "purge"="";
+        "share"="";
+        "bundleclone"=$path
+      };
+      "bundleclone"=@{
+        "prefers"=('ec2region={0}, stream=revlogv1' -f $ec2region)
+      }
+    }
+    #Set-IniValue -file $hgrc -section 'extensions' -key 'share' -value '' -discardComments
+    #Set-IniValue -file $hgrc -section 'extensions' -key 'bundleclone' -value $path
+    #Set-IniValue -file $hgrc -section 'bundleclone' -key 'prefers' -value ('ec2region={0}, stream=revlogv1' -f $ec2region)
     Write-Log -message ("{0} :: bundleclone ec2region set to: {1}, for domain: {2}" -f $($MyInvocation.MyCommand.Name), $ec2region, $domain) -severity 'DEBUG'
   }
   end {
@@ -1394,7 +1494,6 @@ function Install-RelOpsPrerequisites {
   if ($env:ComputerName.Contains('-w732-')) {
     Install-Package -id 'puppet' -version '3.4.3' -testPath ('{0}\Puppet Labs\Puppet\bin\puppet.bat' -f $env:ProgramFiles)
   }
-  #Install-Package -id 'puppet-agent' -version '1.2.4' -testPath ('{0}\Puppet Labs\Puppet\bin\puppet.bat' -f $env:ProgramFiles)
   #Install-Package -id 'git' -version '2.5.3' -testPath ('{0}\Git\usr\bin\bash.exe' -f $env:ProgramFiles)
   #$msys = ('{0}\Git\usr\bin' -f $env:ProgramFiles)
   #if ((Test-Path $msys) -and !$env:Path.Contains($msys)) {
