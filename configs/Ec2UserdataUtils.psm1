@@ -299,9 +299,12 @@ function Install-Certificates {
     (Get-Content $vbs) | Foreach-Object { $_ -replace "($certPass)", 'xxxxxx' } | Set-Content $vbs
   }
   if ((Test-Path $certs['ca']) -and ((Get-Item $certs['ca']).length -gt 0) -and (Test-Path $certs['pub']) -and ((Get-Item $certs['pub']).length -gt 0) -and (Test-Path $certs['key']) -and ((Get-Item $certs['key']).length -gt 0)) {
-    Write-Log -message ("{0} :: certificates detected" -f $($MyInvocation.MyCommand.Name)) -severity 'INFO'
-    return $true
-  } elseif (($certHost -ne $null) -and ($certUser -ne $null) -and ($certPass -ne $null)) {
+    Remove-Item $certs['ca'] -Confirm:$false -force
+    Remove-Item $certs['pub'] -Confirm:$false -force
+    Remove-Item $certs['key'] -Confirm:$false -force
+    Write-Log -message ("{0} :: existing certificates deleted" -f $($MyInvocation.MyCommand.Name)) -severity 'INFO'
+  }
+  if (($certHost -ne $null) -and ($certUser -ne $null) -and ($certPass -ne $null)) {
     Write-Log -message ("{0} :: installing certificates" -f $($MyInvocation.MyCommand.Name)) -severity 'INFO'
     foreach ($folder in @(('{0}\private_keys' -f $sslPath), ('{0}\certs' -f $sslPath))) {
       if (Test-Path $folder) {
