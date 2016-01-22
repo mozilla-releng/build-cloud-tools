@@ -104,8 +104,10 @@ us-west-2:
             aus5.mozilla.org: IGW
             upload.ffxbld.productdelivery.prod.mozaws.net: IGW
             upload.tbirdbld.productdelivery.prod.mozaws.net: IGW
+            upload.seabld.productdelivery.prod.mozaws.net: IGW
             upload.ffxbld.productdelivery.stage.mozaws.net: IGW
             upload.tbirdbld.productdelivery.stage.mozaws.net: IGW
+            upload.seabld.productdelivery.stage.mozaws.net: IGW
 
             10.132.0.0/16: local
             0.0.0.0/0: VGW
