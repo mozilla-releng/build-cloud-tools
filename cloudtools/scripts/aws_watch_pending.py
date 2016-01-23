@@ -317,7 +317,10 @@ def do_request_instance(region, moz_instance_type, price, ami, instance_config,
         "hostname": name,
         "domain": instance_config[region]["domain"],
         "fqdn": fqdn,
-        "region_dns_atom": get_region_dns_atom(region)})
+        "region_dns_atom": get_region_dns_atom(region),
+        "puppet_server": "",  # intentionally empty
+        "password": ""  # intentionally empty
+    })
 
     bdm = create_block_device_mapping(
         ami, instance_config[region]['device_map'])
