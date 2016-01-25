@@ -44,7 +44,7 @@ def update_ami_status(data):
     conn = boto.connect_s3()
     bucket = conn.get_bucket(BUCKET)
     key = bucket.get_key(KEY)
-    key.set_contents_from_string(data)
+    key.set_contents_from_string(data, headers={'Content-Type': 'application/json'})
     key.set_acl("public-read")
 
 
