@@ -117,16 +117,20 @@ if ($hostname.Contains("-2008-ec2-")) {{
 if (!(Is-DomainSetCorrectly -domainExpected $domain)) {{
   Set-Domain -domain $domain
 }}
+$hostRenamed = $false
 if (!(Is-HostnameSetCorrectly -hostnameExpected $hostname)) {{
   Set-Hostname -hostname $hostname
+  $hostRenamed = $true
   Stop-ComputerWithDelay -reason 'host renamed' -restart
 }}
-if ($hostname.Contains("-golden")) {{
-  Prep-Golden -puppetServer $puppetServer -logdest $puppetLog -deployPass $deployPass -domain $domain
-  Flush-EventLog
-  Stop-ComputerWithDelay -reason 'userdata golden run complete'
-}} elseif ($hostname -match "(b|y)-2[0-9]{{3}}-ec2-[a-z].*") {{
-  Prep-Loaner -deployPass $deployPass
+if (!$hostRenamed) {{
+  if ($hostname.Contains("-golden")) {{
+    Prep-Golden -puppetServer $puppetServer -logdest $puppetLog -deployPass $deployPass -domain $domain
+    Flush-EventLog
+    Stop-ComputerWithDelay -reason 'userdata golden run complete'
+  }} elseif ($hostname -match "(b|y)-2[0-9]{{3}}-ec2-[a-z].*") {{
+    Prep-Loaner -deployPass $deployPass
+  }}
 }}
 if (!($hostname.Contains("-spot-"))) {{
   Send-Log -logfile $runLog -subject ('UserData Run Report for {{0}}.{{1}}' -f $hostname, $domain) -to 'releng-puppet-mail@mozilla.com' -from $logSender
