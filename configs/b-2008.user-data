@@ -137,3 +137,8 @@ Move-Item -path $runLog -destination ([IO.Path]::Combine($logDir, ('userdata-run
 Move-Item -path $ec2Log -destination ([IO.Path]::Combine($logDir, ('ec2config-run-{{0}}.log' -f [DateTime]::Now.ToString("yyyyMMdd-HHmm"))))-ErrorAction SilentlyContinue
 </powershell>
 <persist>true</persist>
+<mozuserdata>
+# see bug 1243421
+hostname: {fqdn}
+moz_instance_type: {moz_instance_type}
+</mozuserdata>
