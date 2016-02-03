@@ -698,6 +698,9 @@ function Clone-Repository {
   }
   process {
     if ((Test-Path $target -PathType Container) -and (Test-Path ('{0}\.hg' -f $target) -PathType Container)) {
+      if ($target.EndsWith('hg-shared\try')) {
+        Update-TryDefaultPath -local $target
+      }
       & hg @('pull', '-R', $target)
       $exitCode = $LastExitCode
       if ($?) {
@@ -710,6 +713,9 @@ function Clone-Repository {
       $exitCode = $LastExitCode
       if (($?) -and (Test-Path $target)) {
         Write-Log -message ("{0} :: {1} cloned to {2}" -f $($MyInvocation.MyCommand.Name), $source, $target) -severity 'INFO'
+        if ($target.EndsWith('hg-shared\try')) {
+          Update-TryDefaultPath -local $target
+        }
       } else {
         Write-Log -message ("{0} :: hg clone of {1} to {2} failed with exit code: {3}" -f $($MyInvocation.MyCommand.Name), $source, $target, $exitCode) -severity 'ERROR'
       }
@@ -718,6 +724,15 @@ function Clone-Repository {
   end {
     Write-Log -message ("{0} :: Function ended" -f $($MyInvocation.MyCommand.Name)) -severity 'DEBUG'
   }
+}
+
+function Update-TryDefaultPath {
+  param (
+    [string] $local = ('{0}\builds\hg-shared\try' -f $env:SystemDrive),
+    [string] $remote = 'https://hg.mozilla.org/try'
+  )
+  Set-IniValue -file ('{0}\.hg\hgrc' -f $local) -section 'paths' -key 'default' -value $remote
+  Write-Log -message ("{0} :: hg default path for {1} set to {2}" -f $($MyInvocation.MyCommand.Name), $local, $remote) -severity 'INFO'
 }
 
 function Get-SourceCaches {
