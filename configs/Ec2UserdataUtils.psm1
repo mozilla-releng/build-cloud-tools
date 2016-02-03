@@ -376,6 +376,15 @@ function Run-Puppet {
         'usecacheonfailure' = 'false'
       }
     }
+    #foreach ($task in @('StartRunner', 'SchTsk_netsh', 'rm_reboot_semaphore', 'Ec2ConfigMonitorTask')) {
+    foreach ($task in @('StartRunner', 'SchTsk_netsh')) {
+      $invalidFilename = ('{0}\System32\Tasks\{1}' -f $env:SystemRoot, $task)
+      $validFilename = ('{0}.xml' -f $invalidFilename)
+      if (Test-Path $invalidFilename -PathType Leaf) {
+        Rename-Item -path $invalidFilename -newname $validFilename
+        Write-Log -message ("{0} :: renamed invalid filename: {1}, to: {2}" -f $($MyInvocation.MyCommand.Name), $invalidFilename, $validFilename) -severity 'INFO'
+      }
+    }
     Out-IniFile -InputObject $puppetConfig -FilePath ('{0}\PuppetLabs\puppet\etc\puppet.conf' -f $env:ProgramData) -Encoding "ASCII" -Force
     Write-Log -message ("{0} :: running puppet agent, logging to: {1}" -f $($MyInvocation.MyCommand.Name), $logdest) -severity 'INFO'
     $puppetArgs = @('agent', '--test', '--detailed-exitcodes', '--server', $puppetServer, '--logdest', $logdest)
