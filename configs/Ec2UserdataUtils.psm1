@@ -298,11 +298,11 @@ function Install-Certificates {
   if ((Test-Path $vbs) -and (!(StringIsNullOrWhitespace -string $certPass))) {
     (Get-Content $vbs) | Foreach-Object { $_ -replace "($certPass)", 'xxxxxx' } | Set-Content $vbs
   }
-  if ((Test-Path $certs['ca']) -and ((Get-Item $certs['ca']).length -gt 0) -and (Test-Path $certs['pub']) -and ((Get-Item $certs['pub']).length -gt 0) -and (Test-Path $certs['key']) -and ((Get-Item $certs['key']).length -gt 0)) {
-    Remove-Item $certs['ca'] -Confirm:$false -force
-    Remove-Item $certs['pub'] -Confirm:$false -force
-    Remove-Item $certs['key'] -Confirm:$false -force
-    Write-Log -message ("{0} :: existing certificates deleted" -f $($MyInvocation.MyCommand.Name)) -severity 'INFO'
+  foreach ($c in @('ca', 'pub', 'key')) {
+    if (Test-Path $certs[$c])  {
+      Remove-Item $certs[$c] -Confirm:$false -force
+      Write-Log -message ("{0} :: removed {1}" -f $($MyInvocation.MyCommand.Name), $certs[$c]) -severity 'INFO'
+    }
   }
   if (($certHost -ne $null) -and ($certUser -ne $null) -and ($certPass -ne $null)) {
     Write-Log -message ("{0} :: installing certificates" -f $($MyInvocation.MyCommand.Name)) -severity 'INFO'
