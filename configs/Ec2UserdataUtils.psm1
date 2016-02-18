@@ -1250,42 +1250,46 @@ function Enable-BundleClone {
     } else {
       $ec2region = 'us-east-1'
     }
-    Remove-Item -path $hgrc -force
-    Out-IniFile -FilePath $hgrc -encoding 'UTF8' -InputObject @{
-      "ui"=@{
-        "editor"='"C:\Program Files\Sublime Text 3\sublime_text.exe" --wait --new-window';
-        "traceback"="True";
-        "username"="Mozilla Release Engineering <release@mozilla.com>"
-      };
-      "web"=@{
-        "cacerts"="C:\mozilla-build\hg\hgrc.d\cacert.pem"
-      };
-      "hostfingerprints"=@{
-        "hg.mozilla.org"="af:27:b9:34:47:4e:e5:98:01:f6:83:2b:51:c9:aa:d8:df:fb:1a:27"
-      };
-      "format"=@{
-        "dotencode"="False"
-      };
-      "diff"=@{
-        "git"="True";
-        "ignoreblanklines"="True";
-        "showfunc"="True"
-      };
-      "extensions"=@{
-        "rebase"="";
-        "mq"="";
-        "purge"="";
-        "share"="";
-        "bundleclone"=$path
-      };
-      "bundleclone"=@{
-        "prefers"=('ec2region={0}, stream=revlogv1' -f $ec2region)
+    if (!(Test-Path (Split-Path $hgrc) -PathType Container)) {
+      Write-Log -message ("{0} :: detected missing mercurial installation" -f $($MyInvocation.MyCommand.Name)) -severity 'ERROR'
+    } else {
+      Remove-Item -path $hgrc -force
+      Out-IniFile -FilePath $hgrc -encoding 'UTF8' -InputObject @{
+        "ui"=@{
+          "editor"='"C:\Program Files\Sublime Text 3\sublime_text.exe" --wait --new-window';
+          "traceback"="True";
+          "username"="Mozilla Release Engineering <release@mozilla.com>"
+        };
+        "web"=@{
+          "cacerts"="C:\mozilla-build\hg\hgrc.d\cacert.pem"
+        };
+        "hostfingerprints"=@{
+          "hg.mozilla.org"="af:27:b9:34:47:4e:e5:98:01:f6:83:2b:51:c9:aa:d8:df:fb:1a:27"
+        };
+        "format"=@{
+          "dotencode"="False"
+        };
+        "diff"=@{
+          "git"="True";
+          "ignoreblanklines"="True";
+          "showfunc"="True"
+        };
+        "extensions"=@{
+          "rebase"="";
+          "mq"="";
+          "purge"="";
+          "share"="";
+          "bundleclone"=$path
+        };
+        "bundleclone"=@{
+          "prefers"=('ec2region={0}, stream=revlogv1' -f $ec2region)
+        }
       }
+      #Set-IniValue -file $hgrc -section 'extensions' -key 'share' -value '' -discardComments
+      #Set-IniValue -file $hgrc -section 'extensions' -key 'bundleclone' -value $path
+      #Set-IniValue -file $hgrc -section 'bundleclone' -key 'prefers' -value ('ec2region={0}, stream=revlogv1' -f $ec2region)
+      Write-Log -message ("{0} :: bundleclone ec2region set to: {1}, for domain: {2}" -f $($MyInvocation.MyCommand.Name), $ec2region, $domain) -severity 'DEBUG'
     }
-    #Set-IniValue -file $hgrc -section 'extensions' -key 'share' -value '' -discardComments
-    #Set-IniValue -file $hgrc -section 'extensions' -key 'bundleclone' -value $path
-    #Set-IniValue -file $hgrc -section 'bundleclone' -key 'prefers' -value ('ec2region={0}, stream=revlogv1' -f $ec2region)
-    Write-Log -message ("{0} :: bundleclone ec2region set to: {1}, for domain: {2}" -f $($MyInvocation.MyCommand.Name), $ec2region, $domain) -severity 'DEBUG'
   }
   end {
     Write-Log -message ("{0} :: Function ended" -f $($MyInvocation.MyCommand.Name)) -severity 'DEBUG'
