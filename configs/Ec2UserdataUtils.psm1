@@ -1652,6 +1652,10 @@ function Configure-NxLog {
     [string[]] $files = @('nxlog.conf', 'nxlog_route_eventlog_aggregator.conf', 'nxlog_target_aggregator.conf', 'nxlog_transform_syslog.conf'),
     [string] $aggregator
   )
+  Get-ChildItem -Path $target | % {
+    Remove-Item -path $_.FullName -force
+    Write-Log -message ("{0} :: removed {1}" -f $($MyInvocation.MyCommand.Name), $_.FullName) -severity 'DEBUG'
+  }
   $files += Get-EventlogOsTemplate
   foreach ($file in $files) {
     $remote = ('{0}/{1}.erb' -f $url, $file)
@@ -1663,9 +1667,6 @@ function Configure-NxLog {
     catch {
       Write-Log -message ("{0} :: failed to download: {1} from: {2}. {3}" -f $($MyInvocation.MyCommand.Name), $local, $remote, $_.Exception) -severity 'ERROR'
     }
-  }
-  if ($aggregator.StartsWith('log-aggregator.srv')) {
-
   }
   Set-Aggregator -aggregator $aggregator
 }
