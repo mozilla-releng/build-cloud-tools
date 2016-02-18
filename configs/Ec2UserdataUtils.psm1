@@ -317,9 +317,9 @@ function Install-Certificates {
         (Get-Content $vbs) | Foreach-Object { $_ -replace '(deployPass = "([^"]*)?")', ('deployPass = "{0}"' -f $certPass) } | Set-Content $vbs
         Start-Process cscript -ArgumentList $vbs -Wait -NoNewWindow -PassThru -RedirectStandardOutput 'C:\log\puppettize-stdout.log' -RedirectStandardError 'C:\log\puppettize-stderr.log'
         (Get-Content $vbs) | Foreach-Object { $_ -replace "($certPass)", 'xxxxxx' } | Set-Content $vbs
-        Write-Log -message ("{0} :: puppet certs installed" -f $($MyInvocation.MyCommand.Name)) -severity 'INFO'
+        Write-Log -message ("{0} :: puppettize vbs run completed" -f $($MyInvocation.MyCommand.Name)) -severity 'INFO'
       } catch {
-        Write-Log -message ("{0} :: failed to install puppet certs. {1}" -f $($MyInvocation.MyCommand.Name), $_.Exception) -severity 'ERROR'
+        Write-Log -message ("{0} :: puppettize vbs run failed. {1}" -f $($MyInvocation.MyCommand.Name), $_.Exception) -severity 'ERROR'
       }
     }
     #$getcertUrl = ('https://{0}/deploy/getcert.cgi' -f $certHost)
@@ -337,7 +337,14 @@ function Install-Certificates {
       # todo: set permissions on downloaded key files
     #  cd $wd
     #}
-    return $true
+    $certsMissing = $false
+    foreach ($c in @('ca', 'pub', 'key')) {
+      if (!(Test-Path $certs[$c]))  {
+        $certsMissing = $true
+        Write-Log -message ("{0} :: missing cert detected after puppetize vbs run ({1})" -f $($MyInvocation.MyCommand.Name), $certs[$c]) -severity 'Error'
+      }
+    }
+    return (!($certsMissing))
   } else {
     Write-Log -message ("{0} :: unable to install certificates" -f $($MyInvocation.MyCommand.Name)) -severity 'ERROR'
     return $false
@@ -360,53 +367,74 @@ function Run-Puppet {
     [string] $deployPass = $null,
     [string] $domain
   )
-  if ((Install-Certificates -certHost $puppetServer -certUser 'deploy' -certPass $deployPass)) {
-    $puppetConfig = @{
-      'main' = @{
-        'logdir' = '$vardir/log/puppet';
-        'rundir' = '$vardir/run/puppet';
-        'ssldir' = '$vardir/ssl'
-      };
-      'agent' = @{
-        'classfile' = '$vardir/classes.txt';
-        'localconfig' = '$vardir/localconfig';
-        'server' = $puppetServer;
-        'certificate_revocation' = 'false';
-        'pluginsync' = 'true';
-        'usecacheonfailure' = 'false'
-      }
+  $certsInstalled = (Install-Certificates -certHost $puppetServer -certUser 'deploy' -certPass $deployPass)
+  $certsInstallAttempts = 1
+  while (-not $certsInstalled) {
+    $waitInMinutes = (30 * $certsInstallAttempts)
+    Write-Log -message ("{0} :: detected puppet certificate installation failure" -f $($MyInvocation.MyCommand.Name)) -severity 'ERROR'
+    Write-Log -message ("{0} :: retry in {0} minutes..." -f $($MyInvocation.MyCommand.Name), $waitInMinutes) -severity 'DEBUG'
+    Start-Sleep -seconds (60 * $waitInMinutes) # wait for puppet cert propagation
+    $certsInstalled = (Install-Certificates -certHost $puppetServer -certUser 'deploy' -certPass $deployPass)
+    $certsInstallAttempts += 1
+  }
+  $puppetConfig = @{
+    'main' = @{
+      'logdir' = '$vardir/log/puppet';
+      'rundir' = '$vardir/run/puppet';
+      'ssldir' = '$vardir/ssl'
+    };
+    'agent' = @{
+      'classfile' = '$vardir/classes.txt';
+      'localconfig' = '$vardir/localconfig';
+      'server' = $puppetServer;
+      'certificate_revocation' = 'false';
+      'pluginsync' = 'true';
+      'usecacheonfailure' = 'false'
     }
-    #foreach ($task in @('StartRunner', 'SchTsk_netsh', 'rm_reboot_semaphore', 'Ec2ConfigMonitorTask')) {
-    foreach ($task in @('StartRunner', 'SchTsk_netsh')) {
-      $invalidFilename = ('{0}\System32\Tasks\{1}' -f $env:SystemRoot, $task)
-      $validFilename = ('{0}.xml' -f $invalidFilename)
-      if (Test-Path $invalidFilename -PathType Leaf) {
-        Rename-Item -path $invalidFilename -newname $validFilename
-        Write-Log -message ("{0} :: renamed invalid filename: {1}, to: {2}" -f $($MyInvocation.MyCommand.Name), $invalidFilename, $validFilename) -severity 'INFO'
-      }
+  }
+  # legacy hack (these file extensions need to be corrected in order for the puppet run to succeed)
+  foreach ($task in @('StartRunner', 'SchTsk_netsh')) {
+    $invalidFilename = ('{0}\System32\Tasks\{1}' -f $env:SystemRoot, $task)
+    $validFilename = ('{0}.xml' -f $invalidFilename)
+    if (Test-Path $invalidFilename -PathType Leaf) {
+      Rename-Item -path $invalidFilename -newname $validFilename
+      Write-Log -message ("{0} :: renamed invalid filename: {1}, to: {2}" -f $($MyInvocation.MyCommand.Name), $invalidFilename, $validFilename) -severity 'INFO'
     }
-    Out-IniFile -InputObject $puppetConfig -FilePath ('{0}\PuppetLabs\puppet\etc\puppet.conf' -f $env:ProgramData) -Encoding "ASCII" -Force
-    Write-Log -message ("{0} :: running puppet agent, logging to: {1}" -f $($MyInvocation.MyCommand.Name), $logdest) -severity 'INFO'
-    $puppetArgs = @('agent', '--test', '--detailed-exitcodes', '--server', $puppetServer, '--logdest', $logdest)
-    if (-not (StringIsNullOrWhitespace -string $environment)) {
-      $puppetArgs += '--environment'
-      $puppetArgs += $environment
-    }
-    $puppetBat = $null
-    if (Test-Path ('{0}\Puppet Labs\Puppet\bin\puppet.bat' -f $env:ProgramFiles)) {
-      $puppetBat = ('{0}\Puppet Labs\Puppet\bin\puppet.bat' -f $env:ProgramFiles)
-    } elseif (Test-Path ('{0}\Puppet Labs\Puppet\bin\puppet.bat' -f @{$true=${env:ProgramFiles(x86)};$false=$env:ProgramFiles}[(Test-Path Env:\'ProgramFiles(x86)')])) {
-      $puppetBat = ('{0}\Puppet Labs\Puppet\bin\puppet.bat' -f @{$true=${env:ProgramFiles(x86)};$false=$env:ProgramFiles}[(Test-Path Env:\'ProgramFiles(x86)')])
-    }
-    if ($puppetBat -ne $null) {
+  }
+  Out-IniFile -InputObject $puppetConfig -FilePath ('{0}\PuppetLabs\puppet\etc\puppet.conf' -f $env:ProgramData) -Encoding "ASCII" -Force
+  Write-Log -message ("{0} :: running puppet agent, logging to: {1}" -f $($MyInvocation.MyCommand.Name), $logdest) -severity 'INFO'
+  $puppetArgs = @('agent', '--test', '--detailed-exitcodes', '--server', $puppetServer, '--logdest', $logdest)
+  if (-not (StringIsNullOrWhitespace -string $environment)) {
+    $puppetArgs += '--environment'
+    $puppetArgs += $environment
+  }
+  $puppetBat = $null
+  if (Test-Path ('{0}\Puppet Labs\Puppet\bin\puppet.bat' -f $env:ProgramFiles)) {
+    $puppetBat = ('{0}\Puppet Labs\Puppet\bin\puppet.bat' -f $env:ProgramFiles)
+  } elseif (Test-Path ('{0}\Puppet Labs\Puppet\bin\puppet.bat' -f @{$true=${env:ProgramFiles(x86)};$false=$env:ProgramFiles}[(Test-Path Env:\'ProgramFiles(x86)')])) {
+    $puppetBat = ('{0}\Puppet Labs\Puppet\bin\puppet.bat' -f @{$true=${env:ProgramFiles(x86)};$false=$env:ProgramFiles}[(Test-Path Env:\'ProgramFiles(x86)')])
+  }
+  if ($puppetBat -ne $null) {
+    $puppetAgentSummary = ('{0}\PuppetLabs\puppet\var\state\last_run_summary.yaml' -f $env:ProgramData)
+    $puppetAgentSuccess = $false
+    $puppetAgentAttempts = 0
+    while (-not $puppetAgentSuccess) {
       & $puppetBat $puppetArgs
       Send-Log -logfile $logdest -subject ('Puppet Agent Run Report for {0}.{1}' -f $env:ComputerName, $domain) -to 'releng-puppet-mail@mozilla.com' -from ('{0}@{1}.{2}' -f $env:USERNAME, $env:ComputerName, $domain)
+      Send-Log -logfile $puppetAgentSummary -subject ('Puppet Agent Summary for {0}.{1}' -f $env:ComputerName, $domain) -to 'releng-puppet-mail@mozilla.com' -from ('{0}@{1}.{2}' -f $env:USERNAME, $env:ComputerName, $domain)
       Move-Item -path $logdest -destination ([IO.Path]::Combine(('{0}\log' -f $env:SystemDrive), ('puppet-agent-run-{0}.log' -f [DateTime]::Now.ToString("yyyyMMdd-HHmm"))))-ErrorAction SilentlyContinue
-    } else {
-      Write-Log -message ("{0} :: missing puppet installation detected" -f $($MyInvocation.MyCommand.Name)) -severity 'ERROR'
+      $puppetAgentAttempts += 1
+      $puppetAgentSuccess = ((Test-Path $puppetAgentSummary) -and (Does-FileContain -haystack $puppetAgentSummary -needle 'failed: 0') -and (Does-FileContain -haystack $puppetAgentSummary -needle 'failure: 0'))
+      if (-not $puppetAgentSuccess) {
+        $waitInMinutes = (30 * $puppetAgentAttempts)
+        Write-Log -message ("{0} :: detected puppet agent failures" -f $($MyInvocation.MyCommand.Name)) -severity 'ERROR'
+        Write-Log -message ("{0} :: retry in {0} minutes..." -f $($MyInvocation.MyCommand.Name), $waitInMinutes) -severity 'DEBUG'
+        Start-Sleep -seconds (60 * $waitInMinutes) # wait until someone commits a patch to puppet-again, or terminates this instance
+      }
     }
+
   } else {
-    Write-Log -message ("{0} :: missing puppet credentials detected" -f $($MyInvocation.MyCommand.Name)) -severity 'ERROR'
+    Write-Log -message ("{0} :: missing puppet installation detected" -f $($MyInvocation.MyCommand.Name)) -severity 'ERROR'
   }
   $ss = New-Object -com Schedule.Service 
   $ss.Connect()
