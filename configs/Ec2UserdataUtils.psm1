@@ -415,9 +415,24 @@ function Run-Puppet {
     $puppetBat = ('{0}\Puppet Labs\Puppet\bin\puppet.bat' -f @{$true=${env:ProgramFiles(x86)};$false=$env:ProgramFiles}[(Test-Path Env:\'ProgramFiles(x86)')])
   }
   if ($puppetBat -ne $null) {
-    & $puppetBat $puppetArgs
-    Send-Log -logfile $logdest -subject ('Puppet Agent Run Report for {0}.{1}' -f $env:ComputerName, $domain) -to 'releng-puppet-mail@mozilla.com' -from ('{0}@{1}.{2}' -f $env:USERNAME, $env:ComputerName, $domain)
-    Move-Item -path $logdest -destination ([IO.Path]::Combine(('{0}\log' -f $env:SystemDrive), ('puppet-agent-run-{0}.log' -f [DateTime]::Now.ToString("yyyyMMdd-HHmm"))))-ErrorAction SilentlyContinue
+    $puppetAgentSummary = ('{0}\PuppetLabs\puppet\var\state\last_run_summary.yaml' -f $env:ProgramData)
+    $puppetAgentSuccess = $false
+    $puppetAgentAttempts = 0
+    while (-not $puppetAgentSuccess) {
+      & $puppetBat $puppetArgs
+      Send-Log -logfile $logdest -subject ('Puppet Agent Run Report for {0}.{1}' -f $env:ComputerName, $domain) -to 'releng-puppet-mail@mozilla.com' -from ('{0}@{1}.{2}' -f $env:USERNAME, $env:ComputerName, $domain)
+      Send-Log -logfile $puppetAgentSummary -subject ('Puppet Agent Summary for {0}.{1}' -f $env:ComputerName, $domain) -to 'releng-puppet-mail@mozilla.com' -from ('{0}@{1}.{2}' -f $env:USERNAME, $env:ComputerName, $domain)
+      Move-Item -path $logdest -destination ([IO.Path]::Combine(('{0}\log' -f $env:SystemDrive), ('puppet-agent-run-{0}.log' -f [DateTime]::Now.ToString("yyyyMMdd-HHmm"))))-ErrorAction SilentlyContinue
+      $puppetAgentAttempts += 1
+      $puppetAgentSuccess = ((Test-Path $puppetAgentSummary) -and (Does-FileContain -haystack $puppetAgentSummary -needle 'failed: 0') -and (Does-FileContain -haystack $puppetAgentSummary -needle 'failure: 0'))
+      if (-not $puppetAgentSuccess) {
+        $waitInMinutes = (30 * $puppetAgentAttempts)
+        Write-Log -message ("{0} :: detected puppet agent failures" -f $($MyInvocation.MyCommand.Name)) -severity 'ERROR'
+        Write-Log -message ("{0} :: retry in {0} minutes..." -f $($MyInvocation.MyCommand.Name), $waitInMinutes) -severity 'DEBUG'
+        Start-Sleep -seconds (60 * $waitInMinutes) # wait until someone commits a patch to puppet-again, or terminates this instance
+      }
+    }
+
   } else {
     Write-Log -message ("{0} :: missing puppet installation detected" -f $($MyInvocation.MyCommand.Name)) -severity 'ERROR'
   }
