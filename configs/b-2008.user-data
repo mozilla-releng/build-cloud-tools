@@ -98,9 +98,7 @@ function Download-Module {{
 }}
 
 # download and import the Ec2UserdataUtils module
-# todo: swap hardcoded puppet url when puppet_server token is being correctly populated (spot and golden)
-#Download-Module -url ('http://{{0}}/repos/powershell/Ec2UserdataUtils.psm1' -f $puppetServer)
-Download-Module -url 'http://releng-puppet2.srv.releng.scl3.mozilla.com/repos/powershell/Ec2UserdataUtils.psm1'
+Download-Module -url ('http://{{0}}/repos/powershell/Ec2UserdataUtils.psm1' -f $puppetServer)
 Import-Module Ec2UserdataUtils
 
 # create the log directory if it doesn't exist
