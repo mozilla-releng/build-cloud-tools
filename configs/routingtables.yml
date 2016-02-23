@@ -111,6 +111,7 @@ us-west-2:
             upload.ffxbld.productdelivery.stage.mozaws.net: IGW
             upload.tbirdbld.productdelivery.stage.mozaws.net: IGW
             upload.seabld.productdelivery.stage.mozaws.net: IGW
+            crash-stats.mozilla.com: IGW
 
             10.132.0.0/16: local
             0.0.0.0/0: VGW
@@ -265,6 +266,7 @@ us-east-1:
             upload.ffxbld.productdelivery.stage.mozaws.net: IGW
             upload.tbirdbld.productdelivery.stage.mozaws.net: IGW
             upload.seabld.productdelivery.stage.mozaws.net: IGW
+            crash-stats.mozilla.com: IGW
 
             10.134.0.0/16: local
             0.0.0.0/0: VGW
