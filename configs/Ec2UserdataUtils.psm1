@@ -401,6 +401,9 @@ function Run-Puppet {
       Write-Log -message ("{0} :: renamed invalid filename: {1}, to: {2}" -f $($MyInvocation.MyCommand.Name), $invalidFilename, $validFilename) -severity 'INFO'
     }
   }
+  # https://bugzilla.mozilla.org/show_bug.cgi?id=1249662#c6
+  & 'schtasks' @('/delete', '/tn', 'SchTsk_netsh', '/f')
+  
   Out-IniFile -InputObject $puppetConfig -FilePath ('{0}\PuppetLabs\puppet\etc\puppet.conf' -f $env:ProgramData) -Encoding "ASCII" -Force
   Write-Log -message ("{0} :: running puppet agent, logging to: {1}" -f $($MyInvocation.MyCommand.Name), $logdest) -severity 'INFO'
   $puppetArgs = @('agent', '--test', '--detailed-exitcodes', '--server', $puppetServer, '--logdest', $logdest)
