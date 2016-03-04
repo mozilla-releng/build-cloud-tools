@@ -67,7 +67,7 @@ us-east-1:
             name: test
             routing_table: testers
 
-        10.134.60.0/22:
+        10.132.60.0/22:
             name: test
             routing_table: testers
 
