@@ -372,7 +372,7 @@ function Run-Puppet {
   while (-not $certsInstalled) {
     $waitInMinutes = (30 * $certsInstallAttempts)
     Write-Log -message ("{0} :: detected puppet certificate installation failure" -f $($MyInvocation.MyCommand.Name)) -severity 'ERROR'
-    Write-Log -message ("{0} :: retry in {0} minutes..." -f $($MyInvocation.MyCommand.Name), $waitInMinutes) -severity 'DEBUG'
+    Write-Log -message ("{0} :: retry in {1} minutes..." -f $($MyInvocation.MyCommand.Name), $waitInMinutes) -severity 'DEBUG'
     Start-Sleep -seconds (60 * $waitInMinutes) # wait for puppet cert propagation
     $certsInstalled = (Install-Certificates -certHost $puppetServer -certUser 'deploy' -certPass $deployPass)
     $certsInstallAttempts += 1
@@ -431,7 +431,7 @@ function Run-Puppet {
       if (-not $puppetAgentSuccess) {
         $waitInMinutes = (30 * $puppetAgentAttempts)
         Write-Log -message ("{0} :: detected puppet agent failures" -f $($MyInvocation.MyCommand.Name)) -severity 'ERROR'
-        Write-Log -message ("{0} :: retry in {0} minutes..." -f $($MyInvocation.MyCommand.Name), $waitInMinutes) -severity 'DEBUG'
+        Write-Log -message ("{0} :: retry in {1} minutes..." -f $($MyInvocation.MyCommand.Name), $waitInMinutes) -severity 'DEBUG'
         Start-Sleep -seconds (60 * $waitInMinutes) # wait until someone commits a patch to puppet-again, or terminates this instance
       }
     }
