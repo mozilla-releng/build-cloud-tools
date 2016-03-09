@@ -213,11 +213,13 @@ includes:
     test-usw2: 10.132.56.0/22
     test2-usw2: 10.132.156.0/22
     test3-usw2: 10.132.40.0/21
+    test4-usw2: 10.132.60.0/22
     try-usw2: 10.132.64.0/22
     build-use1: 10.134.52.0/22
     test-use1: 10.134.56.0/22
     test2-use1: 10.134.156.0/22
     test3-use1: 10.134.40.0/21
+    test4-use1: 10.134.60.0/22
     try-use1: 10.134.64.0/22
     slave-vlans:
       - {include: build-scl3}
@@ -231,11 +233,13 @@ includes:
       - {include: test-usw2}
       - {include: test2-usw2}
       - {include: test3-usw2}
+      - {include: test4-usw2}
       - {include: try-usw2}
       - {include: build-use1}
       - {include: test-use1}
       - {include: test2-use1}
       - {include: test3-use1}
+      - {include: test4-use1}
       - {include: try-use1}
 
     # and port aliases
@@ -438,6 +442,7 @@ proxxy-vpc-use1:
             - {include: test-use1}
             - {include: test2-use1}
             - {include: test3-use1}
+            - {include: test4-use1}
             - {include: try-use1}
         - include: aws-manager-ssh
         - include: admin-access
@@ -459,6 +464,7 @@ proxxy-vpc-usw2:
             - {include: test-usw2}
             - {include: test2-usw2}
             - {include: test3-usw2}
+            - {include: test4-usw2}
             - {include: try-usw2}
         - include: aws-manager-ssh
         - include: admin-access
