@@ -403,6 +403,8 @@ function Run-Puppet {
   }
   # https://bugzilla.mozilla.org/show_bug.cgi?id=1249662#c6
   & 'schtasks' @('/delete', '/tn', 'SchTsk_netsh', '/f')
+  # https://bugzilla.mozilla.org/show_bug.cgi?id=1249662#c13
+  Remove-Item ('{0}\PuppetLabs\puppet\var\log\netsh_error.log' -f $env:ProgramData) -force -ErrorAction SilentlyContinue
   
   Out-IniFile -InputObject $puppetConfig -FilePath ('{0}\PuppetLabs\puppet\etc\puppet.conf' -f $env:ProgramData) -Encoding "ASCII" -Force
   Write-Log -message ("{0} :: running puppet agent, logging to: {1}" -f $($MyInvocation.MyCommand.Name), $logdest) -severity 'INFO'
