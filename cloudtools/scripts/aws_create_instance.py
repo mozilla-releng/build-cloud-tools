@@ -100,6 +100,9 @@ def create_instance(name, config, region, key_name, ssh_key, instance_data,
                 bd.ephemeral_name = device_info["ephemeral_name"]
             if device_info.get("volume_type"):
                 bd.volume_type = device_info["volume_type"]
+                if device_info["volume_type"] == "io1" \
+                        and device_info.get("iops")
+                    bd.iops = device_info["iops"]
 
             bdm[device] = bd
 
