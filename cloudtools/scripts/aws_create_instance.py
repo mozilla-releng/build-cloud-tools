@@ -98,6 +98,8 @@ def create_instance(name, config, region, key_name, ssh_key, instance_data,
                 bd.delete_on_termination = True
             if device_info.get("ephemeral_name"):
                 bd.ephemeral_name = device_info["ephemeral_name"]
+            if device_info.get("volume_type"):
+                bd.volume_type = device_info["volume_type"]
 
             bdm[device] = bd
 
