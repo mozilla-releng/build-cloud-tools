@@ -429,7 +429,9 @@ function Run-Puppet {
       Send-Log -logfile $puppetAgentSummary -subject ('Puppet Agent Summary for {0}.{1}' -f $env:ComputerName, $domain) -to 'releng-puppet-mail@mozilla.com' -from ('{0}@{1}.{2}' -f $env:USERNAME, $env:ComputerName, $domain)
       Move-Item -path $logdest -destination ([IO.Path]::Combine(('{0}\log' -f $env:SystemDrive), ('puppet-agent-run-{0}.log' -f [DateTime]::Now.ToString("yyyyMMdd-HHmm"))))-ErrorAction SilentlyContinue
       $puppetAgentAttempts += 1
-      $puppetAgentSuccess = ((Test-Path $puppetAgentSummary) -and (Does-FileContain -haystack $puppetAgentSummary -needle 'failed: 0') -and (Does-FileContain -haystack $puppetAgentSummary -needle 'failure: 0'))
+      $puppetAgentReportContainsError = (Does-FileContain -haystack $logdest -needle 'Could not apply complete catalog')
+      $puppetAgentSummaryContainsError = ((!(Test-Path $puppetAgentSummary)) -or (Does-FileContain -haystack $puppetAgentSummary -needle 'failed: 0') -or (Does-FileContain -haystack $puppetAgentSummary -needle 'failure: 0'))
+      $puppetAgentSuccess = ((!$puppetAgentReportContainsError) -and (!$puppetAgentSummaryContainsError))
       if (-not $puppetAgentSuccess) {
         $waitInMinutes = (30 * $puppetAgentAttempts)
         Write-Log -message ("{0} :: detected puppet agent failures" -f $($MyInvocation.MyCommand.Name)) -severity 'ERROR'
