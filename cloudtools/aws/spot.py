@@ -191,7 +191,8 @@ def get_available_slave_name(region, moz_instance_type, is_spot,
     else:
         # populate cache and call again
         all_slave_names = get_classified_slaves(is_spot)
-        all_used_names = set(i.tags.get("Name") for i in all_instances)
+        all_used_names = set(i.tags.get("Name") for i in all_instances if
+                             i.state != 'terminated')
         # used_spot_names contains pending too
         used_spot_names = set(r.tags.get("Name") for r in
                               get_active_spot_requests(region))
