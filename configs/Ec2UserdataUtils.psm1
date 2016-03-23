@@ -788,7 +788,6 @@ function Get-SourceCaches {
     [hashtable] $buildRepos = @{
       'https://hg.mozilla.org/integration/mozilla-inbound' = ('{0}\hg-shared\integration\mozilla-inbound' -f $cachePath);
       'https://hg.mozilla.org/integration/fx-team' = ('{0}\hg-shared\integration\fx-team' -f $cachePath);
-      'https://hg.mozilla.org/projects/ux' = ('{0}\hg-shared\projects\ux' -f $cachePath);
       'https://hg.mozilla.org/mozilla-central' = ('{0}\hg-shared\mozilla-central' -f $cachePath)
     },
     [hashtable] $tryRepos = @{
