@@ -288,18 +288,18 @@ function Install-Certificates {
     }
   )
   $duffPath = ('{0}\PuppetLabs\puppet\etc\ssl' -f $env:ProgramData)
-  if (Test-Path $duffPath) {
+  if (Test-Path -Path $duffPath -ErrorAction SilentlyContinue) {
     Remove-Item $duffPath -Recurse -Confirm:$false -force
   }
   $vbs = ('{0}\PuppetLabs\puppet\var\puppettize_TEMP.vbs' -f $env:ProgramData)
-  if (!(Test-Path $vbs) -and (!(StringIsNullOrWhitespace -string $certPass))) {
+  if (!(Test-Path -Path $vbs -ErrorAction SilentlyContinue) -and (!(StringIsNullOrWhitespace -string $certPass))) {
     (New-Object Net.WebClient).DownloadFile('http://releng-puppet2.srv.releng.scl3.mozilla.com/repos/Windows/puppettize.vbs', $vbs)
   }
-  if ((Test-Path $vbs) -and (!(StringIsNullOrWhitespace -string $certPass))) {
+  if ((Test-Path -Path $vbs -ErrorAction SilentlyContinue) -and (!(StringIsNullOrWhitespace -string $certPass))) {
     (Get-Content $vbs) | Foreach-Object { $_ -replace "($certPass)", 'xxxxxx' } | Set-Content $vbs
   }
   foreach ($c in @('ca', 'pub', 'key')) {
-    if (Test-Path $certs[$c])  {
+    if (Test-Path -Path $certs[$c] -ErrorAction SilentlyContinue)  {
       Remove-Item $certs[$c] -Confirm:$false -force
       Write-Log -message ("{0} :: removed {1}" -f $($MyInvocation.MyCommand.Name), $certs[$c]) -severity 'INFO'
     }
@@ -307,12 +307,12 @@ function Install-Certificates {
   if (($certHost -ne $null) -and ($certUser -ne $null) -and ($certPass -ne $null)) {
     Write-Log -message ("{0} :: installing certificates" -f $($MyInvocation.MyCommand.Name)) -severity 'INFO'
     foreach ($folder in @(('{0}\private_keys' -f $sslPath), ('{0}\certs' -f $sslPath))) {
-      if (Test-Path $folder) {
+      if (Test-Path -Path $folder -ErrorAction SilentlyContinue) {
         Remove-Item -path $folder -recurse -force
       }
       New-Item -ItemType Directory -Force -Path $folder
     }
-    if (Test-Path $vbs) {
+    if (Test-Path -Path $vbs -ErrorAction SilentlyContinue) {
       try {
         (Get-Content $vbs) | Foreach-Object { $_ -replace '(deployPass = "([^"]*)?")', ('deployPass = "{0}"' -f $certPass) } | Set-Content $vbs
         Start-Process cscript -ArgumentList $vbs -Wait -NoNewWindow -PassThru -RedirectStandardOutput 'C:\log\puppettize-stdout.log' -RedirectStandardError 'C:\log\puppettize-stderr.log'
@@ -339,16 +339,19 @@ function Install-Certificates {
     #}
     $certsMissing = $false
     foreach ($c in @('ca', 'pub', 'key')) {
-      if (!(Test-Path $certs[$c]))  {
+      if (!(Test-Path -Path $certs[$c] -ErrorAction SilentlyContinue))  {
         $certsMissing = $true
         Write-Log -message ("{0} :: missing cert detected after puppetize vbs run ({1})" -f $($MyInvocation.MyCommand.Name), $certs[$c]) -severity 'Error'
       }
     }
-    return (!($certsMissing))
+    if ($certsMissing) {
+      return $false
+    }
   } else {
     Write-Log -message ("{0} :: unable to install certificates" -f $($MyInvocation.MyCommand.Name)) -severity 'ERROR'
     return $false
   }
+  return $true
 }
 
 function Run-Puppet {
