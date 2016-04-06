@@ -1566,6 +1566,16 @@ function Install-RelOpsPrerequisites {
   if ($env:ComputerName.Contains('-w732-')) {
     Install-Package -id 'puppet' -version '3.4.3' -testPath ('{0}\Puppet Labs\Puppet\bin\puppet.bat' -f $env:ProgramFiles)
   }
+  
+  #https://bugzilla.mozilla.org/show_bug.cgi?id=1261812
+  if (-not (Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows\Windows Error Reporting\' -Name 'LocalDumps' -ErrorAction SilentlyContinue)) {
+    New-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows\Windows Error Reporting\' -Name 'LocalDumps'
+  }
+  if (-not (Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows\Windows Error Reporting\' -Name 'DontShowUI' -ErrorAction SilentlyContinue)) {
+    New-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows\Windows Error Reporting\' -Type 'DWord' -Name 'DontShowUI' -Value '0x00000001'
+  } else {
+    Set-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows\Windows Error Reporting\' -Type 'DWord' -Name 'DontShowUI' -Value '0x00000001'
+  }
   #Install-Package -id 'git' -version '2.5.3' -testPath ('{0}\Git\usr\bin\bash.exe' -f $env:ProgramFiles)
   #$msys = ('{0}\Git\usr\bin' -f $env:ProgramFiles)
   #if ((Test-Path $msys) -and !$env:Path.Contains($msys)) {
