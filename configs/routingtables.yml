@@ -72,7 +72,7 @@ us-west-2:
             # cloudfront for ftp/ftp-ssl/archive.m.o
             54.192.0.0/16: IGW
             # public-artifacts.taskcluster.net
-            52.84.0.0/15
+            52.84.0.0/15: IGW
 
             # For graphite
             carbon.hostedgraphite.com: IGW
@@ -239,7 +239,7 @@ us-east-1:
             # cloudfront for ftp/ftp-ssl/archive.m.o
             54.192.0.0/16: IGW
             # public-artifacts.taskcluster.net
-            52.84.0.0/15
+            52.84.0.0/15: IGW
 
             # For graphite
             carbon.hostedgraphite.com: IGW
