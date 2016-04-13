@@ -38,7 +38,7 @@
             "/dev/sda1": {
                 "delete_on_termination": true,
                 "skip_resize": true,
-                "volume_type": "io1",
+                "volume_type": "gp2",
                 "iops": 3000,
                 "size": 120,
                 "instance_dev": "C:"
@@ -82,7 +82,7 @@
             "/dev/sda1": {
                 "delete_on_termination": true,
                 "skip_resize": true,
-                "volume_type": "io1",
+                "volume_type": "gp2",
                 "iops": 3000,
                 "size": 120,
                 "instance_dev": "C:"
