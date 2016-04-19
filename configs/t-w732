@@ -51,7 +51,7 @@
     "us-west-2": {
         "type": "t-w732",
         "domain": "test.releng.usw2.mozilla.com",
-        "ami": "ami-7904f219",
+        "ami": "ami-d7798fb7",
         "subnet_ids": [
             "subnet-aecba8c7",
             "subnet-56082710",
