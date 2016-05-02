@@ -1,9 +1,9 @@
 {
-    "hostname": "t-w732-ec2-%03d",
+    "hostname": "g-w732-ec2-%03d",
     "us-east-1": {
-        "type": "t-w732",
+        "type": "g-w732",
         "domain": "test.releng.use1.mozilla.com",
-        "ami": "ami-d8b95eb5",
+        "ami": "ami-55866138",
         "subnet_ids": [
             "subnet-5bafe92c",
             "subnet-e40e0786",
@@ -29,11 +29,11 @@
         "security_group_ids": [
             "sg-f0f1239f"
         ],
-        "instance_type": "c3.2xlarge",
+        "instance_type": "g2.2xlarge",
         "distro": "win7",
         "ssh_key": "aws-releng",
         "use_public_ip": true,
-        "instance_profile_name": "t-w732",
+        "instance_profile_name": "g-w732",
         "device_map": {
             "/dev/sda1": {
                 "delete_on_termination": true,
@@ -45,13 +45,13 @@
             }
         },
         "tags": {
-            "moz-type": "t-w732"
+            "moz-type": "g-w732"
         }
     },
     "us-west-2": {
-        "type": "t-w732",
+        "type": "g-w732",
         "domain": "test.releng.usw2.mozilla.com",
-        "ami": "ami-64847704",
+        "ami": "ami-ab9d6ecb",
         "subnet_ids": [
             "subnet-aecba8c7",
             "subnet-56082710",
@@ -73,11 +73,11 @@
         "security_group_ids": [
             "sg-8b9f7ce4"
         ],
-        "instance_type": "c3.2xlarge",
+        "instance_type": "g2.2xlarge",
         "distro": "win7",
         "ssh_key": "aws-releng",
         "use_public_ip": true,
-        "instance_profile_name": "t-w732",
+        "instance_profile_name": "g-w732",
         "device_map": {
             "/dev/sda1": {
                 "delete_on_termination": true,
@@ -89,7 +89,7 @@
             }
         },
         "tags": {
-            "moz-type": "t-w732"
+            "moz-type": "g-w732"
         }
     }
 }
