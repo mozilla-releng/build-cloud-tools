@@ -144,6 +144,7 @@ function Set-Ec2ConfigPluginsState {
     & 'icacls' $icaclsArgs
     $xml.Save($ec2SettingsFile)
   }
+ <#
   Write-Log -message ('granting read access to: Everyone, on: {0}' -f $ec2SettingsFile) -severity 'DEBUG'
   $icaclsArgs = @($ec2SettingsFile, '/grant', 'Everyone:R')
   & 'icacls' $icaclsArgs
@@ -162,6 +163,7 @@ function Set-Ec2ConfigPluginsState {
   Write-Log -message ('removing access for: System, on: {0}' -f $ec2SettingsFile) -severity 'DEBUG'
   $icaclsArgs = @($ec2SettingsFile, '/remove:g', 'System')
   & 'icacls' $icaclsArgs
+#>
 }
 
 function Stop-ComputerWithDelay {
