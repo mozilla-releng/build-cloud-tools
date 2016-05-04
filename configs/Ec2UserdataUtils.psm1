@@ -687,7 +687,6 @@ function Flush-BuildFiles {
     [string[]] $paths = @(
       ('{0}\builds\moz2_slave' -f $env:SystemDrive),
       ('{0}\builds\slave' -f $env:SystemDrive),
-      ('{0}\builds\hg-shared' -f $env:SystemDrive),
       ('{0}\Users\cltbld\Desktop' -f $env:SystemDrive),
       ('{0}\Users\cltbld\AppData\Roaming\Mozilla' -f $env:SystemDrive),
       ('{0}\Users\Administrator\Desktop' -f $env:SystemDrive)
