@@ -276,84 +276,124 @@ function Disable-PuppetService {
     & 'schtasks' $schtasksArgs
   }
 }
-
+function New-CertsExist {
+  param (
+    [int] $ageInMinutes = 5,
+    [string] $hostname = $env:COMPUTERNAME,
+    [string] $domain = $env:USERDOMAIN,
+    [string] $sslPath = ('{0}\PuppetLabs\puppet\var\ssl' -f $env:ProgramData),
+    [string[]] $certs = @(
+      ('{0}\certs\ca.pem' -f $sslPath),
+      ('{0}\certs\{1}.{2}.pem' -f $sslPath, $hostname, $domain),
+      ('{0}\private_keys\{1}.{2}.pem' -f $sslPath, $hostname, $domain)
+    )
+  )
+  return (-not (@($certs | % { ((Test-Path -Path $_ -ErrorAction SilentlyContinue) -and ((Get-Item $_).LastWriteTime -gt ((Get-Date) - (New-Timespan -Minutes $ageInMinutes)))) }) -contains $false))
+}
 function Install-Certificates {
   param (
     [string] $certHost = $null,
     [string] $certUser = $null,
     [string] $certPass = $null,
+    [string] $hostname = $env:COMPUTERNAME,
+    [string] $domain = $env:USERDOMAIN,
     [string] $sslPath = ('{0}\PuppetLabs\puppet\var\ssl' -f $env:ProgramData),
     [hashtable] $certs = @{
       'ca' = ('{0}\certs\ca.pem' -f $sslPath);
-      'pub' = ('{0}\certs\{1}.{2}.pem' -f $sslPath, $env:COMPUTERNAME, $env:USERDOMAIN);
-      'key' = ('{0}\private_keys\{1}.{2}.pem' -f $sslPath, $env:COMPUTERNAME, $env:USERDOMAIN)
+      'pub' = ('{0}\certs\{1}.{2}.pem' -f $sslPath, $hostname, $domain);
+      'key' = ('{0}\private_keys\{1}.{2}.pem' -f $sslPath, $hostname, $domain)
     }
   )
-  $duffPath = ('{0}\PuppetLabs\puppet\etc\ssl' -f $env:ProgramData)
-  if (Test-Path -Path $duffPath -ErrorAction SilentlyContinue) {
-    Remove-Item $duffPath -Recurse -Confirm:$false -force
+  begin {
+    Write-Log -message ('{0} :: Function started' -f $($MyInvocation.MyCommand.Name)) -severity 'DEBUG'
   }
-  $vbs = ('{0}\PuppetLabs\puppet\var\puppettize_TEMP.vbs' -f $env:ProgramData)
-  if (!(Test-Path -Path $vbs -ErrorAction SilentlyContinue) -and (!(StringIsNullOrWhitespace -string $certPass))) {
-    (New-Object Net.WebClient).DownloadFile('http://releng-puppet2.srv.releng.scl3.mozilla.com/repos/Windows/puppettize.vbs', $vbs)
-  }
-  if ((Test-Path -Path $vbs -ErrorAction SilentlyContinue) -and (!(StringIsNullOrWhitespace -string $certPass))) {
-    (Get-Content $vbs) | Foreach-Object { $_ -replace "($certPass)", 'xxxxxx' } | Set-Content $vbs
-  }
-  foreach ($c in @('ca', 'pub', 'key')) {
-    if (Test-Path -Path $certs[$c] -ErrorAction SilentlyContinue)  {
-      Remove-Item $certs[$c] -Confirm:$false -force
-      Write-Log -message ("{0} :: removed {1}" -f $($MyInvocation.MyCommand.Name), $certs[$c]) -severity 'INFO'
+  process {
+    $duffPath = ('{0}\PuppetLabs\puppet\etc\ssl' -f $env:ProgramData)
+    if (Test-Path -Path $duffPath -ErrorAction SilentlyContinue) {
+      Remove-Item $duffPath -Recurse -Confirm:$false -force
+      Write-Log -message ('{0} :: removed {1}' -f $($MyInvocation.MyCommand.Name), $duffPath) -severity 'DEBUG'
     }
-  }
-  if (($certHost -ne $null) -and ($certUser -ne $null) -and ($certPass -ne $null)) {
-    Write-Log -message ("{0} :: installing certificates" -f $($MyInvocation.MyCommand.Name)) -severity 'INFO'
-    foreach ($folder in @(('{0}\private_keys' -f $sslPath), ('{0}\certs' -f $sslPath))) {
-      if (Test-Path -Path $folder -ErrorAction SilentlyContinue) {
-        Remove-Item -path $folder -recurse -force
-      }
-      New-Item -ItemType Directory -Force -Path $folder
+    $vbs = ('{0}\PuppetLabs\puppet\var\puppettize_TEMP.vbs' -f $env:ProgramData)
+    if (!(Test-Path -Path $vbs -ErrorAction SilentlyContinue) -and (!(StringIsNullOrWhitespace -string $certPass))) {
+      (New-Object Net.WebClient).DownloadFile('http://releng-puppet2.srv.releng.scl3.mozilla.com/repos/Windows/puppettize.vbs', $vbs)
+      Write-Log -message ('{0} :: downloaded {1}' -f $($MyInvocation.MyCommand.Name), $vbs) -severity 'DEBUG'
     }
-    if (Test-Path -Path $vbs -ErrorAction SilentlyContinue) {
-      try {
-        (Get-Content $vbs) | Foreach-Object { $_ -replace '(deployPass = "([^"]*)?")', ('deployPass = "{0}"' -f $certPass) } | Set-Content $vbs
-        Start-Process cscript -ArgumentList $vbs -Wait -NoNewWindow -PassThru -RedirectStandardOutput 'C:\log\puppettize-stdout.log' -RedirectStandardError 'C:\log\puppettize-stderr.log'
-        (Get-Content $vbs) | Foreach-Object { $_ -replace "($certPass)", 'xxxxxx' } | Set-Content $vbs
-        Write-Log -message ("{0} :: puppettize vbs run completed" -f $($MyInvocation.MyCommand.Name)) -severity 'INFO'
-      } catch {
-        Write-Log -message ("{0} :: puppettize vbs run failed. {1}" -f $($MyInvocation.MyCommand.Name), $_.Exception) -severity 'ERROR'
-      }
+    if ((Test-Path -Path $vbs -ErrorAction SilentlyContinue) -and (!(StringIsNullOrWhitespace -string $certPass))) {
+      (Get-Content $vbs) | Foreach-Object { $_ -replace "($certPass)", 'xxxxxx' } | Set-Content $vbs
+      Write-Log -message ('{0} :: applied deploy pass' -f $($MyInvocation.MyCommand.Name)) -severity 'DEBUG'
     }
-    #$getcertUrl = ('https://{0}/deploy/getcert.cgi' -f $certHost)
-    #$cc = New-Object Net.CredentialCache
-    #$cc.Add($getcertUrl, "Basic", (New-Object Net.NetworkCredential($certUser, $certPass)))
-    #$wc = New-Object Net.WebClient
-    #$wc.Credentials = $cc
-    #[Net.ServicePointManager]::ServerCertificateValidationCallback = {$true}
-    #Invoke-Command -ScriptBlock {
-    #  $wd = $(Get-Location).Path
-    #  cd $sslPath
-    #  $shArgs = @('set', 'PATH=/c/mozilla-build/Git/bin:$PATH')
-    #  & ('{0}\mozilla-build\Git\bin\sh.exe' -f $env:SystemDrive) $shArgs
-    #  $wc.DownloadString($getcertUrl) | & ('{0}\mozilla-build\Git\bin\sh.exe' -f $env:SystemDrive)
-      # todo: set permissions on downloaded key files
-    #  cd $wd
-    #}
-    $certsMissing = $false
     foreach ($c in @('ca', 'pub', 'key')) {
-      if (!(Test-Path -Path $certs[$c] -ErrorAction SilentlyContinue))  {
-        $certsMissing = $true
-        Write-Log -message ("{0} :: missing cert detected after puppetize vbs run ({1})" -f $($MyInvocation.MyCommand.Name), $certs[$c]) -severity 'Error'
+      if (Test-Path -Path $certs[$c] -ErrorAction SilentlyContinue)  {
+        Remove-Item $certs[$c] -Confirm:$false -force
+        Write-Log -message ('{0} :: removed {1}' -f $($MyInvocation.MyCommand.Name), $certs[$c]) -severity 'DEBUG'
       }
     }
-    if ($certsMissing) {
+    if (($certHost -ne $null) -and ($certUser -ne $null) -and ($certPass -ne $null)) {
+      Write-Log -message ('{0} :: installing certificates' -f $($MyInvocation.MyCommand.Name)) -severity 'INFO'
+      foreach ($folder in @(('{0}\private_keys' -f $sslPath), ('{0}\certs' -f $sslPath))) {
+        if (Test-Path -Path $folder -ErrorAction SilentlyContinue) {
+          Remove-Item -path $folder -recurse -force
+          Write-Log -message ('{0} :: removed {1}' -f $($MyInvocation.MyCommand.Name), $folder) -severity 'DEBUG'
+        }
+        if (-not (Test-Path -Path $folder -ErrorAction SilentlyContinue)) {
+          New-Item -ItemType Directory -Force -Path $folder
+          Write-Log -message ('{0} :: created {1}' -f $($MyInvocation.MyCommand.Name), $folder) -severity 'DEBUG'
+        }
+      }
+      if (Test-Path -Path $vbs -ErrorAction SilentlyContinue) {
+        try {
+          (Get-Content $vbs) | Foreach-Object { $_ -replace '(deployPass = "([^"]*)?")', ('deployPass = "{0}"' -f $certPass) } | Set-Content $vbs
+          # for some reason, it's possible to get here with an incorrect value in $env:COMPUTERNAME (truncated) and $env:USERDOMAIN (set to hostname).
+          # for the purpose of the puppet run, its enough that the env var is correct. no reboot is required.
+          if (-not ($hostname -ieq $env:COMPUTERNAME)) {
+            Set-Hostname -hostname $hostname
+          }
+          if (-not ($domain -ieq $env:USERDOMAIN)) {
+            Set-Domain -domain $domain
+          }
+          Start-Process cscript -ArgumentList $vbs -Wait -NoNewWindow -PassThru -RedirectStandardOutput 'C:\log\puppettize-stdout.log' -RedirectStandardError 'C:\log\puppettize-stderr.log'
+          (Get-Content $vbs) | Foreach-Object { $_ -replace "($certPass)", 'xxxxxx' } | Set-Content $vbs
+          Write-Log -message ("{0} :: puppettize vbs run completed" -f $($MyInvocation.MyCommand.Name)) -severity 'INFO'
+          $certsMissing = $false
+          foreach ($c in @('ca', 'pub', 'key')) {
+            if (-not (Test-Path -Path $certs[$c] -ErrorAction SilentlyContinue))  {
+              $certsMissing = $true
+              Write-Log -message ("{0} :: missing cert detected after puppetize vbs run ({1})" -f $($MyInvocation.MyCommand.Name), $certs[$c]) -severity 'Error'
+            }
+          }
+          return (-not ($certsMissing))
+        } catch {
+          Write-Log -message ("{0} :: puppettize vbs run failed. {1}" -f $($MyInvocation.MyCommand.Name), $_.Exception) -severity 'ERROR'
+          return $false
+        }
+      } else {
+        Write-Log -message ("{0} :: puppettize vbs missing." -f $($MyInvocation.MyCommand.Name)) -severity 'ERROR'
+        return $false
+      }
+      #$getcertUrl = ('https://{0}/deploy/getcert.cgi' -f $certHost)
+      #$cc = New-Object Net.CredentialCache
+      #$cc.Add($getcertUrl, "Basic", (New-Object Net.NetworkCredential($certUser, $certPass)))
+      #$wc = New-Object Net.WebClient
+      #$wc.Credentials = $cc
+      #[Net.ServicePointManager]::ServerCertificateValidationCallback = {$true}
+      #Invoke-Command -ScriptBlock {
+      #  $wd = $(Get-Location).Path
+      #  cd $sslPath
+      #  $shArgs = @('set', 'PATH=/c/mozilla-build/Git/bin:$PATH')
+      #  & ('{0}\mozilla-build\Git\bin\sh.exe' -f $env:SystemDrive) $shArgs
+      #  $wc.DownloadString($getcertUrl) | & ('{0}\mozilla-build\Git\bin\sh.exe' -f $env:SystemDrive)
+        # todo: set permissions on downloaded key files
+      #  cd $wd
+      #}
+    } else {
+      Write-Log -message ("{0} :: unable to install certificates (no credentials)" -f $($MyInvocation.MyCommand.Name)) -severity 'ERROR'
       return $false
     }
-  } else {
-    Write-Log -message ("{0} :: unable to install certificates" -f $($MyInvocation.MyCommand.Name)) -severity 'ERROR'
-    return $false
+    return $true
   }
-  return $true
+  end {
+    Write-Log -message ("{0} :: Function ended" -f $($MyInvocation.MyCommand.Name)) -severity 'DEBUG'
+  }
 }
 
 function Run-Puppet {
@@ -370,17 +410,16 @@ function Run-Puppet {
     [string] $logdest,
     [string] $environment = $null,
     [string] $deployPass = $null,
+    [string] $hostname,
     [string] $domain
   )
-  $certsInstalled = (Install-Certificates -certHost $puppetServer -certUser 'deploy' -certPass $deployPass)
-  $certsInstallAttempts = 1
-  while (-not $certsInstalled) {
+  $certsInstallAttempts = 0
+  while ((-not (Install-Certificates -hostname $hostname -domain $domain -certHost $puppetServer -certUser 'deploy' -certPass $deployPass)) -or (-not (New-CertsExist -hostname $hostname -domain $domain))) {
+    $certsInstallAttempts += 1
     $waitInMinutes = (30 * $certsInstallAttempts)
     Write-Log -message ("{0} :: detected puppet certificate installation failure" -f $($MyInvocation.MyCommand.Name)) -severity 'ERROR'
     Write-Log -message ("{0} :: retry in {1} minutes..." -f $($MyInvocation.MyCommand.Name), $waitInMinutes) -severity 'DEBUG'
     Start-Sleep -seconds (60 * $waitInMinutes) # wait for puppet cert propagation
-    $certsInstalled = (Install-Certificates -certHost $puppetServer -certUser 'deploy' -certPass $deployPass)
-    $certsInstallAttempts += 1
   }
   $puppetConfig = @{
     'main' = @{
@@ -832,6 +871,7 @@ function Prep-Golden {
     [string] $logdest = $null,
     [string] $environment = $null,
     [string] $deployPass = $null,
+    [string] $hostname,
     [string] $domain
   )
   begin {
@@ -839,7 +879,7 @@ function Prep-Golden {
   }
   process {
     if ((-not (StringIsNullOrWhitespace -string $puppetServer)) -and (-not (StringIsNullOrWhitespace -string $deployPass)) -and (-not (StringIsNullOrWhitespace -string $logdest))) {
-      Run-Puppet -puppetServer $puppetServer -deployPass $deployPass -logdest $logdest -environment $environment -domain $domain
+      Run-Puppet -puppetServer $puppetServer -deployPass $deployPass -logdest $logdest -environment $environment -hostname $hostname -domain $domain
     }
     Flush-RecycleBin
     Flush-TempFiles
