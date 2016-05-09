@@ -3,7 +3,7 @@
     "us-east-1": {
         "type": "t-w732",
         "domain": "test.releng.use1.mozilla.com",
-        "ami": "ami-d8b95eb5",
+        "ami": "ami-be08e5d3",
         "subnet_ids": [
             "subnet-5bafe92c",
             "subnet-e40e0786",
@@ -51,7 +51,7 @@
     "us-west-2": {
         "type": "t-w732",
         "domain": "test.releng.usw2.mozilla.com",
-        "ami": "ami-64847704",
+        "ami": "ami-2bf00d4b",
         "subnet_ids": [
             "subnet-aecba8c7",
             "subnet-56082710",
