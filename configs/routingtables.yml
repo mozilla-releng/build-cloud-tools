@@ -122,6 +122,7 @@ us-west-2:
             upload.tbirdbld.productdelivery.stage.mozaws.net: IGW
             upload.seabld.productdelivery.stage.mozaws.net: IGW
             crash-stats.mozilla.com: IGW
+            queue.taskcluster.net: IGW
 
             10.132.0.0/16: local
             0.0.0.0/0: VGW
@@ -153,6 +154,7 @@ us-west-2:
             aus5.mozilla.org: IGW
             upload.trybld.productdelivery.prod.mozaws.net: IGW
             upload.trybld.productdelivery.stage.mozaws.net: IGW
+            queue.taskcluster.net: IGW
 
             10.132.0.0/16: local
             0.0.0.0/0: VGW
@@ -289,6 +291,7 @@ us-east-1:
             upload.tbirdbld.productdelivery.stage.mozaws.net: IGW
             upload.seabld.productdelivery.stage.mozaws.net: IGW
             crash-stats.mozilla.com: IGW
+            queue.taskcluster.net: IGW
 
             10.134.0.0/16: local
             0.0.0.0/0: VGW
@@ -321,6 +324,7 @@ us-east-1:
             aus5.mozilla.org: IGW
             upload.trybld.productdelivery.prod.mozaws.net: IGW
             upload.trybld.productdelivery.stage.mozaws.net: IGW
+            queue.taskcluster.net: IGW
 
             10.134.0.0/16: local
             0.0.0.0/0: VGW
