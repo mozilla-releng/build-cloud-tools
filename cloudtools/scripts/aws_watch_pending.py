@@ -137,8 +137,6 @@ def aws_resume_instances(all_instances, moz_instance_type, start_count,
 def get_product_description(moz_instance_type):
     # http://docs.aws.amazon.com/sdkforruby/api/Aws/EC2/Types/DescribeReservedInstancesOfferingsRequest.html
     # https://boto3.readthedocs.org/en/latest/reference/services/ec2.html#EC2.Client.request_spot_instances
-    if moz_instance_type in ["y-2008", "b-2008", "t-w732", "g-w732"]:
-        return "Windows (Amazon VPC)"
     return "Linux/UNIX (Amazon VPC)"
 
 
