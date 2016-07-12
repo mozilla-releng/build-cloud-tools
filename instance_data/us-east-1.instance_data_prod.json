@@ -1,7 +1,4 @@
 {
   "dev_puppet_masters": ["releng-puppet2.srv.releng.scl3.mozilla.com"],
-  "puppet_masters": ["releng-puppet1.srv.releng.scl3.mozilla.com", "releng-puppet2.srv.releng.scl3.mozilla.com", "releng-puppet1.srv.releng.use1.mozilla.com", "releng-puppet1.srv.releng.usw2.mozilla.com"],
-  "s3_tarballs": {
-    "/builds/git-shared/repo": {"bucket": "mozilla-releng-tarballs-use1", "key": "git-shared-repo.tar"}
-  }
+  "puppet_masters": ["releng-puppet1.srv.releng.scl3.mozilla.com", "releng-puppet2.srv.releng.scl3.mozilla.com", "releng-puppet1.srv.releng.use1.mozilla.com", "releng-puppet1.srv.releng.usw2.mozilla.com"]
 }
