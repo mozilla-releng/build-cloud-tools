@@ -182,8 +182,6 @@ def assimilate_instance(instance, config, ssh_key, instance_data, deploypass,
         unbundle_hg(instance_data['hg_bundles'])
     if instance_data.get("s3_tarballs"):
         unpack_tarballs(instance_data["s3_tarballs"])
-    if instance_data.get("hg_repos"):
-        share_repos(instance_data["hg_repos"])
 
     run("sync")
     run("sync")
@@ -234,20 +232,6 @@ def unpack_tarballs(tarballs):
                  user="cltbld")
     run("rm -f /tmp/s3-get")
     log.info("Unpacking tarballs finished")
-
-
-@redo.retriable(sleeptime=0, jitter=0, attempts=3)
-def share_repos(hg_repos):
-    log.info("Cloning HG repos")
-    hg = "/tools/python27-mercurial/bin/hg"
-    for share, repo in hg_repos.iteritems():
-        target_dir = '/builds/hg-shared/%s' % share
-        parent_dir = os.path.dirname(target_dir.rstrip("/"))
-        sudo('rm -rf {d} && mkdir -p {p}'.format(d=target_dir, p=parent_dir),
-             user="cltbld")
-        sudo('{hg} clone -U {repo} {d}'.format(hg=hg, repo=repo, d=target_dir),
-             user="cltbld")
-    log.info("Cloning HG repos finished")
 
 
 def make_instance_interfaces(region, hostname, ignore_subnet_check,
