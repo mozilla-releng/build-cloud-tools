@@ -824,10 +824,6 @@ function Get-SourceCaches {
   param (
     [string] $hostname = $env:ComputerName,
     [string] $cachePath = ('{0}\builds' -f $env:SystemDrive),
-    [hashtable] $sharedRepos = @{
-      'https://hg.mozilla.org/build/mozharness' = ('{0}\hg-shared\build\mozharness' -f $cachePath);
-      'https://hg.mozilla.org/build/tools' = ('{0}\hg-shared\build\tools' -f $cachePath)
-    },
     [hashtable] $buildRepos = @{
       'https://hg.mozilla.org/integration/mozilla-inbound' = ('{0}\hg-shared\integration\mozilla-inbound' -f $cachePath);
       'https://hg.mozilla.org/integration/fx-team' = ('{0}\hg-shared\integration\fx-team' -f $cachePath);
@@ -844,15 +840,15 @@ function Get-SourceCaches {
     switch ($hostname[0]) 
     {
       'b' {
-        $repos = $sharedRepos + $buildRepos
+        $repos = $buildRepos
         break
       }
       'y' {
-        $repos = $sharedRepos + $tryRepos
+        $repos = $tryRepos
         break
       }
       default {
-        $repos = $sharedRepos
+        $repos = @{}
         break
       }
     }
