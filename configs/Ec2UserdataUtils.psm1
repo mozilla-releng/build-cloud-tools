@@ -1610,7 +1610,6 @@ function Install-RelOpsPrerequisites {
   if ($env:ComputerName.Contains('-w732-')) {
     Install-Package -id 'puppet' -version '3.4.3' -testPath ('{0}\Puppet Labs\Puppet\bin\puppet.bat' -f $env:ProgramFiles)
     Disable-Service -serviceName 'puppet'
-    Remove-ItemProperty -Name 'fPromptForPassword' -Path 'HKLM:\Software\Policies\Microsoft\Windows NT\Terminal Services' -ErrorAction SilentlyContinue
   }
   
   #https://bugzilla.mozilla.org/show_bug.cgi?id=1261812
