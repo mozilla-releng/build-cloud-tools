@@ -783,9 +783,6 @@ function Clone-Repository {
   }
   process {
     if ((Test-Path $target -PathType Container) -and (Test-Path ('{0}\.hg' -f $target) -PathType Container)) {
-      if ($target.EndsWith('hg-shared\try')) {
-        Update-TryDefaultPath -local $target
-      }
       & hg @('pull', '-R', $target)
       $exitCode = $LastExitCode
       if ($?) {
@@ -794,13 +791,12 @@ function Clone-Repository {
         Write-Log -message ("{0} :: hg pull of {1} to {2} failed with exit code: {3}" -f $($MyInvocation.MyCommand.Name), $source, $target, $exitCode) -severity 'ERROR'
       }
     } else {
-      & hg @('clone', '-U', $source, $target)
+      // Prefer a streaming clone bundle because they are the fastest to download and
+      // preserve optimal encoding from server.
+      & hg @('--config', 'ui.clonebundleprefers=VERSION=packed1', 'clone', '--noupdate', $source, $target)
       $exitCode = $LastExitCode
       if (($?) -and (Test-Path $target)) {
         Write-Log -message ("{0} :: {1} cloned to {2}" -f $($MyInvocation.MyCommand.Name), $source, $target) -severity 'INFO'
-        if ($target.EndsWith('hg-shared\try')) {
-          Update-TryDefaultPath -local $target
-        }
       } else {
         Write-Log -message ("{0} :: hg clone of {1} to {2} failed with exit code: {3}" -f $($MyInvocation.MyCommand.Name), $source, $target, $exitCode) -severity 'ERROR'
       }
@@ -811,30 +807,12 @@ function Clone-Repository {
   }
 }
 
-function Update-TryDefaultPath {
-  param (
-    [string] $local = ('{0}\builds\hg-shared\try' -f $env:SystemDrive),
-    [string] $remote = 'https://hg.mozilla.org/try'
-  )
-  Set-IniValue -file ('{0}\.hg\hgrc' -f $local) -section 'paths' -key 'default' -value $remote
-  Write-Log -message ("{0} :: hg default path for {1} set to {2}" -f $($MyInvocation.MyCommand.Name), $local, $remote) -severity 'INFO'
-}
-
 function Get-SourceCaches {
   param (
     [string] $hostname = $env:ComputerName,
     [string] $cachePath = ('{0}\builds' -f $env:SystemDrive),
-    [hashtable] $sharedRepos = @{
-      'https://hg.mozilla.org/build/mozharness' = ('{0}\hg-shared\build\mozharness' -f $cachePath);
-      'https://hg.mozilla.org/build/tools' = ('{0}\hg-shared\build\tools' -f $cachePath)
-    },
     [hashtable] $buildRepos = @{
-      'https://hg.mozilla.org/integration/mozilla-inbound' = ('{0}\hg-shared\integration\mozilla-inbound' -f $cachePath);
-      'https://hg.mozilla.org/integration/fx-team' = ('{0}\hg-shared\integration\fx-team' -f $cachePath);
-      'https://hg.mozilla.org/mozilla-central' = ('{0}\hg-shared\mozilla-central' -f $cachePath)
-    },
-    [hashtable] $tryRepos = @{
-      'https://hg.mozilla.org/mozilla-central' = ('{0}\hg-shared\try' -f $cachePath)
+      'https://hg.mozilla.org/mozilla-unified' = ('{0}\hg-shared\8ba995b74e18334ab3707f27e9eb8f4e37ba3d29' -f $cachePath);
     }
   )
   begin {
@@ -844,15 +822,15 @@ function Get-SourceCaches {
     switch ($hostname[0]) 
     {
       'b' {
-        $repos = $sharedRepos + $buildRepos
+        $repos = $buildRepos
         break
       }
       'y' {
-        $repos = $sharedRepos + $tryRepos
+        $repos = $buildRepos
         break
       }
       default {
-        $repos = $sharedRepos
+        $repos = @{}
         break
       }
     }
