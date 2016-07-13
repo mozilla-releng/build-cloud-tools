@@ -825,12 +825,7 @@ function Get-SourceCaches {
     [string] $hostname = $env:ComputerName,
     [string] $cachePath = ('{0}\builds' -f $env:SystemDrive),
     [hashtable] $buildRepos = @{
-      'https://hg.mozilla.org/integration/mozilla-inbound' = ('{0}\hg-shared\integration\mozilla-inbound' -f $cachePath);
-      'https://hg.mozilla.org/integration/fx-team' = ('{0}\hg-shared\integration\fx-team' -f $cachePath);
-      'https://hg.mozilla.org/mozilla-central' = ('{0}\hg-shared\mozilla-central' -f $cachePath)
-    },
-    [hashtable] $tryRepos = @{
-      'https://hg.mozilla.org/mozilla-central' = ('{0}\hg-shared\try' -f $cachePath)
+      'https://hg.mozilla.org/mozilla-unified' = ('{0}\hg-shared\8ba995b74e18334ab3707f27e9eb8f4e37ba3d29' -f $cachePath);
     }
   )
   begin {
@@ -844,7 +839,7 @@ function Get-SourceCaches {
         break
       }
       'y' {
-        $repos = $tryRepos
+        $repos = $buildRepos
         break
       }
       default {
