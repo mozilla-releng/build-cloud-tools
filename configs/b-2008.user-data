@@ -98,7 +98,7 @@ function Download-Module {{
 }}
 
 # download and import the Ec2UserdataUtils module
-Download-Module -url 'https://raw.githubusercontent.com/mozilla/build-cloud-tools/master/configs/Ec2UserdataUtils.psm1'
+Download-Module -url 'https://raw.githubusercontent.com/mozilla-releng/build-cloud-tools/master/configs/Ec2UserdataUtils.psm1'
 Import-Module Ec2UserdataUtils
 
 # create the log directory if it doesn't exist
