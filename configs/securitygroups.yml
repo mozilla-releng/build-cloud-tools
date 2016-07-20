@@ -30,6 +30,13 @@ includes:
           - 10.22.240.0/20  # scl3-vpn-net
           - 10.22.20.0/25  # admin1.scl3-vpn
 
+    # opsec scanning host
+    opsec-scanner:
+        proto: tcp
+        ports: [22]
+        hosts:
+          - 10.22.75.203/32 # nxp-con3.private.scl3.mozilla.com
+
     # observium has universal SNMP access
     observium:
         proto: udp
@@ -356,6 +363,7 @@ buildbot-master:
         - include: aws-manager-ssh
         - include: admin-access
         - include: observium
+        - include: opsec-scanner
         - include: infra-puppetize
         - include: global-ping
     outbound:
@@ -391,6 +399,7 @@ puppet-master:
         - include: aws-manager-ssh
         - include: admin-access
         - include: observium
+        - include: opsec-scanner
         - include: infra-puppetize
         - include: global-ping
     outbound:
@@ -409,6 +418,7 @@ blobber:
           hosts: {include: slave-vlans}
         - include: admin-access
         - include: observium
+        - include: opsec-scanner
         - include: infra-puppetize
         - include: global-ping
     outbound:
@@ -424,6 +434,7 @@ nagios:
     inbound:
         - include: admin-access
         - include: observium
+        - include: opsec-scanner
         - include: infra-puppetize
         - include: global-ping
     outbound:
@@ -447,6 +458,7 @@ proxxy-vpc-use1:
         - include: aws-manager-ssh
         - include: admin-access
         - include: observium
+        - include: opsec-scanner
         - include: global-ping
     outbound:
         # TODO: bug 1210137
@@ -469,6 +481,7 @@ proxxy-vpc-usw2:
         - include: aws-manager-ssh
         - include: admin-access
         - include: observium
+        - include: opsec-scanner
         - include: global-ping
     outbound:
         # TODO: bug 1210137
@@ -491,6 +504,7 @@ LogAggregators:
         - include: aws-manager-ssh
         - include: admin-access
         - include: observium
+        - include: opsec-scanner
         - include: global-ping
     outbound:
         # TODO: bug 1210137
@@ -506,6 +520,7 @@ VCSSync:
         - include: aws-manager-ssh
         - include: admin-access
         - include: observium
+        - include: opsec-scanner
         - include: global-ping
     outbound:
         # TODO: bug 1210137
@@ -525,6 +540,7 @@ signing-worker:
           - 10.22.240.0/20  # scl3-vpn-net
         - include: admin-access
         - include: observium
+        - include: opsec-scanner
         - include: infra-puppetize
         - include: global-ping
         - include: aws-manager-ssh
