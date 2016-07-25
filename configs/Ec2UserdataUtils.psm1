@@ -749,6 +749,28 @@ function Flush-BuildFiles {
   }
 }
 
+function Flush-DeprecatedCaches {
+  param (
+    [string[]] $paths = @(
+      ('{0}\builds\hg-shared\build' -f $env:SystemDrive),
+      ('{0}\builds\hg-shared\integration' -f $env:SystemDrive),
+      ('{0}\builds\hg-shared\try' -f $env:SystemDrive)
+    )
+  )
+  try {
+    $freespaceBefore = (Get-WmiObject win32_logicaldisk -filter ("DeviceID='{0}'" -f $env:SystemDrive) | select Freespace).FreeSpace/1GB
+    foreach ($path in $paths) {
+      if (Test-Path $path -PathType Container) {
+        Remove-Item -path $path -force -recurse
+      }
+    }
+    $freespaceAfter = (Get-WmiObject win32_logicaldisk -filter ("DeviceID='{0}'" -f $env:SystemDrive) | select Freespace).FreeSpace/1GB
+    Write-Log -message ("{0} :: flushed Folders. free space before: {1:N1}gb, after: {2:N1}gb" -f $($MyInvocation.MyCommand.Name), $freespaceBefore, $freespaceAfter) -severity 'INFO'
+  } catch {
+    Write-Log -message ("{0} :: failed to flush Folders. {1}" -f $($MyInvocation.MyCommand.Name), $_.Exception) -severity 'ERROR'
+  }
+}
+
 function Flush-Secrets {
   param (
     [string[]] $paths = @(
@@ -1664,6 +1686,8 @@ function Install-BasePrerequisites {
   Set-AutoLogin
   Set-RegistryValue -path 'HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem' -key 'NtfsDisableLastAccessUpdate' -value 1
   Set-RegistryValue -path 'HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem' -key 'NtfsMemoryUsage' -value 2
+
+  Flush-DeprecatedCaches
 
   # start hacks
   Create-SymbolicLink -link 'C:\mozilla-buildpython27' -target 'C:\mozilla-build\python27'
