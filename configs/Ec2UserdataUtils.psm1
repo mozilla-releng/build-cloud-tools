@@ -754,6 +754,7 @@ function Flush-DeprecatedCaches {
     [string[]] $paths = @(
       ('{0}\builds\hg-shared\build' -f $env:SystemDrive),
       ('{0}\builds\hg-shared\integration' -f $env:SystemDrive),
+      ('{0}\builds\hg-shared\mozilla-central' -f $env:SystemDrive),
       ('{0}\builds\hg-shared\try' -f $env:SystemDrive)
     )
   )
