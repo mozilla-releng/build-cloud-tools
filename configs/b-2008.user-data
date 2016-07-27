@@ -109,9 +109,6 @@ Disable-Firewall
 Disable-WindowsUpdate
 Install-BasePrerequisites -aggregator $aggregator -domain $domain
 Rename-Admin
-if ($hostname.Contains("-2008-ec2-")) {{
-  Get-SourceCaches -hostname $hostname
-}}
 if (!(Is-DomainSetCorrectly -domainExpected $domain)) {{
   Set-Domain -domain $domain
 }}
