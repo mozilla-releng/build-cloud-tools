@@ -814,8 +814,8 @@ function Clone-Repository {
         Write-Log -message ("{0} :: hg pull of {1} to {2} failed with exit code: {3}" -f $($MyInvocation.MyCommand.Name), $source, $target, $exitCode) -severity 'ERROR'
       }
     } else {
-      // Prefer a streaming clone bundle because they are the fastest to download and
-      // preserve optimal encoding from server.
+      # Prefer a streaming clone bundle because they are the fastest to download and
+      # preserve optimal encoding from server.
       & hg @('--config', 'ui.clonebundleprefers=VERSION=packed1', 'clone', '--noupdate', $source, $target)
       $exitCode = $LastExitCode
       if (($?) -and (Test-Path $target)) {
