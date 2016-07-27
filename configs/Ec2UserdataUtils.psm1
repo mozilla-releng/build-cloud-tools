@@ -1316,7 +1316,6 @@ function Enable-CloneBundle {
           "share"=""
         }
       }
-      Write-Log -message ("{0} :: clonebundle ec2region set to: {1}, for domain: {2}" -f $($MyInvocation.MyCommand.Name), $ec2region, $domain) -severity 'DEBUG'
     }
   }
   end {
