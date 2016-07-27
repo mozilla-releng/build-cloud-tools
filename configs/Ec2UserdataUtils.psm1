@@ -816,7 +816,7 @@ function Clone-Repository {
     } else {
       # Prefer a streaming clone bundle because they are the fastest to download and
       # preserve optimal encoding from server.
-      & hg @('--config', 'ui.clonebundleprefers=VERSION=packed1', 'clone', '--noupdate', $source, $target)
+      & hg @('clone', '--noupdate', $source, $target)
       $exitCode = $LastExitCode
       if (($?) -and (Test-Path $target)) {
         Write-Log -message ("{0} :: {1} cloned to {2}" -f $($MyInvocation.MyCommand.Name), $source, $target) -severity 'INFO'
