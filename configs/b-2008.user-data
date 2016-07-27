@@ -87,22 +87,35 @@ function Download-Module {{
     [string] $modulesPath = ('{{0}}\Modules' -f $pshome)
   )
   $filename = $url.Substring($url.LastIndexOf('/') + 1)
-  $moduleName = [IO.Path]::GetFileNameWithoutExtension($filename)
-  $modulePath = ('{{0}}\{{1}}' -f $modulesPath, $moduleName)
-  if (Test-Path $modulePath) {{
-    Remove-Module $moduleName -ErrorAction SilentlyContinue
-    Remove-Item -path $modulePath -recurse -force
+  $tmpFile = ('{{0}}\Temp\{{1}}' -f $env:SystemRoot, $filename)
+  if (Test-Path $tmpFile) {{
+    Remove-Item -path $tmpFile -force
   }}
-  New-Item -ItemType Directory -Force -Path $modulePath
-  (New-Object Net.WebClient).DownloadFile($url, ('{{0}}\{{1}}' -f $modulePath, $filename))
+  try {{
+    (New-Object Net.WebClient).DownloadFile($url, $tmpFile)
+    $moduleName = [IO.Path]::GetFileNameWithoutExtension($filename)
+    $modulePath = ('{{0}}\{{1}}' -f $modulesPath, $moduleName)
+    if (Test-Path $tmpFile) {{
+      if (Test-Path $modulePath) {{
+        Remove-Module $moduleName -ErrorAction SilentlyContinue
+        Remove-Item -path $modulePath -recurse -force
+      }}
+      New-Item -ItemType Directory -Force -Path $modulePath
+      Move-Item -Path $tmpFile -Destination ('{{0}}\{{1}}' -f $modulePath, $filename)
+    }}
+  }}
+  catch {{
+    $_.Exception.Message | Out-File ('{{0}}\log\download-module-error.log' -f $env:SystemDrive)
+  }}
 }}
+
+# create the log directory if it doesn't exist
+New-Item -ItemType Directory -Force -Path $logDir
 
 # download and import the Ec2UserdataUtils module
 Download-Module -url 'https://raw.githubusercontent.com/mozilla-releng/build-cloud-tools/master/configs/Ec2UserdataUtils.psm1'
 Import-Module Ec2UserdataUtils
 
-# create the log directory if it doesn't exist
-New-Item -ItemType Directory -Force -Path $logDir
 Set-Ec2ConfigPluginsState
 Set-Timezone
 Disable-Firewall 
