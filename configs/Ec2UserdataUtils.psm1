@@ -1279,22 +1279,12 @@ function Install-BundleClone {
 
 function Enable-CloneBundle {
   param (
-    [string] $hgrc = [IO.Path]::Combine([IO.Path]::Combine([IO.Path]::Combine(('{0}\' -f $env:SystemDrive), 'mozilla-build'), 'hg'), 'Mercurial.ini'),
-    [string] $domain = $env:USERDOMAIN
+    [string] $hgrc = [IO.Path]::Combine([IO.Path]::Combine([IO.Path]::Combine(('{0}\' -f $env:SystemDrive), 'mozilla-build'), 'hg'), 'Mercurial.ini')
   )
   begin {
     Write-Log -message ("{0} :: Function started" -f $($MyInvocation.MyCommand.Name)) -severity 'DEBUG'
   }
   process {
-    switch -wildcard ($domain) 
-    { 
-        '*.usw2.*' {
-          $ec2region = 'us-west-2'
-        }
-        default {
-          $ec2region = 'us-east-1'
-        }
-    }
     if (!(Test-Path (Split-Path $hgrc) -PathType Container)) {
       Write-Log -message ("{0} :: detected missing mercurial installation" -f $($MyInvocation.MyCommand.Name)) -severity 'ERROR'
     } else {
@@ -1302,8 +1292,8 @@ function Enable-CloneBundle {
       Out-IniFile -FilePath $hgrc -encoding 'UTF8' -InputObject @{
         "ui"=@{
           "traceback"="True";
-          "username"="Mozilla Release Engineering <release@mozilla.com>"
-          "clonebundleprefers"=('ec2region={0}, VERSION=packed1' -f $ec2region)
+          "username"="Mozilla Release Engineering <release@mozilla.com>";
+          "clonebundleprefers"="VERSION=packed1"
         };
         "web"=@{
           "cacerts"="C:\mozilla-build\hg\hgrc.d\cacert.pem"
@@ -1659,7 +1649,7 @@ function Install-BasePrerequisites {
   Write-Log -message ("{0} :: installing chocolatey" -f $($MyInvocation.MyCommand.Name)) -severity 'INFO'
   Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
   Install-RelOpsPrerequisites -aggregator $aggregator
-  Enable-CloneBundle -domain $domain
+  Enable-CloneBundle
   #Install-MozillaBuildAndPrerequisites
   #Install-BuildBot
   #Install-ToolTool
