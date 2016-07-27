@@ -814,8 +814,6 @@ function Clone-Repository {
         Write-Log -message ("{0} :: hg pull of {1} to {2} failed with exit code: {3}" -f $($MyInvocation.MyCommand.Name), $source, $target, $exitCode) -severity 'ERROR'
       }
     } else {
-      # Prefer a streaming clone bundle because they are the fastest to download and
-      # preserve optimal encoding from server.
       & hg @('clone', '--noupdate', $source, $target)
       $exitCode = $LastExitCode
       if (($?) -and (Test-Path $target)) {
@@ -832,9 +830,8 @@ function Clone-Repository {
 
 function Get-SourceCaches {
   param (
-    [string] $hostname = $env:ComputerName,
     [string] $cachePath = ('{0}\builds' -f $env:SystemDrive),
-    [hashtable] $buildRepos = @{
+    [hashtable] $repos = @{
       'https://hg.mozilla.org/mozilla-unified' = ('{0}\hg-shared\8ba995b74e18334ab3707f27e9eb8f4e37ba3d29' -f $cachePath);
     }
   )
@@ -842,21 +839,6 @@ function Get-SourceCaches {
     Write-Log -message ("{0} :: Function started" -f $($MyInvocation.MyCommand.Name)) -severity 'DEBUG'
   }
   process {
-    switch ($hostname[0]) 
-    {
-      'b' {
-        $repos = $buildRepos
-        break
-      }
-      'y' {
-        $repos = $buildRepos
-        break
-      }
-      default {
-        $repos = @{}
-        break
-      }
-    }
     foreach ($repo in $repos.GetEnumerator()) {
       Clone-Repository -source $repo.Name -target $repo.Value
     }
@@ -882,6 +864,7 @@ function Prep-Golden {
     if ((-not (StringIsNullOrWhitespace -string $puppetServer)) -and (-not (StringIsNullOrWhitespace -string $deployPass)) -and (-not (StringIsNullOrWhitespace -string $logdest))) {
       Run-Puppet -puppetServer $puppetServer -deployPass $deployPass -logdest $logdest -environment $environment -hostname $hostname -domain $domain
     }
+    Get-SourceCaches -hostname $hostname
     Flush-RecycleBin
     Flush-TempFiles
     Flush-BuildFiles
@@ -903,6 +886,7 @@ function Prep-Loaner {
       Write-Log -message ("{0} :: detected prior run. skipping loaner setup" -f $($MyInvocation.MyCommand.Name)) -severity 'DEBUG'
     } else {
       #todo: run puppet
+      Get-SourceCaches -hostname $hostname
       Flush-RecycleBin
       Flush-TempFiles
       Flush-BuildFiles
@@ -1293,30 +1277,23 @@ function Install-BundleClone {
   }
 }
 
-function Enable-BundleClone {
+function Enable-CloneBundle {
   param (
-    [string] $hgrc = [IO.Path]::Combine([IO.Path]::Combine([IO.Path]::Combine(('{0}\' -f $env:SystemDrive), 'mozilla-build'), 'hg'), 'Mercurial.ini'),
-    [string] $path = [IO.Path]::Combine([IO.Path]::Combine([IO.Path]::Combine(('{0}\' -f $env:SystemDrive), 'mozilla-build'), 'hg'), 'bundleclone.py'),
-    [string] $domain = $env:USERDOMAIN
+    [string] $hgrc = [IO.Path]::Combine([IO.Path]::Combine([IO.Path]::Combine(('{0}\' -f $env:SystemDrive), 'mozilla-build'), 'hg'), 'Mercurial.ini')
   )
   begin {
     Write-Log -message ("{0} :: Function started" -f $($MyInvocation.MyCommand.Name)) -severity 'DEBUG'
   }
   process {
-    if ($domain.Contains('.usw2.')) {
-      $ec2region = 'us-west-2'
-    } else {
-      $ec2region = 'us-east-1'
-    }
     if (!(Test-Path (Split-Path $hgrc) -PathType Container)) {
       Write-Log -message ("{0} :: detected missing mercurial installation" -f $($MyInvocation.MyCommand.Name)) -severity 'ERROR'
     } else {
       Remove-Item -path $hgrc -force
       Out-IniFile -FilePath $hgrc -encoding 'UTF8' -InputObject @{
         "ui"=@{
-          "editor"='"C:\Program Files\Sublime Text 3\sublime_text.exe" --wait --new-window';
           "traceback"="True";
-          "username"="Mozilla Release Engineering <release@mozilla.com>"
+          "username"="Mozilla Release Engineering <release@mozilla.com>";
+          "clonebundleprefers"="VERSION=packed1"
         };
         "web"=@{
           "cacerts"="C:\mozilla-build\hg\hgrc.d\cacert.pem"
@@ -1336,17 +1313,10 @@ function Enable-BundleClone {
           "rebase"="";
           "mq"="";
           "purge"="";
-          "share"="";
-          "bundleclone"=$path
-        };
-        "bundleclone"=@{
-          "prefers"=('ec2region={0}, stream=revlogv1' -f $ec2region)
+          "share"=""
         }
       }
-      #Set-IniValue -file $hgrc -section 'extensions' -key 'share' -value '' -discardComments
-      #Set-IniValue -file $hgrc -section 'extensions' -key 'bundleclone' -value $path
-      #Set-IniValue -file $hgrc -section 'bundleclone' -key 'prefers' -value ('ec2region={0}, stream=revlogv1' -f $ec2region)
-      Write-Log -message ("{0} :: bundleclone ec2region set to: {1}, for domain: {2}" -f $($MyInvocation.MyCommand.Name), $ec2region, $domain) -severity 'DEBUG'
+      Write-Log -message ("{0} :: clonebundle ec2region set to: {1}, for domain: {2}" -f $($MyInvocation.MyCommand.Name), $ec2region, $domain) -severity 'DEBUG'
     }
   }
   end {
@@ -1679,8 +1649,7 @@ function Install-BasePrerequisites {
   Write-Log -message ("{0} :: installing chocolatey" -f $($MyInvocation.MyCommand.Name)) -severity 'INFO'
   Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
   Install-RelOpsPrerequisites -aggregator $aggregator
-  #Enable-BundleClone -hgrc ('{0}\Users\cltbld\.hgrc' -f $env:SystemDrive) -domain $aggregator
-  Enable-BundleClone -domain $domain
+  Enable-CloneBundle
   #Install-MozillaBuildAndPrerequisites
   #Install-BuildBot
   #Install-ToolTool
@@ -1740,66 +1709,6 @@ function Configure-NxLog {
     }
   }
   Set-Aggregator -aggregator $aggregator
-}
-
-function Run-BuildBot {
-  param (
-    [string] $username = 'cltbld',
-    [string] $password = $username,
-    [string] $domain = $env:USERDOMAIN
-  )
-  $lusers = (([ADSI]"WinNT://.").Children | Where { ($_.SchemaClassName -eq 'user') } | % { $_.name[0].ToString() } )
-  if($lusers -NotContains $username) {
-    Create-LocalUser -username $username -password $password
-  } else {
-    $u = ([ADSI]"WinNT://./$username,user")
-    $u.SetPassword($password)
-    $u.SetInfo()
-    Write-Log -message ("{0} :: password changed for user: {1}" -f $($MyInvocation.MyCommand.Name), $username) -severity 'INFO'
-  }
-  Enable-PSRemoting -Force
-  Set-Item wsman:\localhost\client\trustedhosts 'localhost' -Force
-  Restart-Service WinRM
-  $credential = New-Object Management.Automation.PSCredential ('.\{0}' -f $username), (ConvertTo-SecureString $password -AsPlainText -Force)
-  try {
-    Invoke-Command -ComputerName 'localhost' -Credential $credential -ScriptBlock {
-      param (
-        [string] $domain
-      )
-      $hgrc = ('{0}\.hgrc' -f $env:UserProfile)
-      Create-Hgrc -hgrc $hgrc
-      if (Test-Path $hgrc) {
-        Enable-BundleClone -hgrc $hgrc -domain $domain
-      }
-      
-      $env:MOZBUILDDIR = ('{0}\mozilla-build' -f $env:SystemDrive)
-      [Environment]::SetEnvironmentVariable("MOZBUILDDIR", $env:MOZBUILDDIR, 'User')
-      
-      $env:MOZILLABUILD = ('{0}\mozilla-build' -f $env:SystemDrive)
-      [Environment]::SetEnvironmentVariable("MOZILLABUILD", $env:MOZILLABUILD, 'User')
-      
-      $env:MOZ_TOOLS = ('{0}\moztools-x64' -f $env:MOZILLABUILD)
-      [Environment]::SetEnvironmentVariable("MOZ_TOOLS", $env:MOZ_TOOLS, 'User')
-
-      Add-PathToPath -path ('{0}\bin' -f $env:MOZ_TOOLS) -target 'User'
-      
-      $env:IDLEIZER_HALT_ON_IDLE = 'true'
-      [Environment]::SetEnvironmentVariable("IDLEIZER_HALT_ON_IDLE", $env:IDLEIZER_HALT_ON_IDLE, 'User')
-
-      Add-PathToPath -path ('{0}\mozilla-build\hg' -f $env:SystemDrive) -target 'User'
-      Add-PathToPath -path ('{0}\mozilla-build\msys\bin' -f $env:SystemDrive) -target 'User'
-      Add-PathToPath -path ('{0}\mozilla-build\python' -f $env:SystemDrive) -target 'User'
-      Add-PathToPath -path ('{0}\mozilla-build\python\Scripts' -f $env:SystemDrive) -target 'User'
-      Tidy-Path
-      Write-Log -message ("{0} :: starting buildbot" -f $($MyInvocation.MyCommand.Name)) -severity 'INFO'
-      $bashArgs = @('--login', '-c', '"python /c/mozilla-build/buildbot.py --twistd-cmd /c/mozilla-build/python/Scripts/twistd.py"')
-      & 'bash' $bashArgs
-      Write-Log -message ("{0} :: buildbot started" -f $($MyInvocation.MyCommand.Name)) -severity 'INFO'
-    } -ArgumentList $domain
-  }
-  catch {
-    Write-Log -message ("{0} :: failed to start buildbot. {1}" -f $($MyInvocation.MyCommand.Name), $_.Exception) -severity 'ERROR'
-  }
 }
 
 function Add-PathToPath {
