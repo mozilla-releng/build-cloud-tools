@@ -1608,32 +1608,6 @@ function Test-Key {
   return $true
 }
 
-function Install-MozillaBuild {
-  param (
-    [string] $version = '2.2.0',
-    [string] $installPath = ('{0}\mozilla-build-{1}' -f $env:SystemDrive, $version),
-    [bool] $preserveBuildBotVersion = $true,
-    [string] $installer = ('MozillaBuildSetup-{0}.exe' -f $version),
-    [string] $installerUrl = ('http://ftp.mozilla.org/pub/mozilla/libraries/win32/{0}' -f $installer),
-    [string] $installerPath = ('{0}\Temp\{1}' -f $env:SystemRoot, $installer)
-  )
-  if (!(Test-Path -Path ('{0}\VERSION' -f $installPath) -ErrorAction SilentlyContinue) -or !(Does-FileContain -haystack ('{0}\VERSION' -f $installPath) -needle $version)) {
-    if ($preserveBuildBotVersion) {
-      if (!(Test-Path -Path ('{0}\mozilla-build-1.9.0' -f $env:SystemDrive) -ErrorAction SilentlyContinue) -and (Test-Path -Path ('{0}\mozilla-build' -f $env:SystemDrive) -ErrorAction SilentlyContinue) -and (Does-FileContain -haystack ('{0}\mozilla-build\VERSION' -f $env:SystemDrive) -needle '1.9.0')) {
-        Rename-Item -path ('{0}\mozilla-build' -f $env:SystemDrive) -newName ('{0}\mozilla-build-1.9.0' -f $env:SystemDrive)
-      }
-    }
-    (New-Object Net.WebClient).DownloadFile($installerUrl, $installerPath)
-    Start-Process $installerPath -ArgumentList @('/S') -wait -NoNewWindow -PassThru -RedirectStandardOutput ('{0}\log\{1}-install-stdout.log' -f $env:SystemDrive, $installer) -RedirectStandardError ('{0}\log\{1}-install-stderr.log' -f $env:SystemDrive, $installer)
-    Rename-Item -path ('{0}\mozilla-build' -f $env:SystemDrive) -newName ('{0}\mozilla-build-{1}' -f $env:SystemDrive, $version)
-    if ($preserveBuildBotVersion) {
-      Create-SymbolicLink -link ('{0}\mozilla-build' -f $env:SystemDrive) -target ('{0}\mozilla-build-1.9.0' -f $env:SystemDrive)
-    } else {
-      Create-SymbolicLink -link ('{0}\mozilla-build' -f $env:SystemDrive) -target $installPath
-    }
-  }
-}
-
 function Install-MozillaBuildAndPrerequisites {
   if (!(Test-Key "HKLM:\Software\Microsoft\NET Framework Setup\NDP\v3.5" "Install")) {
     Add-WindowsFeature -Name 'NET-Framework-Core' -IncludeAllSubFeature # prerequisite for June 2010 DirectX SDK is to install ".NET Framework 3.5 (includes .NET 2.0 and 3.0)"
@@ -1683,11 +1657,6 @@ function Install-BasePrerequisites {
   Set-RegistryValue -path 'HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem' -key 'NtfsMemoryUsage' -value 2
 
   Flush-DeprecatedCaches
-  
-  Install-MozillaBuild -version '2.2.0' -preserveBuildBotVersion $true
-  Create-SymbolicLink -link 'C:\mozilla-build\nsis-3.0b3' -target 'C:\mozilla-build-2.2.0\nsis-3.0b3'
-  Remove-PathFromPath -path 'C:\mozilla-build\nsis-3.0b1'
-  Add-PathToPath -path 'C:\mozilla-build\nsis-3.0b3'
 
   # start hacks
   Create-SymbolicLink -link 'C:\mozilla-buildpython27' -target 'C:\mozilla-build\python27'
@@ -1757,24 +1726,6 @@ function Add-PathToPath {
   }
   $env:Path = [string]::Join(';', $paths)
   [Environment]::SetEnvironmentVariable("PATH", $env:Path, $target)
-}
-
-function Remove-PathFromPath {
-  param (
-    [string] $path,
-    [string] $target = 'Machine'
-  )
-  $paths = @()
-  ($env:Path.Split(';', [System.StringSplitOptions]::RemoveEmptyEntries) | Get-Unique) | %{ $paths += $_.TrimEnd('\') }
-  $paths = $paths | Get-Unique
-  if ($paths -Contains $path) {
-    $paths.Remove($path)
-    Write-Log -message ('{0} :: {1} removed from PATH' -f $($MyInvocation.MyCommand.Name), $target) -severity 'INFO'
-  } else {
-    Write-Log -message ('{0} :: {1} not found in PATH' -f $($MyInvocation.MyCommand.Name), $target) -severity 'DEBUG'
-  }
-  $env:Path = [string]::Join(';', $paths)
-  [Environment]::SetEnvironmentVariable('PATH', $env:Path, $target)
 }
 
 function Tidy-Path {
