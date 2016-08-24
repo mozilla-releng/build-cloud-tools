@@ -199,6 +199,8 @@ def create_instance(name, config, region, key_name, ssh_key, instance_data,
         volume = instance.connection.get_all_volumes(
             volume_ids=[root_bd.volume_id])[0]
         # The instance has to be stopped to flush EBS caches
+        # The sleep is to prevent the occasional interference of the shutdown with the capture of Windows AMIs
+        time.sleep(15)
         instance.stop()
         wait_for_status(instance, 'state', 'stopped', 'update')
         ami = volume_to_ami(volume=volume, ami_name=ami_name,
