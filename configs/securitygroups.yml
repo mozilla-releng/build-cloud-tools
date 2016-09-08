@@ -357,6 +357,14 @@ buildbot-master:
             - {include: slaveapi-servers}
             - aws-manager1.srv.releng.scl3.mozilla.com
             - aws-manager2.srv.releng.scl3.mozilla.com
+        
+        # traffic from buildduty-tools
+        - proto: tcp
+          ports:
+            - 22  # ssh
+            - {include: buildbot-http-portrange}
+          hosts:
+            - buildduty-tools.srv.releng.usw2.mozilla.com
 
         # generic stuff
         - include: aws-manager-ssh
