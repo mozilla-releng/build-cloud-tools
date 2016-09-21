@@ -452,7 +452,7 @@ function Run-Puppet {
   
   Out-IniFile -InputObject $puppetConfig -FilePath ('{0}\PuppetLabs\puppet\etc\puppet.conf' -f $env:ProgramData) -Encoding "ASCII" -Force
   Write-Log -message ("{0} :: running puppet agent, logging to: {1}" -f $($MyInvocation.MyCommand.Name), $logdest) -severity 'INFO'
-  $puppetArgs = @('agent', '--test', '--detailed-exitcodes', '--server', $puppetServer, '--logdest', $logdest, '--enviroment', 1302376mcornmesser)
+  $puppetArgs = @('agent', '--test', '--detailed-exitcodes', '--server', $puppetServer, '--logdest', $logdest)
   if (-not (StringIsNullOrWhitespace -string $environment)) {
     $puppetArgs += '--environment'
     $puppetArgs += $environment
