@@ -1299,7 +1299,7 @@ function Enable-CloneBundle {
           "cacerts"="C:\mozilla-build\hg\hgrc.d\cacert.pem"
         };
         "hostfingerprints"=@{
-          "hg.mozilla.org"="af:27:b9:34:47:4e:e5:98:01:f6:83:2b:51:c9:aa:d8:df:fb:1a:27"
+          "hg.mozilla.org"="73:7F:EF:AB:68:0F:49:3F:88:91:F0:B7:06:69:FD:8F:F2:55:C9:56"
         };
         "format"=@{
           "dotencode"="False"
