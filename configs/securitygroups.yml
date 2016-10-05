@@ -357,7 +357,7 @@ buildbot-master:
             - {include: slaveapi-servers}
             - aws-manager1.srv.releng.scl3.mozilla.com
             - aws-manager2.srv.releng.scl3.mozilla.com
-        
+
         # traffic from buildduty-tools
         - proto: tcp
           ports:
@@ -553,4 +553,23 @@ signing-worker:
         - include: aws-manager-ssh
     outbound:
         # TODO: bug 1210137
+        - include: global-any
+
+balrogworker:
+    description: security group for balrogworkers
+    regions:
+        us-east-1: vpc-b42100df
+    inbound:
+        - proto: tcp
+          ports:
+            - 22  # ssh
+          hosts:
+          - 10.22.240.0/20
+        - include: admin-access
+        - include: observium
+        - include: opsec-scanner
+        - include: infra-puppetize
+        - include: global-ping
+        - include: aws-manager-ssh
+    outbound:
         - include: global-any
