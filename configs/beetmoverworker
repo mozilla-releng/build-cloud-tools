@@ -4,7 +4,7 @@
         "domain": "srv.releng.use1.mozilla.com",
         "ami": "ami-18abe670",
         "subnet_ids": ["subnet-33a98358"],
-        "security_group_ids": ["sg-cf1027ab"],
+        "security_group_ids": ["sg-03e4047e"],
         "instance_type": "t2.micro",
         "distro": "centos",
         "ssh_key": "aws-releng",
