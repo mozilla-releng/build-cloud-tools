@@ -315,7 +315,7 @@ function Install-Certificates {
     }
     $vbs = ('{0}\PuppetLabs\puppet\var\puppettize_TEMP.vbs' -f $env:ProgramData)
     if (!(Test-Path -Path $vbs -ErrorAction SilentlyContinue) -and (!(StringIsNullOrWhitespace -string $certPass))) {
-      (New-Object Net.WebClient).DownloadFile('http://releng-puppet2.srv.releng.scl3.mozilla.com/repos/Windows/puppettize.vbs', $vbs)
+      (New-Object Net.WebClient).DownloadFile('http://puppet/repos/Windows/puppettize.vbs', $vbs)
       Write-Log -message ('{0} :: downloaded {1}' -f $($MyInvocation.MyCommand.Name), $vbs) -severity 'DEBUG'
     }
     if ((Test-Path -Path $vbs -ErrorAction SilentlyContinue) -and (!(StringIsNullOrWhitespace -string $certPass))) {
@@ -1463,21 +1463,21 @@ function Install-BuildBot {
       Add-PathToPath -path ('{0}\mozilla-build\python\Scripts' -f $env:SystemDrive) -target 'Machine'
 
       if (!(Test-Path 'c:\mozilla-build\python\Scripts\twistd.py')) {
-        $bashArgs = @('--login', '-c', '"pip install --trusted-host=puppetagain.pub.build.mozilla.org --find-links=http://puppetagain.pub.build.mozilla.org/data/python/packages/ --no-index --no-deps zope.interface==3.6.1 buildbot-slave==0.8.4-pre-moz8 buildbot==0.8.4-pre-moz8 Twisted==10.2.0 simplejson==2.1.3"')
+        $bashArgs = @('--login', '-c', '"pip install --trusted-host=puppet --find-links=http://puppet/data/python/packages/ --no-index --no-deps zope.interface==3.6.1 buildbot-slave==0.8.4-pre-moz8 buildbot==0.8.4-pre-moz8 Twisted==10.2.0 simplejson==2.1.3"')
         & 'bash' $bashArgs
         Write-Log -message ('{0} :: zope.interface, buildbot-slave, buildbot, Twisted and simplejson installed to /c/mozilla-build/python' -f $($MyInvocation.MyCommand.Name), $version, $target, $url) -severity 'DEBUG'
       }
       if (!(Test-Path 'c:\mozilla-build\python\Lib\site-packages\pywin32-218-py2.7-win32.egg' -PathType Container)) {
-        $bashArgs = @('--login', '-c', '"easy_install.exe http://releng-puppet1.srv.releng.use1.mozilla.com/repos/EXEs/pywin32-218.win32-py2.7.exe"')
+        $bashArgs = @('--login', '-c', '"easy_install.exe http://puppet/repos/EXEs/pywin32-218.win32-py2.7.exe"')
         & 'bash' $bashArgs
         Write-Log -message ('{0} :: pywin32 installed to /c/mozilla-build/python/Lib/site-packages/pywin32-218-py2.7-win32.egg' -f $($MyInvocation.MyCommand.Name), $version, $target, $url) -severity 'DEBUG'
       }
       # buildbot expects this specific virtualenv and these noddy paths to exist. go ahead and try to clean this up. i dare ya.
       $veArgs = @(('{0}\mozilla-build\python\Lib\site-packages\virtualenv.py' -f $env:SystemDrive), '--no-site-packages', '--distribute', ('{0}\mozilla-build\buildbotve' -f $env:SystemDrive))
       & 'python' $veArgs
-      (New-Object Net.WebClient).DownloadFile('http://releng-puppet2.srv.releng.scl3.mozilla.com/repos/Windows/python/virtualenv.py', ('{0}\mozilla-build\buildbotve\virtualenv.py' -f $env:SystemDrive))
-      (New-Object Net.WebClient).DownloadFile('http://releng-puppet2.srv.releng.scl3.mozilla.com/repos/Windows/python/pip-1.5.5.tar.gz', ('{0}\mozilla-build\buildbotve\pip-1.5.5.tar.gz' -f $env:SystemDrive))
-      (New-Object Net.WebClient).DownloadFile('http://releng-puppet2.srv.releng.scl3.mozilla.com/repos/Windows/python/distribute-0.6.24.tar.gz', ('{0}\mozilla-build\buildbotve\distribute-0.6.24.tar.gz' -f $env:SystemDrive))
+      (New-Object Net.WebClient).DownloadFile('http://puppet/repos/Windows/python/virtualenv.py', ('{0}\mozilla-build\buildbotve\virtualenv.py' -f $env:SystemDrive))
+      (New-Object Net.WebClient).DownloadFile('http://puppet/repos/Windows/python/pip-1.5.5.tar.gz', ('{0}\mozilla-build\buildbotve\pip-1.5.5.tar.gz' -f $env:SystemDrive))
+      (New-Object Net.WebClient).DownloadFile('http://puppet/repos/Windows/python/distribute-0.6.24.tar.gz', ('{0}\mozilla-build\buildbotve\distribute-0.6.24.tar.gz' -f $env:SystemDrive))
     } catch {
       Write-Log -message ("{0} :: failed to install buildbot. {1}" -f $($MyInvocation.MyCommand.Name), $_.Exception) -severity 'ERROR'
     }
@@ -1618,7 +1618,7 @@ function Install-MozillaBuildAndPrerequisites {
   if(Install-Package -id 'mozillabuild' -version '2.0.0' -testPath ('{0}\mozilla-build\yasm\yasm.exe' -f $env:SystemDrive)) {
     Create-SymbolicLink -link ('{0}\mozilla-build\python27' -f $env:SystemDrive) -target ('{0}\mozilla-build\python' -f $env:SystemDrive)
     if (!(Test-Path 'c:\mozilla-build\python\Lib\site-packages\pywin32-218-py2.7-win32.egg' -PathType Container)) {
-      $bashArgs = @('--login', '-c', '"/c/mozilla-build/python/Scripts/easy_install.exe http://releng-puppet1.srv.releng.use1.mozilla.com/repos/EXEs/pywin32-218.win32-py2.7.exe"')
+      $bashArgs = @('--login', '-c', '"/c/mozilla-build/python/Scripts/easy_install.exe http://puppet/repos/EXEs/pywin32-218.win32-py2.7.exe"')
       & 'bash' $bashArgs
       Write-Log -message ('{0} :: pywin32 installed to /c/mozilla-build/python/Lib/site-packages/pywin32-218-py2.7-win32.egg' -f $($MyInvocation.MyCommand.Name), $version, $target, $url) -severity 'DEBUG'
     }

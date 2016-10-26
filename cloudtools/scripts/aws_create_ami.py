@@ -199,7 +199,7 @@ def create_ami(host_instance, args, config, instance_config, ssh_key,
     # Step 2: install base system
     if config.get('distro') in ('debian', 'ubuntu'):
         run("debootstrap %s %s "
-            "http://puppetagain.pub.build.mozilla.org/data/repos/apt/ubuntu/"
+            "http://puppet/data/repos/apt/ubuntu/"
             % (ubuntu_release, mount_point))
         run('chroot %s mount -t proc none /proc' % mount_point)
         run('mount -o bind /dev %s/dev' % mount_point)
