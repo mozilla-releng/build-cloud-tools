@@ -1,4 +1,4 @@
-deb http://puppet/repos/apt/ubuntu trusty main restricted universe
-deb http://puppet/repos/apt/ubuntu trusty-security main restricted universe
-deb http://puppet/repos/apt/releng trusty main
-deb http://puppet/repos/apt/puppetlabs trusty main dependencies
+deb http://puppetagain-apt.pvt.build.mozilla.org/repos/apt/ubuntu trusty main restricted universe
+deb http://puppetagain-apt.pvt.build.mozilla.org/repos/apt/ubuntu trusty-security main restricted universe
+deb http://puppetagain-apt.pvt.build.mozilla.org/repos/apt/releng trusty main
+deb http://puppetagain-apt.pvt.build.mozilla.org/repos/apt/puppetlabs trusty main dependencies
