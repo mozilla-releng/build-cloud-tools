@@ -206,7 +206,7 @@ def make_instance_interfaces(region, hostname, ignore_subnet_check,
         s_id = get_subnet_id(vpc, ip_address)
         log.info("subnet %s", s_id)
         if ignore_subnet_check:
-            log.info("ignore_subnet_check, usning %s", s_id)
+            log.info("ignore_subnet_check, using %s", s_id)
             subnet_id = s_id
         elif s_id in avail_subnets:
             if ip_available(region, ip_address):
