@@ -1,52 +1,52 @@
 [base]
 name=base
-baseurl=http://puppet/data/repos/yum/mirrors/centos/6.5/os/$basearch
+baseurl=http://puppet/repos/yum/mirrors/centos/6.5/os/$basearch
 enabled=1
 gpgcheck=0
 
 [puppet]
 name=puppet
-baseurl=http://puppet/data/repos/yum/mirrors/puppetlabs/el/6/products/$basearch
+baseurl=http://puppet/repos/yum/mirrors/puppetlabs/el/6/products/$basearch
 enabled=1
 gpgcheck=0
 
 [updates]
 name=updates
-baseurl=http://puppet/data/repos/yum/mirrors/centos/6.5/updates/$basearch
+baseurl=http://puppet/repos/yum/mirrors/centos/6.5/updates/$basearch
 enabled=1
 gpgcheck=0
 
 [puppetlabs-main]
 name=puppetlabs-main
 descr=Puppet
-baseurl=http://puppet/data/repos/yum/mirrors/puppetlabs/el/6/products/$basearch
+baseurl=http://puppet/repos/yum/mirrors/puppetlabs/el/6/products/$basearch
 enabled=1
 gpgcheck=0
 
 [puppetlabs-deps]
 name=puppetlabs-deps
 descr=Puppet
-baseurl=http://puppet/data/repos/yum/mirrors/puppetlabs/el/6/dependencies/$basearch
+baseurl=http://puppet/repos/yum/mirrors/puppetlabs/el/6/dependencies/$basearch
 enabled=1
 gpgcheck=0
 
 [releng]
 name=releng
 descr=Releng
-baseurl=http://puppet/data/repos/yum/releng/public/CentOS/6/$basearch
+baseurl=http://puppet/repos/yum/releng/public/CentOS/6/$basearch
 enabled=1
 gpgcheck=0
 
 [releng-noarch]
 name=releng-noarch
 descr=Releng-noarch
-baseurl=http://puppet/data/repos/yum/releng/public/CentOS/6/noarch
+baseurl=http://puppet/repos/yum/releng/public/CentOS/6/noarch
 enabled=1
 gpgcheck=0
 
 [cloud-init]
 name=epel
-baseurl=http://puppet/data/repos/yum/custom/cloud-init/$basearch
+baseurl=http://puppet/repos/yum/custom/cloud-init/$basearch
 enabled=1
 gpgcheck=0
 

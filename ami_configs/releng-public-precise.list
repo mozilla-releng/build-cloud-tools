@@ -1,4 +1,4 @@
-deb http://puppet/data/repos/apt/ubuntu precise main restricted universe
-deb http://puppet/data/repos/apt/ubuntu precise-security main restricted universe
-deb http://puppet/data/repos/apt/releng precise main
-deb http://puppet/data/repos/apt/puppetlabs precise main dependencies
+deb http://puppet/repos/apt/ubuntu precise main restricted universe
+deb http://puppet/repos/apt/ubuntu precise-security main restricted universe
+deb http://puppet/repos/apt/releng precise main
+deb http://puppet/repos/apt/puppetlabs precise main dependencies

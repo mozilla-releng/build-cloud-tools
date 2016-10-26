@@ -1463,7 +1463,7 @@ function Install-BuildBot {
       Add-PathToPath -path ('{0}\mozilla-build\python\Scripts' -f $env:SystemDrive) -target 'Machine'
 
       if (!(Test-Path 'c:\mozilla-build\python\Scripts\twistd.py')) {
-        $bashArgs = @('--login', '-c', '"pip install --trusted-host=puppet --find-links=http://puppet/data/python/packages/ --no-index --no-deps zope.interface==3.6.1 buildbot-slave==0.8.4-pre-moz8 buildbot==0.8.4-pre-moz8 Twisted==10.2.0 simplejson==2.1.3"')
+        $bashArgs = @('--login', '-c', '"pip install --trusted-host=puppet --find-links=http://puppet/python/packages/ --no-index --no-deps zope.interface==3.6.1 buildbot-slave==0.8.4-pre-moz8 buildbot==0.8.4-pre-moz8 Twisted==10.2.0 simplejson==2.1.3"')
         & 'bash' $bashArgs
         Write-Log -message ('{0} :: zope.interface, buildbot-slave, buildbot, Twisted and simplejson installed to /c/mozilla-build/python' -f $($MyInvocation.MyCommand.Name), $version, $target, $url) -severity 'DEBUG'
       }
