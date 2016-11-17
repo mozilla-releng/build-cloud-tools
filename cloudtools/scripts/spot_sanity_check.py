@@ -58,5 +58,6 @@ def main():
     regions = args.regions or DEFAULT_REGIONS
     sanity_check(regions)
 
+
 if __name__ == '__main__':
     main()
