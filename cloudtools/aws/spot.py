@@ -334,7 +334,7 @@ def get_spot_choices(connections, rules, product_description, start_time=None):
                               " ignored_azs: %s", az, instance_type,
                               ignored_availability_zones)
                     continue
-                if price > bid_price:
+                if price > bid_price * 0.8:
                     log.debug("%s (in %s) too expensive for %s", price, az,
                               instance_type)
                 else:
