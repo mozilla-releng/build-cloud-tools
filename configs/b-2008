@@ -16,7 +16,7 @@
         "security_group_ids": [
             "sg-e758e982"
         ],
-        "instance_type": "c4.2xlarge",
+        "instance_type": "c3.4xlarge",
         "distro": "win2008",
         "ssh_key": "aws-releng",
         "use_public_ip": true,
@@ -28,6 +28,18 @@
                 "volume_type": "gp2",
                 "size": 120,
                 "instance_dev": "C:"
+            },
+            "/dev/sdb": {
+                "ephemeral_name": "ephemeral0",
+                "instance_dev": "/dev/xvdb",
+                "skip_resize": true,
+                "delete_on_termination": false
+            },
+            "/dev/sdc": {
+                "ephemeral_name": "ephemeral1",
+                "instance_dev": "/dev/xvdc",
+                "skip_resize": true,
+                "delete_on_termination": false
             }
         },
         "tags": {
@@ -47,7 +59,7 @@
         "security_group_ids": [
             "sg-f5ca0690"
         ],
-        "instance_type": "c4.2xlarge",
+        "instance_type": "c3.4xlarge",
         "distro": "win2008",
         "ssh_key": "aws-releng",
         "use_public_ip": true,
@@ -59,6 +71,18 @@
                 "volume_type": "gp2",
                 "size": 120,
                 "instance_dev": "C:"
+            },
+            "/dev/sdb": {
+                "ephemeral_name": "ephemeral0",
+                "instance_dev": "/dev/xvdb",
+                "skip_resize": true,
+                "delete_on_termination": false
+            },
+            "/dev/sdc": {
+                "ephemeral_name": "ephemeral1",
+                "instance_dev": "/dev/xvdc",
+                "skip_resize": true,
+                "delete_on_termination": false
             }
         },
         "tags": {
