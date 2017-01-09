@@ -96,6 +96,21 @@ us-east-1:
             routing_table: testers
             skip_azs: []
 
+        10.134.160.0/22:
+            name: test
+            routing_table: testers
+            skip_azs: ["us-east-1a", "us-east-1b", "us-east-1c", "us-east-1d"]
+
+        10.134.164.0/24:
+            name: build
+            routing_table: builders
+            skip_azs: ["us-east-1a", "us-east-1b", "us-east-1c", "us-east-1d"]
+
+        10.134.165.0/24:
+            name: try
+            routing_table: try
+            skip_azs: ["us-east-1a", "us-east-1b", "us-east-1c", "us-east-1d"]
+
         10.134.30.0/24:
             name: signing
             routing_table: signing
