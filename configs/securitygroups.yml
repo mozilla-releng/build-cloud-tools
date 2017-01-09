@@ -559,6 +559,7 @@ balrogworker:
     description: security group for balrogworkers
     regions:
         us-east-1: vpc-b42100df
+        us-west-2: vpc-cd63f2a4
     inbound:
         - proto: tcp
           ports:
@@ -578,6 +579,7 @@ beetmoverworker:
     description: security group for beetmoverworkers
     regions:
         us-east-1: vpc-b42100df
+        us-west-2: vpc-cd63f2a4
     inbound:
         - proto: tcp
           ports:
