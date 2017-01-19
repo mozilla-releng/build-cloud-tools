@@ -123,7 +123,7 @@ if (!$hostRenamed) {{
     Prep-Golden -puppetServer $puppetServer -logdest $puppetLog -deployPass $deployPass -hostname $hostname -domain $domain
     Flush-EventLog
     Stop-ComputerWithDelay -reason 'userdata golden run complete'
-  }} elseif ($hostname -match "((b|y)-2008|(t|g)-w(732|10))-ec2-[a-z].*") {{
+  }} elseif ($hostname -match "((b|y)-2008|(t|g)-w732-ec2-[a-z].*") {{
     Prep-Loaner -deployPass $deployPass
   }}
 }}

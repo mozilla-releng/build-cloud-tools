@@ -1773,8 +1773,6 @@ function Set-Timezone {
 function Get-EventlogOsTemplate {
   if ($env:ComputerName.Contains('-w732-')) {
     return 'nxlog_source_eventlog_win7_ec2.conf'
-  } elseif ($env:ComputerName.Contains('-w10-')) {
-    return 'nxlog_source_eventlog_win10_ec2.conf'
   } else {
     return 'nxlog_source_eventlog_win2008_ec2.conf'
   }
