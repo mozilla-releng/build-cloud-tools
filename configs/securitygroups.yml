@@ -26,6 +26,7 @@ includes:
           - ssh1.corpdmz.scl3.mozilla.com
           - ssh1.stage.corpdmz.scl3.mozilla.com
           - nagios1.private.releng.scl3.mozilla.com  # note: includes tcp/5666
+          - nagios3.private.releng.scl3.mozilla.com
           - vportal1a.ops.scl3.mozilla.com
           - 10.22.240.0/20  # scl3-vpn-net
           - 10.22.20.0/25  # admin1.scl3-vpn
