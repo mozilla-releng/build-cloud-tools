@@ -463,11 +463,14 @@ proxxy-vpc-use1:
           ports: [80]
           hosts:
             - {include: build-use1}
+            - {include: build2-use1}
             - {include: test-use1}
             - {include: test2-use1}
             - {include: test3-use1}
             - {include: test4-use1}
+            - {include: test5-use1}
             - {include: try-use1}
+            - {include: try2-use1}
         - include: aws-manager-ssh
         - include: admin-access
         - include: observium
