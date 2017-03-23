@@ -222,11 +222,14 @@ includes:
     test4-usw2: 10.132.60.0/22
     try-usw2: 10.132.64.0/22
     build-use1: 10.134.52.0/22
+    build2-use1: 10.134.164.0/24
     test-use1: 10.134.56.0/22
     test2-use1: 10.134.156.0/22
     test3-use1: 10.134.40.0/21
     test4-use1: 10.134.60.0/22
+    test5-use1: 10.134.160.0/22
     try-use1: 10.134.64.0/22
+    try2-use1: 10.134.165.0/24
     slave-vlans:
       - {include: build-scl3}
       - {include: test-scl3}
@@ -242,11 +245,14 @@ includes:
       - {include: test4-usw2}
       - {include: try-usw2}
       - {include: build-use1}
+      - {include: build2-use1}
       - {include: test-use1}
       - {include: test2-use1}
       - {include: test3-use1}
       - {include: test4-use1}
+      - {include: test5-use1}
       - {include: try-use1}
+      - {include: try2-use1}
 
     # and port aliases
     buildbot-http-portrange: 8000-8999
@@ -457,11 +463,14 @@ proxxy-vpc-use1:
           ports: [80]
           hosts:
             - {include: build-use1}
+            - {include: build2-use1}
             - {include: test-use1}
             - {include: test2-use1}
             - {include: test3-use1}
             - {include: test4-use1}
+            - {include: test5-use1}
             - {include: try-use1}
+            - {include: try2-use1}
         - include: aws-manager-ssh
         - include: admin-access
         - include: observium
@@ -559,6 +568,7 @@ balrogworker:
     description: security group for balrogworkers
     regions:
         us-east-1: vpc-b42100df
+        us-west-2: vpc-cd63f2a4
     inbound:
         - proto: tcp
           ports:
@@ -578,12 +588,32 @@ beetmoverworker:
     description: security group for beetmoverworkers
     regions:
         us-east-1: vpc-b42100df
+        us-west-2: vpc-cd63f2a4
     inbound:
         - proto: tcp
           ports:
             - 22  # ssh
           hosts:
           - 10.22.240.0/20
+        - include: admin-access
+        - include: observium
+        - include: opsec-scanner
+        - include: infra-puppetize
+        - include: global-ping
+        - include: aws-manager-ssh
+    outbound:
+        - include: global-any
+
+pushapkworker:
+    description: security group for pushapkworker
+    regions:
+        us-east-1: vpc-b42100df
+    inbound:
+        - proto: tcp
+          ports:
+            - 22  # ssh
+          hosts:
+            - 10.22.240.0/20
         - include: admin-access
         - include: observium
         - include: opsec-scanner

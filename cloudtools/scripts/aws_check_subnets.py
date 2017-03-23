@@ -125,5 +125,6 @@ def main():
     exit_code = report_free_ips(grouped_subnets, args.warn_threshold, args.crit_threshold)
     exit(exit_code)
 
+
 if __name__ == '__main__':
     main()

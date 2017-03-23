@@ -20,5 +20,28 @@
         "tags": {
             "moz-type": "balrogworker"
         }
+    },
+
+    "us-west-2": {
+        "type": "balrogworker",
+        "domain": "srv.releng.usw2.mozilla.com",
+        "ami": "ami-eb89acdb",
+        "subnet_ids": ["subnet-d50cb6a2"],
+        "security_group_ids": ["sg-3291414a"],
+        "instance_type": "t2.micro",
+        "distro": "centos",
+        "ssh_key": "aws-releng",
+        "use_public_ip": true,
+        "device_map": {
+            "/dev/xvda": {
+                "delete_on_termination": true,
+                "skip_resize": true,
+                "volume_type": "gp2",
+                "instance_dev": "/dev/xvda1"
+            }
+        },
+        "tags": {
+            "moz-type": "balrogworker"
+        }
     }
 }

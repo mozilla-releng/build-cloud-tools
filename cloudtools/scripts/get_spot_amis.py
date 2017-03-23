@@ -31,5 +31,6 @@ def main():
                                            ami.tags.get("Name"),
                                            ami.root_device_type)
 
+
 if __name__ == '__main__':
     main()

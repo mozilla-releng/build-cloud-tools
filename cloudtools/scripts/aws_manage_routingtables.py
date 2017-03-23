@@ -143,5 +143,6 @@ def main():
 
         sync_tables(conn, my_tables, remote_tables)
 
+
 if __name__ == '__main__':
     main()

@@ -72,5 +72,6 @@ def main():
                                           filters={"state": "available"}))
     update_ami_status(amis_to_dict(images))
 
+
 if __name__ == '__main__':
     main()

@@ -40,5 +40,6 @@ def main():
                 log.debug("tagging %s", i)
                 copy_spot_request_tags(i)
 
+
 if __name__ == '__main__':
     main()

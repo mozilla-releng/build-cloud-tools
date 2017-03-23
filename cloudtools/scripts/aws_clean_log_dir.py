@@ -128,5 +128,6 @@ def main():
                 instance_event_file = os.path.join(root, f)
                 delete_obsolete_json_file(instance_event_file, numdays)
 
+
 if __name__ == '__main__':
     main()

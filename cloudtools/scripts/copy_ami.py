@@ -28,5 +28,6 @@ def main():
             new_ami = copy_ami(ami, r)
             log.info("New AMI created. AMI ID: %s", new_ami.id)
 
+
 if __name__ == '__main__':
     main()

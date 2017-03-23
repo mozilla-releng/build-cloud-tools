@@ -155,6 +155,8 @@ def request_spot_instances(all_instances, moz_instance_type, start_count,
     spot_choices = get_spot_choices(connections, spot_rules, product_description)
     if not spot_choices:
         log.warn("No spot choices for %s", moz_instance_type)
+        log.warn("%s: market price too expensive in all available regions; spot instances needed: %i",
+                 moz_instance_type, start_count)
         return 0
 
     to_start = defaultdict(list)
@@ -588,6 +590,7 @@ def main():
 
     gr_log.sendall()
     log.debug("done")
+
 
 if __name__ == '__main__':
     main()

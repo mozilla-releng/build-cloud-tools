@@ -81,6 +81,7 @@ def resolve_host(hostname):
 
 # VPC
 
+
 cft = CloudFormationTemplate(description="Release Engineering network configuration")
 
 cft.resources.add(Resource(

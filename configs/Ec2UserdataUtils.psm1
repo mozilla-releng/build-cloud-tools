@@ -900,6 +900,103 @@ function Prep-Loaner {
   }
 }
 
+function Prep-Spot {
+  param (
+    [switch] $force,
+    [string] $tempdir = ('{0}\builds' -f $env:ProgramData)
+  )
+  begin {
+    Write-Log -message ("{0} :: Function started" -f $($MyInvocation.MyCommand.Name)) -severity 'DEBUG'
+  }
+  process {
+
+    # This has not been tested on w732 as of yet.
+    #if ($env:ComputerName.contains('w732')) {
+      #Write-Host "Windows 7 detected. Mounting ephemeral drives to C:\slave\test\build"
+      #Write-Log -message "Mounting ephemeral drives to C:\slave\test\build"
+      #$mountPath = ('{0}\slave\test\build' -f $env:SystemDrive)
+      #Get-ChildItem -Path $mountPath | Move-Item -destination $tempdir
+      #if ((Test-Path -Path $mountPath -PathType Container -ErrorAction SilentlyContinue) -and ((Get-ChildItem $mountPath | Measure-Object).Count -eq 0)) {
+        #Mount-EphemeralDisks
+         #Get-ChildItem -Path $tempdir | Copy-Item -destination $mountPath
+      #}
+    #}
+    if ($env:ComputerName.Contains('2008')) {
+      # Checking for a semaphore since powershell on 2008 is not rebust enough to do a pogrammatic check for the mounted directory
+      If (test-path "$tempdir\prep-spot.semaphore") {
+        Write-log "Semaphore for prior run exists"
+      } else {
+        Write-Log -message "Mounting ephemeral drives to C:\builds"
+        $mountPath = ('{0}\builds' -f $env:SystemDrive)
+        Get-ChildItem -Path $mountPath | Move-Item -destination $tempdir
+        if ((Test-Path -Path $mountPath -PathType Container -ErrorAction SilentlyContinue) -and ((Get-ChildItem $mountPath | Measure-Object).Count -eq 0)) {
+          Mount-EphemeralDisks
+          Get-ChildItem -Path $tempdir | Copy-Item -destination $mountPath
+          New-Item -ItemType file "$tempdir\prep-spot.semaphore"
+          # On the c3.4xlarge with the ephemeral drives mounted the paging file hinders performance
+          if((Test-RegistryValue -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management" -Value "PagingFiles") -eq 'true'){
+        Get-Item -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management" | Remove-ItemProperty -Name PagingFiles
+          }
+        }
+      }
+    }
+  }
+  end {
+    Write-Log -message ("{0} :: Function ended" -f $($MyInvocation.MyCommand.Name)) -severity 'DEBUG'
+  }
+}
+# this function will not work on instances that have more than one, non-ephemeral disk (eg: c:, d: where both are gp2 or iops).
+# it will likely do nasty things if that is the case.
+function Mount-EphemeralDisks {
+  param (
+    [string] $path = ('{0}\mnt' -f $env.SystemDrive)
+  )
+  begin {
+    Write-Log -message ("{0} :: Function started" -f $($MyInvocation.MyCommand.Name)) -severity 'DEBUG'
+  }
+  process {
+    $outfile = ('{0}\log\{1}.diskpart.stdout.log' -f $env:SystemDrive, [DateTime]::Now.ToString("yyyyMMddHHmmss"))
+    $errfile = ('{0}\log\{1}.diskpart.stderr.log' -f $env:SystemDrive, [DateTime]::Now.ToString("yyyyMMddHHmmss"))
+    $ephemeralVolumeCount = @(Get-WmiObject Win32_Volume | ? { ($_.DriveLetter -and !($_.SystemVolume) -and (-not ($_.DriveLetter -ieq $env:SystemDrive))) }).length
+    $volumeOffset = ((@(Get-WmiObject Win32_Volume).length) - $ephemeralVolumeCount)
+    $diskpartscript = @(
+      '',
+      "select volume 1`nremove all dismount`nselect disk 1`nclean`nconvert gpt`ncreate partition primary`nformat quick fs=ntfs`nselect volume 1`nassign mount=$mountPath",
+      "select disk 1`nclean`nconvert dynamic`nselect disk 2`n clean`nconvert dynamic`ncreate volume stripe disk=1,2`nselect volume $volumeOffset`nformat quick fs=ntfs`nassign mount=$mountPath"
+    )
+    if (($ephemeralVolumeCount -gt 0) -and ($volumeOffset -gt 0) -and ($ephemeralVolumeCount -lt $diskpartscript.length)) {
+      New-Item -path ('{0}\mnt.dp' -f $env:Temp) -value $diskpartscript[$ephemeralVolumeCount] -itemType file -force
+      Start-Process 'diskpart' -ArgumentList @('/s', ('{0}\mnt.dp' -f $env:Temp)) -Wait -NoNewWindow -PassThru -RedirectStandardOutput $outfile -RedirectStandardError $errfile
+      if (-not ((Get-Item $errfile).length -gt 0kb)) {
+        Write-Log -message ('{0} :: ephemeral volume(s) mounted at {1}. {2}' -f $($MyInvocation.MyCommand.Name), $path, (Get-Content $outfile)) -severity 'INFO'
+      } else {
+        Write-Log -message ("{0} :: failed to mount ephemeral volume(s) at {1}. {2}" -f $($MyInvocation.MyCommand.Name), $path, (Get-Content $errfile)) -severity 'ERROR'
+      }
+    } else {
+      Write-Log -message ('{0} :: mount skipped. volume count was: {1}' -f $($MyInvocation.MyCommand.Name), $ephemeralVolumeCount) -severity 'DEBUG'
+    }
+  }
+  end {
+    Write-Log -message ("{0} :: Function ended" -f $($MyInvocation.MyCommand.Name)) -severity 'DEBUG'
+  }
+}
+function Test-RegistryValue {
+
+param (
+
+ [parameter(Mandatory=$true)]
+ [ValidateNotNullOrEmpty()]$Path,
+
+[parameter(Mandatory=$true)]
+ [ValidateNotNullOrEmpty()]$Value
+)
+Get-ItemProperty -Path $Path | Select-Object -ExpandProperty $Value -ErrorAction Stop | Out-Null
+ return $true
+ }
+{
+return $false
+}
+
 function Set-RandomPassword {
   begin {
     Write-Log -message ("{0} :: Function started" -f $($MyInvocation.MyCommand.Name)) -severity 'DEBUG'
@@ -1676,8 +1773,6 @@ function Set-Timezone {
 function Get-EventlogOsTemplate {
   if ($env:ComputerName.Contains('-w732-')) {
     return 'nxlog_source_eventlog_win7_ec2.conf'
-  } elseif ($env:ComputerName.Contains('-w10-')) {
-    return 'nxlog_source_eventlog_win10_ec2.conf'
   } else {
     return 'nxlog_source_eventlog_win2008_ec2.conf'
   }

@@ -59,6 +59,7 @@ class GraphiteLogger(object):
                 log.warn("Ignoring all grapite submissions!")
         self._data = {}
 
+
 _graphite_logger = GraphiteLogger()
 
 

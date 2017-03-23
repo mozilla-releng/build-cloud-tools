@@ -204,7 +204,8 @@ def get_available_slave_name(region, moz_instance_type, is_spot,
 
 
 def get_current_spot_prices(connection, product_description, start_time=None,
-                            instance_type=None, ignore_cache=False):
+                            instance_type=None, ignored_availability_zones=None,
+                            ignore_cache=False):
     """
     Get the current spot prices for the region associated with the given
     connection. This may return cached results. Pass ignore_cache=True to
@@ -217,6 +218,7 @@ def get_current_spot_prices(connection, product_description, start_time=None,
         start_time (iso8601 str): get spot prices starting from this time
         instance_type (str): restrict results to this instance type, e.g.
             "m1.medium"
+        ignored_availability_zones (list of str): zones where we don't try to get a price
         ignore_cache (bool): ignore cached results
 
     Returns:
@@ -231,7 +233,7 @@ def get_current_spot_prices(connection, product_description, start_time=None,
     current_prices = {}
     cache_key = (region, product_description, start_time, instance_type)
     if not ignore_cache and cache_key in _spot_cache:
-        log.debug("returning cached results")
+        log.debug("using cached pricing for %s in %s", instance_type, region)
         return _spot_cache[cache_key]
 
     if not start_time:
@@ -240,13 +242,19 @@ def get_current_spot_prices(connection, product_description, start_time=None,
         yesterday = now - timedelta(hours=24)
         start_time = yesterday.isoformat() + "Z"
 
-    while True:
-        log.debug("getting spot prices for instance_type %s from %s "
-                  "(next_token %s)", instance_type, start_time, next_token)
+    if ignored_availability_zones is None:
+        ignored_availability_zones = []
+    all_zones = set([az.name for az in connection.get_all_zones()])
+    useful_zones = all_zones - set(ignored_availability_zones)
+    remaining = useful_zones
+    log.debug("getting spot prices for instance_type %s in %s, from %s",
+              instance_type, sorted(remaining), start_time)
+    while remaining:
         all_prices = connection.get_spot_price_history(
             product_description=product_description,
             instance_type=instance_type,
             start_time=start_time,
+            max_results=50,
             next_token=next_token,
         )
         next_token = all_prices.next_token
@@ -254,15 +262,22 @@ def get_current_spot_prices(connection, product_description, start_time=None,
         # entry twice
         all_prices = sorted(all_prices, key=lambda x: x.timestamp,
                             reverse=True)
-        log.debug("got %i results", len(all_prices))
         for price in all_prices:
             az = price.availability_zone
+            if az not in remaining:
+                continue
             inst_type = price.instance_type
             if not current_prices.get(inst_type):
                 current_prices[inst_type] = {}
             if not current_prices[inst_type].get(az):
                 current_prices[inst_type][az] = price.price
+                remaining.remove(az)
+
+        if remaining:
+            log.debug("getting more prices for %s", sorted(remaining))
         if not next_token:
+            log.debug("ran out of prices, need an earlier start time than %s",
+                      start_time)
             break
 
     retval = {region: current_prices}
@@ -299,26 +314,27 @@ class Spot:
         return cmp(self.value, other.value)
 
 
-def get_spot_choices(connections, rules, product_description, start_time=None,
-                     instance_type=None):
+def get_spot_choices(connections, rules, product_description, start_time=None):
     choices = []
     prices = {}
-    for connection in connections:
-        prices.update(get_current_spot_prices(connection, product_description,
-                                              start_time, instance_type))
     for rule in rules:
         instance_type = rule["instance_type"]
         bid_price = rule["bid_price"]
         performance_constant = rule["performance_constant"]
         ignored_availability_zones = rule.get("ignored_azs", [])
+        for connection in connections:
+            prices.update(get_current_spot_prices(connection, product_description,
+                                                  start_time, instance_type,
+                                                  ignored_availability_zones))
+
         for region, region_prices in prices.iteritems():
             for az, price in region_prices.get(instance_type, {}).iteritems():
                 if az in ignored_availability_zones:
-                    log.debug("Ignoring AZ %s for %s becuase it is listed in "
+                    log.debug("Ignoring AZ %s for %s because it is listed in "
                               " ignored_azs: %s", az, instance_type,
                               ignored_availability_zones)
                     continue
-                if price > bid_price:
+                if price > bid_price * 0.8:
                     log.debug("%s (in %s) too expensive for %s", price, az,
                               instance_type)
                 else:
@@ -330,39 +346,3 @@ def get_spot_choices(connections, rules, product_description, start_time=None,
     # sort by self.value
     choices.sort()
     return choices
-
-if __name__ == "__main__":
-    logging.basicConfig(level=logging.DEBUG, format="%(message)s")
-    logging.getLogger("boto").setLevel(logging.INFO)
-    connections = []
-    for region in ['us-west-2', 'us-east-1']:
-        connections.append(get_aws_connection(region))
-    rules = [
-        {
-            "instance_type": "m3.large",
-            "performance_constant": 0.5,
-            "bid_price": 0.10
-        },
-        {
-            "instance_type": "c3.xlarge",
-            "performance_constant": 1,
-            "bid_price": 0.25
-        },
-        {
-            "instance_type": "m3.xlarge",
-            "performance_constant": 1.1,
-            "bid_price": 0.25
-        },
-        {
-            "instance_type": "m3.2xlarge",
-            "performance_constant": 1.4,
-            "bid_price": 0.25
-        },
-        {
-            "instance_type": "c3.2xlarge",
-            "performance_constant": 1.5,
-            "bid_price": 0.25
-        },
-    ]
-    ret = get_spot_choices(connections, rules)
-    print "\n".join(map(str, ret))

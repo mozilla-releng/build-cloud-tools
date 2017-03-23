@@ -119,5 +119,6 @@ def main():
                                     args['--key-name'])
     create_ami(host_instance, args['--config'], config)
 
+
 if __name__ == '__main__':
     main()
