@@ -52,11 +52,11 @@ def partition_ebs_volume(int_dev_name):
     # partitioned first. Additionally ,"1" should the appended to get the
     # first primary device name.
     run('parted -s %s -- mklabel msdos' % int_dev_name)
-    # /boot uses 64M, reserve 64 sectors for grub
-    run('parted -s -a optimal %s -- mkpart primary ext2 64s 64' %
+    # /boot uses 256M, reserve 64 sectors for grub
+    run('parted -s -a optimal %s -- mkpart primary ext2 64s 256' %
         int_dev_name)
     # / uses the rest
-    run('parted -s -a optimal %s -- mkpart primary ext2 64 -1s' %
+    run('parted -s -a optimal %s -- mkpart primary ext2 256 -1s' %
         int_dev_name)
     run('parted -s %s -- set 1 boot on' % int_dev_name)
     run('parted -s %s -- set 2 lvm on' % int_dev_name)
