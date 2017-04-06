@@ -1393,7 +1393,7 @@ function Enable-CloneBundle {
           "clonebundleprefers"="VERSION=packed1"
         };
         "web"=@{
-          "cacerts"="C:\mozilla-build\hg\hgrc.d\cacert.pem"
+          "cacerts"="C:\mozilla-build\hg\cacert.pem"
         };
         "hostfingerprints"=@{
           "hg.mozilla.org"="73:7F:EF:AB:68:0F:49:3F:88:91:F0:B7:06:69:FD:8F:F2:55:C9:56"
