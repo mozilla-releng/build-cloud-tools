@@ -18,7 +18,15 @@ variable "heroku_cnames" {
                "tooltool",
                "tooltool.staging",
                "treestatus",
-               "treestatus.staging"]
+               "treestatus.staging",
+               "pipeline.shipit",
+               "pipeline.shipit.staging",
+               "signoff.shipit",
+               "signoff.shipit.staging",
+               "taskcluster.shipit",
+               "taskcluster.shipit.staging",
+               "uplift.shipit",
+               "uplift.shipit.staging"]
 }
 
 # CNAME records for heroku apps
