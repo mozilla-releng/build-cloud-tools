@@ -26,6 +26,7 @@ includes:
           - ssh1.corpdmz.scl3.mozilla.com
           - ssh1.stage.corpdmz.scl3.mozilla.com
           - nagios1.private.releng.scl3.mozilla.com  # note: includes tcp/5666
+          - nagios2.private.releng.scl3.mozilla.com  # note: includes tcp/5666
           - vportal1a.ops.scl3.mozilla.com
           - 10.22.240.0/20  # scl3-vpn-net
           - 10.22.20.0/25  # admin1.scl3-vpn
@@ -394,6 +395,7 @@ puppet-master:
           ports: [443, 80, 8140]
           hosts:
             - 10.26.0.0/16
+            - 10.49.0.0/16
             - 10.130.0.0/16
             - 10.132.0.0/16
             - 10.134.0.0/16
@@ -404,6 +406,8 @@ puppet-master:
           hosts:
             - releng-puppet1.srv.releng.scl3.mozilla.com
             - releng-puppet2.srv.releng.scl3.mozilla.com
+            - releng-puppet1.srv.releng.mdc1.mozilla.com
+            - releng-puppet2.srv.releng.mdc1.mozilla.com
             # it'd be nice to be able to reference this SG here, instead
             - releng-puppet1.srv.releng.use1.mozilla.com
             - releng-puppet1.srv.releng.usw2.mozilla.com
