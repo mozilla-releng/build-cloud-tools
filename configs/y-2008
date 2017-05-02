@@ -15,7 +15,7 @@
         "security_group_ids": [
             "sg-718b1214"
         ],
-        "instance_type": "c3.4xlarge",
+        "instance_type": "c4.4xlarge",
         "distro": "win2008",
         "ssh_key": "aws-releng",
         "use_public_ip": true,
@@ -59,7 +59,7 @@
         "security_group_ids": [
             "sg-3aaa095f"
         ],
-        "instance_type": "c3.4xlarge",
+        "instance_type": "c4.4xlarge",
         "distro": "win2008",
         "ssh_key": "aws-releng",
         "use_public_ip": true,
