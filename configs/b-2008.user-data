@@ -107,7 +107,6 @@ Set-Ec2ConfigPluginsState
 Set-Timezone
 Disable-Firewall 
 Disable-WindowsUpdate
-Install-BasePrerequisites -aggregator $aggregator -domain $domain
 Rename-Admin
 if (!(Is-DomainSetCorrectly -domainExpected $domain)) {{
   Set-Domain -domain $domain
@@ -120,6 +119,7 @@ if (!(Is-HostnameSetCorrectly -hostnameExpected $hostname)) {{
 }}
 if (!$hostRenamed) {{
   if ($hostname.Contains("-golden")) {{
+    Install-BasePrerequisites -aggregator $aggregator -domain $domain
     Prep-Golden -puppetServer $puppetServer -logdest $puppetLog -deployPass $deployPass -hostname $hostname -domain $domain
     Flush-EventLog
     Stop-ComputerWithDelay -reason 'userdata golden run complete'
