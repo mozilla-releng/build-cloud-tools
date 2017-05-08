@@ -1743,6 +1743,7 @@ function Install-BasePrerequisites {
     [string] $domain = 'releng.use1.mozilla.com'
   )
   Write-Log -message ("{0} :: installing chocolatey" -f $($MyInvocation.MyCommand.Name)) -severity 'INFO'
+  $env:chocolateyDownloadUrl = ('http://releng-puppet1.srv.{0}/repos/EXEs/chocolatey/chocolatey.0.10.5.nupkg' -f $domain)
   Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('http://releng-puppet1.srv.{0}/repos/EXEs/chocolatey/install.ps1' -f $domain))
   Install-RelOpsPrerequisites -aggregator $aggregator
   Enable-CloneBundle
