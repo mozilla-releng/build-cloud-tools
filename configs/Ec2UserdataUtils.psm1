@@ -514,7 +514,7 @@ function Is-HostnameSetCorrectly {
     [string] $hostnameExpected
   )
   $netDnsHostname = [System.Net.Dns]::GetHostName()
-  if (("$hostnameExpected" -ieq "$netDnsHostname") -and ("$hostnameExpected" -ieq "$env:COMPUTERNAME")) {
+  if (("$hostnameExpected" -ieq "$netDnsHostname") -and (("$hostnameExpected" -ieq "$env:COMPUTERNAME") -or (('{0}EN' -f $env:COMPUTERNAME) -ieq $hostnameExpected))) {
     return $true
   } else {
     Write-Log -message ('net dns hostname: {0}, expected: {1}' -f $netDnsHostname, $hostnameExpected) -severity 'DEBUG'
