@@ -1420,29 +1420,6 @@ function Enable-CloneBundle {
   }
 }
 
-function Install-Package {
-  param (
-    [string] $id,
-    [string] $version,
-    [string] $testPath
-  )
-  if (Test-Path $testPath) {
-    Write-Log -message ("{0} :: {1} install skipped, {2} exists" -f $($MyInvocation.MyCommand.Name), $id, $testPath) -severity 'DEBUG'
-    return $false
-  }
-  Write-Log -message ("{0} :: installing {1}" -f $($MyInvocation.MyCommand.Name), $id) -severity 'DEBUG'
-  $cmdArgs = @('install', '-y', '--force', $id, '--version', $version)
-  & 'choco' $cmdArgs
-  $exitCode = $LastExitCode
-  if (($?) -and (Test-Path $testPath)) {
-    Write-Log -message ("{0} :: {1} install succeeded" -f $($MyInvocation.MyCommand.Name), $id) -severity 'INFO'
-    return $true
-  } else {
-    Write-Log -message ("{0} :: {1} install failed with exit code: {2}" -f $($MyInvocation.MyCommand.Name), $id, $exitCode) -severity 'ERROR'
-    return $false
-  }
-}
-
 function Create-SymbolicLink {
   param (
     [string] $link,
@@ -1662,39 +1639,6 @@ function Install-DirectX10 {
   }
 }
 
-function Install-RelOpsPrerequisites {
-  param (
-    [string] $aggregator
-  )
-  #Install-Package -id 'nxlog' -version '2.8.1248' -testPath ('{0}\nxlog\conf\nxlog.conf' -f @{$true=${env:ProgramFiles(x86)};$false=$env:ProgramFiles}[(Test-Path Env:\'ProgramFiles(x86)')])
-  Configure-NxLog -aggregator $aggregator
-  if (Install-Package -id 'sublimetext3' -version '3.0.0.3083' -testPath ('{0}\Sublime Text 3\sublime_text.exe' -f $env:ProgramFiles)) {
-    foreach ($ftype in @('txtfile', 'inifile')) {
-      & 'ftype' @(('{0}="{1}\\Sublime Text 3\sublime_text.exe" %1' -f $ftype, $env:ProgramFiles))
-    }
-  }
-  Install-Package -id 'sublimetext3.packagecontrol' -version '2.0.0.20140915' -testPath ('{0}\Sublime Text 3\Installed Packages\Package Control.sublime-package' -f $env:AppData)
-  if ($env:ComputerName.Contains('-w732-')) {
-    Install-Package -id 'puppet' -version '3.4.3' -testPath ('{0}\Puppet Labs\Puppet\bin\puppet.bat' -f $env:ProgramFiles)
-    Disable-Service -serviceName 'puppet'
-  }
-  
-  #https://bugzilla.mozilla.org/show_bug.cgi?id=1261812
-  if (-not (Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows\Windows Error Reporting\' -Name 'LocalDumps' -ErrorAction SilentlyContinue)) {
-    New-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows\Windows Error Reporting\' -Name 'LocalDumps'
-  }
-  if (-not (Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows\Windows Error Reporting\' -Name 'DontShowUI' -ErrorAction SilentlyContinue)) {
-    New-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows\Windows Error Reporting\' -Type 'DWord' -Name 'DontShowUI' -Value '0x00000001'
-  } else {
-    Set-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows\Windows Error Reporting\' -Type 'DWord' -Name 'DontShowUI' -Value '0x00000001'
-  }
-  #Install-Package -id 'git' -version '2.5.3' -testPath ('{0}\Git\usr\bin\bash.exe' -f $env:ProgramFiles)
-  #$msys = ('{0}\Git\usr\bin' -f $env:ProgramFiles)
-  #if ((Test-Path $msys) -and !$env:Path.Contains($msys)) {
-  #  [Environment]::SetEnvironmentVariable("PATH", ('{0};{1}' -f $msys, $env:Path), "Machine")
-  #}
-}
-
 function Test-Key {
   param (
     [string] $path,
@@ -1705,47 +1649,11 @@ function Test-Key {
   return $true
 }
 
-function Install-MozillaBuildAndPrerequisites {
-  if (!(Test-Key "HKLM:\Software\Microsoft\NET Framework Setup\NDP\v3.5" "Install")) {
-    Add-WindowsFeature -Name 'NET-Framework-Core' -IncludeAllSubFeature # prerequisite for June 2010 DirectX SDK is to install ".NET Framework 3.5 (includes .NET 2.0 and 3.0)"
-  }
-  Install-DirectX10
-  Install-Package -id 'visualstudiocommunity2013' -version '12.0.21005.1' -testPath ('{0}\Microsoft Visual Studio 12.0\Common7\IDE\devenv.exe' -f @{$true=${env:ProgramFiles(x86)};$false=$env:ProgramFiles}[(Test-Path Env:\'ProgramFiles(x86)')])
-  Install-Package -id 'windows-sdk-8.1' -version '8.100.26654.0' -testPath ('{0}\Microsoft Visual Studio 12.0\Common7\IDE\devenv.exe' -f @{$true=${env:ProgramFiles(x86)};$false=$env:ProgramFiles}[(Test-Path Env:\'ProgramFiles(x86)')])
-  if(Install-Package -id 'mozillabuild' -version '2.0.0' -testPath ('{0}\mozilla-build\yasm\yasm.exe' -f $env:SystemDrive)) {
-    Create-SymbolicLink -link ('{0}\mozilla-build\python27' -f $env:SystemDrive) -target ('{0}\mozilla-build\python' -f $env:SystemDrive)
-    if (!(Test-Path 'c:\mozilla-build\python\Lib\site-packages\pywin32-218-py2.7-win32.egg' -PathType Container)) {
-      $bashArgs = @('--login', '-c', '"/c/mozilla-build/python/Scripts/easy_install.exe http://puppet/repos/EXEs/pywin32-218.win32-py2.7.exe"')
-      & 'bash' $bashArgs
-      Write-Log -message ('{0} :: pywin32 installed to /c/mozilla-build/python/Lib/site-packages/pywin32-218-py2.7-win32.egg' -f $($MyInvocation.MyCommand.Name), $version, $target, $url) -severity 'DEBUG'
-    }
-    $bashArgs = @('--login', '-c', '"/c/mozilla-build/python/Scripts/pip uninstall mercurial --yes"')
-    & ('{0}\mozilla-build\msys\bin\bash.exe' -f $env:SystemDrive) $bashArgs
-    foreach ($mbhg in @(('{0}\mozilla-build\python\Scripts\hg' -f $env:SystemDrive), ('{0}\mozilla-build\python\Scripts\hg.bat' -f $env:SystemDrive), ('{0}\mozilla-build\python\Scripts\hg.exe' -f $env:SystemDrive))) {
-      if (Test-Path $mbhg) {
-        Remove-Item $mbhg -force
-      }
-    }
-  }
-  if (Install-Package -id 'hg' -version '3.5.1' -testPath ('{0}\Mercurial\hg.exe' -f $env:ProgramFiles)) {
-    Create-SymbolicLink -link ('{0}\mozilla-build\hg' -f $env:SystemDrive) -target ('{0}\Mercurial' -f $env:ProgramFiles)
-  }
-  Install-BundleClone
-  Add-PathToPath -path ('{0}\mozilla-build\hg' -f $env:SystemDrive)
-  Add-PathToPath -path ('{0}\mozilla-build\msys\bin' -f $env:SystemDrive)
-  Add-PathToPath -path ('{0}\mozilla-build\python' -f $env:SystemDrive)
-  Add-PathToPath -path ('{0}\mozilla-build\python\Scripts' -f $env:SystemDrive)
-}
-
 function Install-BasePrerequisites {
   param (
     [string] $aggregator = 'log-aggregator.srv.releng.use1.mozilla.com',
     [string] $domain = 'releng.use1.mozilla.com'
   )
-  Write-Log -message ("{0} :: installing chocolatey" -f $($MyInvocation.MyCommand.Name)) -severity 'INFO'
-  $chocoUrl = ('http://releng-puppet1.srv.{0}/repos/EXEs/chocolatey' -f $domain.Replace('try.', '').Replace('test.', '').Replace('build.', ''))
-  $env:chocolateyDownloadUrl = ('{0}/chocolatey.0.10.5.nupkg' -f $chocoUrl)
-  Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('{0}/install.ps1' -f $chocoUrl))
   Install-RelOpsPrerequisites -aggregator $aggregator
   Enable-CloneBundle
   #Install-MozillaBuildAndPrerequisites
