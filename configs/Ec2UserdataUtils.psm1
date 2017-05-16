@@ -911,17 +911,10 @@ function Prep-Spot {
   }
   process {
 
-    # This has not been tested on w732 as of yet.
-    #if ($env:ComputerName.contains('w732')) {
-      #Write-Host "Windows 7 detected. Mounting ephemeral drives to C:\slave\test\build"
-      #Write-Log -message "Mounting ephemeral drives to C:\slave\test\build"
-      #$mountPath = ('{0}\slave\test\build' -f $env:SystemDrive)
-      #Get-ChildItem -Path $mountPath | Move-Item -destination $tempdir
-      #if ((Test-Path -Path $mountPath -PathType Container -ErrorAction SilentlyContinue) -and ((Get-ChildItem $mountPath | Measure-Object).Count -eq 0)) {
-        #Mount-EphemeralDisks
-         #Get-ChildItem -Path $tempdir | Copy-Item -destination $mountPath
-      #}
-    #}
+    # Only write the semaphore so that runner will start
+    if ($env:ComputerName.contains('w732')) {
+      New-Item -ItemType file "$tempdir\prep-spot.semaphore"  
+    }
     if ($env:ComputerName.Contains('2008')) {
       # Checking for a semaphore since powershell on 2008 is not rebust enough to do a pogrammatic check for the mounted directory
       If (test-path "$tempdir\prep-spot.semaphore") {
