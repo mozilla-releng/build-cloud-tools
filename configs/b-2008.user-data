@@ -123,6 +123,8 @@ if (!$hostRenamed) {{
     Prep-Golden -puppetServer $puppetServer -logdest $puppetLog -deployPass $deployPass -hostname $hostname -domain $domain
     Flush-EventLog
     Stop-ComputerWithDelay -reason 'userdata golden run complete'
+  }} elseif ($hostname.contains("spot")) {{
+    Prep-spot -force
   }} elseif ($hostname -match "((b|y)-2008-ec2-[a-z].*|(t|g)-w732-ec2-[a-z].*)") {{
     Prep-Loaner -deployPass $deployPass
   }}
@@ -130,9 +132,6 @@ if (!$hostRenamed) {{
 if (!($hostname.Contains("-spot-"))) {{
   Send-Log -logfile $runLog -subject ('UserData Run Report for {{0}}.{{1}}' -f $hostname, $domain) -to 'releng-puppet-mail@mozilla.com' -from $logSender
   Send-Log -logfile $ec2Log -subject ('EC2 Config Report for {{0}}.{{1}}' -f $hostname, $domain) -to 'releng-puppet-mail@mozilla.com' -from $logSender
-}}
-if ($env:computerName.contains("spot")) {{
-      Prep-spot -force
 }}
 Move-Item -path $runLog -destination ([IO.Path]::Combine($logDir, ('userdata-run-{{0}}.log' -f [DateTime]::Now.ToString("yyyyMMdd-HHmm"))))-ErrorAction SilentlyContinue
 Move-Item -path $ec2Log -destination ([IO.Path]::Combine($logDir, ('ec2config-run-{{0}}.log' -f [DateTime]::Now.ToString("yyyyMMdd-HHmm"))))-ErrorAction SilentlyContinue
