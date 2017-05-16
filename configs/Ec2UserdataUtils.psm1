@@ -516,6 +516,7 @@ function Is-HostnameSetCorrectly {
   $netDnsHostname = [System.Net.Dns]::GetHostName()
   if (("$hostnameExpected" -ieq "$netDnsHostname") -and ("$hostnameExpected" -ieq "$env:COMPUTERNAME")) {
     return $true
+    Write-Log -message ('hostnameExpected: {0} == netDnsHostname: {1} and hostnameExpected == env:COMPUTERNAME: {2}' -f $hostnameExpected, $netDnsHostname, $env:COMPUTERNAME) -severity 'DEBUG'
   } else {
     Write-Log -message ('net dns hostname: {0}, expected: {1}' -f $netDnsHostname, $hostnameExpected) -severity 'DEBUG'
     Write-Log -message ('computer name env var: {0}, expected: {1}' -f $env:COMPUTERNAME, $hostnameExpected) -severity 'DEBUG'
@@ -1655,7 +1656,7 @@ function Install-BasePrerequisites {
     [string] $domain = 'releng.use1.mozilla.com'
   )
   Install-RelOpsPrerequisites -aggregator $aggregator
-  Enable-CloneBundle
+  #Enable-CloneBundle
   #Install-MozillaBuildAndPrerequisites
   #Install-BuildBot
   #Install-ToolTool
@@ -1670,6 +1671,22 @@ function Install-BasePrerequisites {
   Create-SymbolicLink -link 'C:\mozilla-buildbuildbotve' -target 'C:\mozilla-build\buildbotve'
   # Add-PathToPath -path ('{0}\Microsoft Visual Studio 12.0\VC\bin' -f @{$true=${env:ProgramFiles(x86)};$false=$env:ProgramFiles}[(Test-Path Env:\'ProgramFiles(x86)')]) -target 'Machine'
   # end hacks
+}
+
+function Install-RelOpsPrerequisites { 
+  param (
+    [string] $aggregator
+  )
+  Configure-NxLog -aggregator $aggregator
+  #https://bugzilla.mozilla.org/show_bug.cgi?id=1261812
+  if (-not (Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows\Windows Error Reporting\' -Name 'LocalDumps' -ErrorAction SilentlyContinue)) {
+    New-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows\Windows Error Reporting\' -Name 'LocalDumps'
+  }
+  if (-not (Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows\Windows Error Reporting\' -Name 'DontShowUI' -ErrorAction SilentlyContinue)) {
+    New-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows\Windows Error Reporting\' -Type 'DWord' -Name 'DontShowUI' -Value '0x00000001'
+  } else {
+    Set-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows\Windows Error Reporting\' -Type 'DWord' -Name 'DontShowUI' -Value '0x00000001'
+  }
 }
 
 function Set-Timezone {
