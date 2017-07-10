@@ -119,12 +119,6 @@ includes:
         hosts:
             - 0.0.0.0/0
 
-    outbound-influx:
-        proto: tcp
-        ports: [8087]
-        hosts:
-            - goldiewilson-onepointtwentyone-1.c.influxdb.com
-
     outbound-irc:
         proto: tcp
         ports: [6697]
@@ -164,7 +158,6 @@ includes:
         - include: outbound-stun-tcp
         - include: outbound-stun-udp
         - include: outbound-carbon
-        - include: outbound-influx
         - include: outbound-ntp
         - include: global-ping
 
@@ -177,7 +170,6 @@ includes:
         - include: outbound-stun-tcp
         - include: outbound-stun-udp
         - include: outbound-carbon
-        - include: outbound-influx
         - include: outbound-ntp
         - include: global-ping
 
@@ -190,7 +182,6 @@ includes:
         - include: outbound-stun-tcp
         - include: outbound-stun-udp
         - include: outbound-carbon
-        - include: outbound-influx
         - include: outbound-ntp
         - include: global-ping
 
