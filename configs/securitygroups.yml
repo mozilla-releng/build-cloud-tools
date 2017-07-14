@@ -590,3 +590,21 @@ pushapkworker:
         - include: aws-manager-ssh
     outbound:
         - include: global-any
+
+binarytransparencyworker:
+    description: security group for binary transparency worker
+    regions:
+        us-east-1: vpc-b42100df
+        us-west-2: vpc-cd63f2a4
+    inbound:
+        - proto: tcp
+          ports:
+            - 22  # ssh
+          hosts:
+          - 10.22.240.0/20
+        - include: admin-access
+        - include: observium
+        - include: global-ping
+        - include: aws-manager-ssh
+    outbound:
+        - include: global-any
