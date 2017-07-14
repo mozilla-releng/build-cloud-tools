@@ -1,0 +1,47 @@
+{
+    "us-east-1": {
+        "type": "binarytransparencyworker",
+        "domain": "srv.releng.use1.mozilla.com",
+        "ami": "ami-18abe670",
+        "subnet_ids": ["subnet-33a98358"],
+        "security_group_ids": ["sg-fce3988d"],
+        "instance_type": "t2.micro",
+        "distro": "centos",
+        "ssh_key": "aws-releng",
+        "use_public_ip": true,
+        "device_map": {
+            "/dev/xvda": {
+                "delete_on_termination": true,
+                "skip_resize": true,
+                "volume_type": "gp2",
+                "instance_dev": "/dev/xvda1"
+            }
+        },
+        "tags": {
+            "moz-type": "binarytransparencyworker"
+        }
+    },
+
+    "us-west-2": {
+        "type": "binarytransparencyworker",
+        "domain": "srv.releng.usw2.mozilla.com",
+        "ami": "ami-eb89acdb",
+        "subnet_ids": ["subnet-d50cb6a2"],
+        "security_group_ids": ["sg-69903713"],
+        "instance_type": "t2.micro",
+        "distro": "centos",
+        "ssh_key": "aws-releng",
+        "use_public_ip": true,
+        "device_map": {
+            "/dev/xvda": {
+                "delete_on_termination": true,
+                "skip_resize": true,
+                "volume_type": "gp2",
+                "instance_dev": "/dev/xvda1"
+            }
+        },
+        "tags": {
+            "moz-type": "binarytransparencyworker"
+        }
+    }
+}
