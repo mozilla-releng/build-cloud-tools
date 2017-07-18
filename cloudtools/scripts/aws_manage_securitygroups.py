@@ -266,11 +266,12 @@ def main():
                     vpc_id=sg_config['regions'][region],
                     description=sg_config['description'],
                 )
+                log.info("New group has id %s", remote_sg.id)
                 log.info("Waiting for group to propagate")
                 time.sleep(5)
                 # Fetch it again so we get all the rules
                 log.info("Re-loading group %s", sg_name)
-                remote_sg = conn.get_all_security_groups(
+                remote_sg = conns_by_region[region].get_all_security_groups(
                     group_ids=[remote_sg.id])[0]
 
             sync_security_group(remote_sg, sg_config, prompt=prompt)
