@@ -9,15 +9,11 @@ resource "aws_route53_zone" "mozilla-releng" {
 variable "heroku_cnames" {
     default = ["archiver",
                "archiver.staging",
-               "clobberer",
                "clobberer.staging",
                "dashboard.shipit",
                "dashboard.shipit.staging",
                "mapper",
                "mapper.staging",
-               "tooltool",
-               "tooltool.staging",
-               "treestatus",
                "treestatus.staging",
                "pipeline.shipit",
                "pipeline.shipit.staging",
@@ -46,6 +42,47 @@ resource "aws_route53_record" "heroku-coalease-cname" {
     type = "CNAME"
     ttl = "180"
     records = ["oita-54541.herokussl.com"]
+}
+
+# Tooltool app cname uses non-sni ssl due to old versions of python
+# used during the build process
+# See bug 1380177
+resource "aws_route53_record" "heroku-tooltool-cname" {
+    zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
+    name = "tooltool.mozilla-releng.net"
+    type = "CNAME"
+    ttl = "180"
+    records = ["kochi-11433.herokussl.com"]
+}
+
+resource "aws_route53_record" "heroku-tooltool-staging-cname" {
+    zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
+    name = "tooltool.staging.mozilla-releng.net"
+    type = "CNAME"
+    ttl = "180"
+    records = ["shizuoka-60622.herokussl.com"]
+}
+
+# Treestatus app cname uses non-sni ssl due to old versions of python
+# used during the build process
+# See bug 1380177
+resource "aws_route53_record" "heroku-treestatus-cname" {
+    zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
+    name = "treestatus.mozilla-releng.net"
+    type = "CNAME"
+    ttl = "180"
+    records = ["osaka-77459.herokussl.com"]
+}
+
+# Clobberer app cname uses non-sni ssl due to old versions of python
+# used during the build process
+# See bug 1380177
+resource "aws_route53_record" "heroku-clobberer-cname" {
+    zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
+    name = "clobberer.mozilla-releng.net"
+    type = "CNAME"
+    ttl = "180"
+    records = ["saitama-70467.herokussl.com"]
 }
 
 # Cloudfront Alias names
