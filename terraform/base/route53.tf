@@ -83,7 +83,7 @@ resource "aws_route53_record" "heroku-treestatus-cname-stage" {
     name = "treestatus.staging.mozilla-releng.net"
     type = "CNAME"
     ttl = "180"
-    records = ["treestatus.staging.mozilla-releng.net.herokudns.com"]
+    records = ["nagasaki-25852.herokussl.com"]
 }
 resource "aws_route53_record" "heroku-tooltool-cname-stage" {
     zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
