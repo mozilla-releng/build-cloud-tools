@@ -5,37 +5,10 @@ resource "aws_route53_zone" "mozilla-releng" {
     name = "mozilla-releng.net."
 }
 
-# A list of CNAMEs for heroku apps
-variable "heroku_cnames" {
-    default = ["archiver",
-               "archiver.staging",
-               "clobberer.staging",
-               "dashboard.shipit",
-               "dashboard.shipit.staging",
-               "mapper",
-               "mapper.staging",
-               "treestatus.staging",
-               "pipeline.shipit",
-               "pipeline.shipit.staging",
-               "signoff.shipit",
-               "signoff.shipit.staging",
-               "taskcluster.shipit",
-               "taskcluster.shipit.staging",
-               "uplift.shipit",
-               "uplift.shipit.staging"]
-}
+##################################
+## Heroku production app cnames ##
+##################################
 
-# CNAME records for heroku apps
-resource "aws_route53_record" "heroku-cname" {
-    zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
-    name = "${element(var.heroku_cnames, count.index)}.mozilla-releng.net"
-    type = "CNAME"
-    ttl = "180"
-    count = "${length(var.heroku_cnames)}"
-    records = ["${element(var.heroku_cnames, count.index)}.mozilla-releng.net.herokudns.com"]
-}
-
-# Coalesce app cname is unique because it uses the old ssl endpoint
 resource "aws_route53_record" "heroku-coalease-cname" {
     zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
     name = "coalesce.mozilla-releng.net"
@@ -43,19 +16,76 @@ resource "aws_route53_record" "heroku-coalease-cname" {
     ttl = "180"
     records = ["oita-54541.herokussl.com"]
 }
-
-# Tooltool app cname uses non-sni ssl due to old versions of python
-# used during the build process
-# See bug 1380177
-resource "aws_route53_record" "heroku-tooltool-cname" {
+resource "aws_route53_record" "heroku-archiver-cname-prod" {
+    zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
+    name = "archiver.mozilla-releng.net"
+    type = "CNAME"
+    ttl = "180"
+    records = ["archiver.mozilla-releng.net.herokudns.com"]
+}
+resource "aws_route53_record" "heroku-clobberer-cname-prod" {
+    zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
+    name = "clobberer.mozilla-releng.net"
+    type = "CNAME"
+    ttl = "180"
+    records = ["saitama-70467.herokussl.com"]
+}
+resource "aws_route53_record" "heroku-mapper-cname-prod" {
+    zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
+    name = "mapper.mozilla-releng.net"
+    type = "CNAME"
+    ttl = "180"
+    records = ["mapper.mozilla-releng.net.herokudns.com"]
+}
+resource "aws_route53_record" "heroku-tooltool-cname-prod" {
     zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
     name = "tooltool.mozilla-releng.net"
     type = "CNAME"
     ttl = "180"
     records = ["kochi-11433.herokussl.com"]
 }
+resource "aws_route53_record" "heroku-treestatus-cname-prod" {
+    zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
+    name = "treestatus.mozilla-releng.net"
+    type = "CNAME"
+    ttl = "180"
+    records = ["treestatus.mozilla-releng.net.herokudns.com"]
+}
 
-resource "aws_route53_record" "heroku-tooltool-staging-cname" {
+
+###############################
+## Heroku staging app cnames ##
+###############################
+
+resource "aws_route53_record" "heroku-archiver-cname-stage" {
+    zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
+    name = "archiver.staging.mozilla-releng.net"
+    type = "CNAME"
+    ttl = "180"
+    records = ["archiver.staging.mozilla-releng.net.herokudns.com"]
+}
+resource "aws_route53_record" "heroku-clobberer-cname-stage" {
+    zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
+    name = "clobberer.staging.mozilla-releng.net"
+    type = "CNAME"
+    ttl = "180"
+    records = ["saitama-70467.herokussl.com"]
+}
+resource "aws_route53_record" "heroku-mapper-cname-stage" {
+    zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
+    name = "mapper.staging.mozilla-releng.net"
+    type = "CNAME"
+    ttl = "180"
+    records = ["mapper.staging.mozilla-releng.net.herokudns.com"]
+}
+resource "aws_route53_record" "heroku-treestatus-cname-stage" {
+    zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
+    name = "treestatus.staging.mozilla-releng.net"
+    type = "CNAME"
+    ttl = "180"
+    records = ["nagasaki-25852.herokussl.com"]
+}
+resource "aws_route53_record" "heroku-tooltool-cname-stage" {
     zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
     name = "tooltool.staging.mozilla-releng.net"
     type = "CNAME"
@@ -63,29 +93,92 @@ resource "aws_route53_record" "heroku-tooltool-staging-cname" {
     records = ["shizuoka-60622.herokussl.com"]
 }
 
-# Treestatus app cname uses non-sni ssl due to old versions of python
-# used during the build process
-# See bug 1380177
-resource "aws_route53_record" "heroku-treestatus-cname" {
+
+#########################################
+## Heroku Shipit production app cnames ##
+#########################################
+
+resource "aws_route53_record" "heroku-dashboard-shipit-cname-prod" {
     zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
-    name = "treestatus.mozilla-releng.net"
+    name = "dashboard.shipit.mozilla-releng.net"
     type = "CNAME"
     ttl = "180"
-    records = ["osaka-77459.herokussl.com"]
+    records = ["dashboard.shipit.mozilla-releng.net.herokudns.com"]
 }
-
-# Clobberer app cname uses non-sni ssl due to old versions of python
-# used during the build process
-# See bug 1380177
-resource "aws_route53_record" "heroku-clobberer-cname" {
+resource "aws_route53_record" "heroku-pipeline-shipit-cname-prod" {
     zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
-    name = "clobberer.mozilla-releng.net"
+    name = "pipeline.shipit.mozilla-releng.net"
     type = "CNAME"
     ttl = "180"
-    records = ["saitama-70467.herokussl.com"]
+    records = ["pipeline.shipit.mozilla-releng.net.herokudns.com"]
+}
+resource "aws_route53_record" "heroku-signoff-shipit-cname-prod" {
+    zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
+    name = "signoff.shipit.mozilla-releng.net"
+    type = "CNAME"
+    ttl = "180"
+    records = ["signoff.shipit.mozilla-releng.net.herokudns.com"]
+}
+resource "aws_route53_record" "heroku-taskcluster-shipit-cname-prod" {
+    zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
+    name = "taskcluster.shipit.mozilla-releng.net"
+    type = "CNAME"
+    ttl = "180"
+    records = ["taskcluster.shipit.mozilla-releng.net.herokudns.com"]
+}
+resource "aws_route53_record" "heroku-uplift-shipit-cname-prod" {
+    zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
+    name = "uplift.shipit.mozilla-releng.net"
+    type = "CNAME"
+    ttl = "180"
+    records = ["uplift.shipit.mozilla-releng.net.herokudns.com"]
 }
 
-# Cloudfront Alias names
+
+######################################
+## Heroku Shipit staging app cnames ##
+######################################
+
+resource "aws_route53_record" "heroku-dashboard-shipit-cname-stage" {
+    zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
+    name = "dashboard.shipit.staging.mozilla-releng.net"
+    type = "CNAME"
+    ttl = "180"
+    records = ["dashboard.shipit.staging.mozilla-releng.net.herokudns.com"]
+}
+resource "aws_route53_record" "heroku-pipeline-shipit-cname-stage" {
+    zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
+    name = "pipeline.shipit.staging.mozilla-releng.net"
+    type = "CNAME"
+    ttl = "180"
+    records = ["pipeline.shipit.staging.mozilla-releng.net.herokudns.com"]
+}
+resource "aws_route53_record" "heroku-signoff-shipit-cname-stage" {
+    zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
+    name = "signoff.shipit.staging.mozilla-releng.net"
+    type = "CNAME"
+    ttl = "180"
+    records = ["signoff.shipit.staging.mozilla-releng.net.herokudns.com"]
+}
+resource "aws_route53_record" "heroku-taskcluster-shipit-cname-stage" {
+    zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
+    name = "taskcluster.shipit.staging.mozilla-releng.net"
+    type = "CNAME"
+    ttl = "180"
+    records = ["taskcluster.shipit.staging.mozilla-releng.net.herokudns.com"]
+}
+resource "aws_route53_record" "heroku-uplift-shipit-cname-stage" {
+    zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
+    name = "uplift.shipit.staging.mozilla-releng.net"
+    type = "CNAME"
+    ttl = "180"
+    records = ["uplift.shipit.staging.mozilla-releng.net.herokudns.com"]
+}
+
+############################
+## CloudFront CDN aliases ##
+############################
+
 variable "cloudfront_alias" {
     default = ["docs",
                "docs.staging",
