@@ -30,6 +30,10 @@ includes:
           - vportal1a.ops.scl3.mozilla.com
           - 10.22.240.0/20  # scl3-vpn-net
           - 10.22.20.0/25  # admin1.scl3-vpn
+          - rejh1.srv.releng.scl3.mozilla.com  # 10.26.48.19
+          - rejh2.srv.releng.scl3.mozilla.com  # 10.26.48.20
+          - rejh1.srv.releng.mdc1.mozilla.com  # 10.49.48.100
+          - rejh2.srv.releng.mdc1.mozilla.com  # 10.49.48.101
 
     # observium has universal SNMP access
     observium:
