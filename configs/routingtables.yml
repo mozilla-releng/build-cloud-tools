@@ -3,18 +3,9 @@
 us-west-2:
     default:
         routes:
-            # Amazon routes (check via 'whois')
-            50.16.0.0/14: IGW
-            54.230.0.0/15: IGW
-            54.239.0.0/17: IGW
-            54.240.0.0/12: IGW
-            72.21.192.0/19: IGW
-            176.32.96.0/21: IGW
-            178.236.0.0/21: IGW
-            205.251.192.0/18: IGW
-            207.171.160.0/19: IGW
-            23.20.0.0/14: IGW
-            54.196.0.0/15: IGW
+            # Amazon routes
+            AMAZON: IGW
+
             aus4.mozilla.org: IGW
             aus5.mozilla.org: IGW
 
@@ -23,18 +14,8 @@ us-west-2:
 
     masters:
         routes:
-            # Amazon routes (check via 'whois')
-            50.16.0.0/14: IGW
-            54.230.0.0/15: IGW
-            54.239.0.0/17: IGW
-            54.240.0.0/12: IGW
-            72.21.192.0/19: IGW
-            176.32.96.0/21: IGW
-            178.236.0.0/21: IGW
-            205.251.192.0/18: IGW
-            207.171.160.0/19: IGW
-            23.20.0.0/14: IGW
-            54.196.0.0/15: IGW
+            # Amazon routes
+            AMAZON: IGW
 
             aus4.mozilla.org: IGW
             aus5.mozilla.org: IGW
@@ -59,28 +40,7 @@ us-west-2:
     testers:
         routes:
             # Amazon routes (check via 'whois')
-            50.16.0.0/14: IGW
-            54.230.0.0/15: IGW
-            54.239.0.0/17: IGW
-            54.240.0.0/12: IGW
-            72.21.192.0/19: IGW
-            176.32.96.0/21: IGW
-            178.236.0.0/21: IGW
-            205.251.192.0/18: IGW
-            207.171.160.0/19: IGW
-            23.20.0.0/14: IGW
-            54.196.0.0/15: IGW
-            # cloudfront for ftp/ftp-ssl/archive.m.o
-            54.192.0.0/16: IGW
-            # public-artifacts.taskcluster.net
-            52.84.0.0/15: IGW
-
-            # For graphite
-            carbon.hostedgraphite.com: IGW
-            mozilla.carbon.hostedgraphite.com: IGW
-
-            # Bug 1047550 - gaia try jobs clone gaia from github
-            192.30.252.0/22: IGW
+            AMAZON: IGW
 
             hg.mozilla.org: IGW
             git.mozilla.org: IGW
@@ -93,23 +53,7 @@ us-west-2:
     builders:
         routes:
             # Amazon routes (check via 'whois')
-            50.16.0.0/14: IGW
-            54.230.0.0/15: IGW
-            54.239.0.0/17: IGW
-            54.240.0.0/12: IGW
-            72.21.192.0/19: IGW
-            176.32.96.0/21: IGW
-            178.236.0.0/21: IGW
-            205.251.192.0/18: IGW
-            207.171.160.0/19: IGW
-            23.20.0.0/14: IGW
-            54.196.0.0/15: IGW
-            # cloudfront for ftp/ftp-ssl/archive.m.o
-            54.192.0.0/16: IGW
-
-            # For graphite
-            carbon.hostedgraphite.com: IGW
-            mozilla.carbon.hostedgraphite.com: IGW
+            AMAZON: IGW
 
             # Mozilla stuff
             hg.mozilla.org: IGW
@@ -129,24 +73,8 @@ us-west-2:
             0.0.0.0/0: VGW
     try:
         routes:
-            # Amazon routes (check via 'whois')
-            50.16.0.0/14: IGW
-            54.230.0.0/15: IGW
-            54.239.0.0/17: IGW
-            54.240.0.0/12: IGW
-            72.21.192.0/19: IGW
-            176.32.96.0/21: IGW
-            178.236.0.0/21: IGW
-            205.251.192.0/18: IGW
-            207.171.160.0/19: IGW
-            23.20.0.0/14: IGW
-            54.196.0.0/15: IGW
-            # cloudfront for ftp/ftp-ssl/archive.m.o
-            54.192.0.0/16: IGW
-
-            # For graphite
-            carbon.hostedgraphite.com: IGW
-            mozilla.carbon.hostedgraphite.com: IGW
+            # Amazon routes
+            AMAZON: IGW
 
             # Mozilla stuff
             hg.mozilla.org: IGW
@@ -162,18 +90,8 @@ us-west-2:
 
     signing:
         routes:
-            # Amazon routes (check via 'whois')
-            50.16.0.0/14: IGW
-            54.230.0.0/15: IGW
-            54.239.0.0/17: IGW
-            54.240.0.0/12: IGW
-            72.21.192.0/19: IGW
-            176.32.96.0/21: IGW
-            178.236.0.0/21: IGW
-            205.251.192.0/18: IGW
-            207.171.160.0/19: IGW
-            23.20.0.0/14: IGW
-            54.196.0.0/15: IGW
+            # Amazon routes
+            AMAZON: IGW
 
             aus4.mozilla.org: IGW
             aus5.mozilla.org: IGW
@@ -194,18 +112,8 @@ us-east-1:
 
     masters:
         routes:
-            # Amazon routes (check via 'whois')
-            50.16.0.0/14: IGW
-            54.230.0.0/15: IGW
-            54.239.0.0/17: IGW
-            54.240.0.0/12: IGW
-            72.21.192.0/19: IGW
-            176.32.96.0/21: IGW
-            178.236.0.0/21: IGW
-            205.251.192.0/18: IGW
-            207.171.160.0/19: IGW
-            23.20.0.0/14: IGW
-            54.196.0.0/15: IGW
+            # Amazon routes
+            AMAZON: IGW
 
             aus4.mozilla.org: IGW
             aus5.mozilla.org: IGW
@@ -229,29 +137,8 @@ us-east-1:
 
     testers:
         routes:
-            # Amazon routes (check via 'whois')
-            50.16.0.0/14: IGW
-            54.230.0.0/15: IGW
-            54.239.0.0/17: IGW
-            54.240.0.0/12: IGW
-            72.21.192.0/19: IGW
-            176.32.96.0/21: IGW
-            178.236.0.0/21: IGW
-            205.251.192.0/18: IGW
-            207.171.160.0/19: IGW
-            23.20.0.0/14: IGW
-            54.196.0.0/15: IGW
-            # cloudfront for ftp/ftp-ssl/archive.m.o
-            54.192.0.0/16: IGW
-            # public-artifacts.taskcluster.net
-            52.84.0.0/15: IGW
-
-            # For graphite
-            carbon.hostedgraphite.com: IGW
-            mozilla.carbon.hostedgraphite.com: IGW
-
-            # Bug 1047550 - gaia try jobs clone gaia from github
-            192.30.252.0/22: IGW
+            # Amazon routes
+            AMAZON: IGW
 
             hg.mozilla.org: IGW
             git.mozilla.org: IGW
@@ -263,24 +150,8 @@ us-east-1:
 
     builders:
         routes:
-            # Amazon routes (check via 'whois')
-            50.16.0.0/14: IGW
-            54.230.0.0/15: IGW
-            54.239.0.0/17: IGW
-            54.240.0.0/12: IGW
-            72.21.192.0/19: IGW
-            176.32.96.0/21: IGW
-            178.236.0.0/21: IGW
-            205.251.192.0/18: IGW
-            207.171.160.0/19: IGW
-            23.20.0.0/14: IGW
-            54.196.0.0/15: IGW
-            # cloudfront for ftp/ftp-ssl/archive.m.o
-            54.192.0.0/16: IGW
-
-            # For graphite
-            carbon.hostedgraphite.com: IGW
-            mozilla.carbon.hostedgraphite.com: IGW
+            # Amazon routes
+            AMAZON: IGW
 
             # Mozilla stuff
             hg.mozilla.org: IGW
@@ -301,24 +172,8 @@ us-east-1:
 
     try:
         routes:
-            # Amazon routes (check via 'whois')
-            50.16.0.0/14: IGW
-            54.230.0.0/15: IGW
-            54.239.0.0/17: IGW
-            54.240.0.0/12: IGW
-            72.21.192.0/19: IGW
-            176.32.96.0/21: IGW
-            178.236.0.0/21: IGW
-            205.251.192.0/18: IGW
-            207.171.160.0/19: IGW
-            23.20.0.0/14: IGW
-            54.196.0.0/15: IGW
-            # cloudfront for ftp/ftp-ssl/archive.m.o
-            54.192.0.0/16: IGW
-
-            # For graphite
-            carbon.hostedgraphite.com: IGW
-            mozilla.carbon.hostedgraphite.com: IGW
+            # Amazon routes
+            AMAZON: IGW
 
             # Mozilla stuff
             hg.mozilla.org: IGW
@@ -347,18 +202,8 @@ us-east-1:
 
     signing:
         routes:
-            # Amazon routes (check via 'whois')
-            50.16.0.0/14: IGW
-            54.230.0.0/15: IGW
-            54.239.0.0/17: IGW
-            54.240.0.0/12: IGW
-            72.21.192.0/19: IGW
-            176.32.96.0/21: IGW
-            178.236.0.0/21: IGW
-            205.251.192.0/18: IGW
-            207.171.160.0/19: IGW
-            23.20.0.0/14: IGW
-            54.196.0.0/15: IGW
+            # Amazon routes
+            AMAZON: IGW
 
             aus4.mozilla.org: IGW
             aus5.mozilla.org: IGW

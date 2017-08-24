@@ -4,6 +4,9 @@ import yaml
 import dns.resolver
 import logging
 import sys
+import json
+import urllib
+from IPy import IP
 
 log = logging.getLogger(__name__)
 _dns_cache = {}
@@ -17,6 +20,13 @@ def load_config(filename):
     return yaml.load(open(filename))
 
 
+def load_aws_ranges():
+    url = "https://ip-ranges.amazonaws.com/ip-ranges.json"
+    ranges = json.load(urllib.urlopen(url))
+    return [p['ip_prefix'] for p in ranges['prefixes'] if
+            (p['service'] in ('S3', 'CLOUDFRONT') and p['region'] in ('us-east-1', 'us-west-1', 'us-west-2'))]
+
+
 def resolve_host(hostname):
     if hostname in _dns_cache:
         return _dns_cache[hostname]
@@ -27,7 +37,7 @@ def resolve_host(hostname):
     return ips
 
 
-def sync_tables(conn, my_tables, remote_tables):
+def sync_tables(conn, my_tables, remote_tables, aws_ranges):
     # Check that remote tables don't have overlapping names
     seen_names = set()
     for t in remote_tables[:]:
@@ -73,6 +83,13 @@ def sync_tables(conn, my_tables, remote_tables):
         # Resolve hostnames
         to_delete = set()
         to_add = set()
+        # Add Amazon routes if required
+        if 'AMAZON' in my_t['routes']:
+            log.info('Adding amazon routes to %s', name)
+            for prefix in aws_ranges:
+                my_t['routes'][prefix] = 'IGW'
+            del my_t['routes']['AMAZON']
+
         for cidr, dest in my_t['routes'].iteritems():
             if "/" not in cidr:
                 for ip in resolve_host(cidr):
@@ -111,6 +128,11 @@ def sync_tables(conn, my_tables, remote_tables):
         extra_routes = remote_routes - my_routes
         for cidr, gateway_id, instance_id in extra_routes:
             log.info("%s - deleting route to %s via %s %s", t.id, cidr, gateway_id, instance_id)
+
+            for my_cidr, my_gw, my_id in my_routes:
+                if IP(cidr) in IP(my_cidr) and my_gw == gateway_id:
+                    log.info('this route is covered by %s', my_cidr)
+
             if raw_input("delete? (y/N) ") == 'y':
                 conn.delete_route(t.id, cidr)
 
@@ -129,6 +151,9 @@ def main():
     log.debug("Parsing file")
     rt_defs = load_config(sys.argv[1])
 
+    log.debug("Getting AWS IP ranges")
+    aws_ranges = load_aws_ranges()
+
     regions = set(rt_defs.keys())
 
     log.info("Working in regions %s", regions)
@@ -141,7 +166,7 @@ def main():
         # Compare vs. our configs
         my_tables = rt_defs[region]
 
-        sync_tables(conn, my_tables, remote_tables)
+        sync_tables(conn, my_tables, remote_tables, aws_ranges)
 
 
 if __name__ == '__main__':
