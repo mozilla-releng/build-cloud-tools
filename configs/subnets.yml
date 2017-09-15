@@ -48,6 +48,10 @@ us-west-2:
             name: signing
             routing_table: signing
 
+        10.132.31.0/24:
+            name: upload-nat
+            routing_table: upload-nat
+
 
 us-east-1:
     vpc-b42100df:
@@ -114,3 +118,7 @@ us-east-1:
         10.134.30.0/24:
             name: signing
             routing_table: signing
+
+        10.134.31.0/24:
+            name: upload-nat
+            routing_table: upload-nat

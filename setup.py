@@ -33,6 +33,14 @@ setup(
         'cfn-pyplates>=0.5.0',
         'IPy==0.81',
         'redo==1.4',
+        'boto3==1.4.7',
+        'botocore==1.7.7',
+        'docutils==0.14',
+        'futures==3.1.1',
+        'jmespath==0.9.3',
+        'python-dateutil==2.6.0',
+        's3transfer==0.1.11',
+        'six==1.10.0',
     ],
     extras_require={
         'test': [

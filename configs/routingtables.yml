@@ -22,9 +22,9 @@ us-west-2:
             upload.ffxbld.productdelivery.prod.mozaws.net: IGW
             upload.trybld.productdelivery.prod.mozaws.net: IGW
             upload.tbirdbld.productdelivery.prod.mozaws.net: IGW
-            upload.ffxbld.productdelivery.stage.mozaws.net: IGW
-            upload.trybld.productdelivery.stage.mozaws.net: IGW
-            upload.tbirdbld.productdelivery.stage.mozaws.net: IGW
+            upload.ffxbld.productdelivery.stage.mozaws.net: NAT
+            upload.trybld.productdelivery.stage.mozaws.net: NAT
+            upload.tbirdbld.productdelivery.stage.mozaws.net: NAT
             # seabld only here to appease firewall-test complexity, no harm
             upload.seabld.productdelivery.prod.mozaws.net: IGW
             upload.seabld.productdelivery.stage.mozaws.net: IGW
@@ -63,8 +63,8 @@ us-west-2:
             upload.ffxbld.productdelivery.prod.mozaws.net: IGW
             upload.tbirdbld.productdelivery.prod.mozaws.net: IGW
             upload.seabld.productdelivery.prod.mozaws.net: IGW
-            upload.ffxbld.productdelivery.stage.mozaws.net: IGW
-            upload.tbirdbld.productdelivery.stage.mozaws.net: IGW
+            upload.ffxbld.productdelivery.stage.mozaws.net: NAT
+            upload.tbirdbld.productdelivery.stage.mozaws.net: NAT
             upload.seabld.productdelivery.stage.mozaws.net: IGW
             crash-stats.mozilla.com: IGW
             queue.taskcluster.net: IGW
@@ -82,7 +82,7 @@ us-west-2:
             aus4.mozilla.org: IGW
             aus5.mozilla.org: IGW
             upload.trybld.productdelivery.prod.mozaws.net: IGW
-            upload.trybld.productdelivery.stage.mozaws.net: IGW
+            upload.trybld.productdelivery.stage.mozaws.net: NAT
             queue.taskcluster.net: IGW
 
             10.132.0.0/16: local
@@ -104,6 +104,12 @@ us-west-2:
             10.132.0.0/16: local
             0.0.0.0/0: VGW
 
+    upload-nat:
+        routes:
+            10.132.0.0/16: local
+            0.0.0.0/0: IGW
+
+
 us-east-1:
     default:
         routes:
@@ -120,9 +126,9 @@ us-east-1:
             upload.ffxbld.productdelivery.prod.mozaws.net: IGW
             upload.trybld.productdelivery.prod.mozaws.net: IGW
             upload.tbirdbld.productdelivery.prod.mozaws.net: IGW
-            upload.ffxbld.productdelivery.stage.mozaws.net: IGW
-            upload.trybld.productdelivery.stage.mozaws.net: IGW
-            upload.tbirdbld.productdelivery.stage.mozaws.net: IGW
+            upload.ffxbld.productdelivery.stage.mozaws.net: NAT
+            upload.trybld.productdelivery.stage.mozaws.net: NAT
+            upload.tbirdbld.productdelivery.stage.mozaws.net: NAT
             # seabld only here to appease firewall-test complexity, no harm
             upload.seabld.productdelivery.prod.mozaws.net: IGW
             upload.seabld.productdelivery.stage.mozaws.net: IGW
@@ -161,8 +167,8 @@ us-east-1:
             upload.ffxbld.productdelivery.prod.mozaws.net: IGW
             upload.tbirdbld.productdelivery.prod.mozaws.net: IGW
             upload.seabld.productdelivery.prod.mozaws.net: IGW
-            upload.ffxbld.productdelivery.stage.mozaws.net: IGW
-            upload.tbirdbld.productdelivery.stage.mozaws.net: IGW
+            upload.ffxbld.productdelivery.stage.mozaws.net: NAT
+            upload.tbirdbld.productdelivery.stage.mozaws.net: NAT
             upload.seabld.productdelivery.stage.mozaws.net: IGW
             crash-stats.mozilla.com: IGW
             queue.taskcluster.net: IGW
@@ -181,7 +187,7 @@ us-east-1:
             aus4.mozilla.org: IGW
             aus5.mozilla.org: IGW
             upload.trybld.productdelivery.prod.mozaws.net: IGW
-            upload.trybld.productdelivery.stage.mozaws.net: IGW
+            upload.trybld.productdelivery.stage.mozaws.net: NAT
             queue.taskcluster.net: IGW
 
             10.134.0.0/16: local
@@ -215,3 +221,8 @@ us-east-1:
 
             10.134.0.0/16: local
             0.0.0.0/0: VGW
+
+    upload-nat:
+        routes:
+            10.134.0.0/16: local
+            0.0.0.0/0: IGW

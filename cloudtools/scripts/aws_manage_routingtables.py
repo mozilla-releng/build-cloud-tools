@@ -37,6 +37,14 @@ def resolve_host(hostname):
     return ips
 
 
+def get_nat_gateway(region):
+    # development shifted from boto to boto3 before NAT gateways were added to AWS :/
+    # https://github.com/boto/boto/issues/3443
+    import boto3
+    client = boto3.client('ec2', region_name=region)
+    return client.describe_nat_gateways()['NatGateways'][0]
+
+
 def sync_tables(conn, my_tables, remote_tables, aws_ranges):
     # Check that remote tables don't have overlapping names
     seen_names = set()
@@ -79,6 +87,7 @@ def sync_tables(conn, my_tables, remote_tables, aws_ranges):
         my_routes = set()
         IGW = None
         VGW = None
+        NAT = None
 
         # Resolve hostnames
         to_delete = set()
@@ -117,6 +126,12 @@ def sync_tables(conn, my_tables, remote_tables, aws_ranges):
                 if VGW is None:
                     VGW = conn.get_all_vpn_gateways()[0]
                 gateway_id = VGW.id
+            elif dest == "NAT":
+                # Use our VPC's NAT gateway
+                if NAT is None:
+                    log.info('Looking up NAT gateway')
+                    NAT = get_nat_gateway(conn.region.name)
+                gateway_id = NAT['NatGatewayId']
             elif dest == 'local':
                 gateway_id = 'local'
             elif dest and dest.startswith("i-"):
