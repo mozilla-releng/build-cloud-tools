@@ -1340,80 +1340,6 @@ function Set-IniValue {
   }
 }
 
-function Install-BundleClone {
-  param (
-    [string] $version = 'd1e664f1dc8d', # latest: 'default'
-    [string] $url = ('https://hg.mozilla.org/hgcustom/version-control-tools/raw-file/{0}/hgext/bundleclone/__init__.py' -f $version),
-    [string] $path = [IO.Path]::Combine([IO.Path]::Combine(('{0}\' -f $env:SystemDrive), 'mozilla-build'), 'hg'),
-    [string] $filename = 'bundleclone.py'
-  )
-  begin {
-    Write-Log -message ("{0} :: Function started" -f $($MyInvocation.MyCommand.Name)) -severity 'DEBUG'
-  }
-  process {
-    if ((Test-Path ('{0}\Mercurial' -f $env:ProgramFiles)) -and !(Test-Path $path)) {
-      Create-SymbolicLink -link $path -target ('{0}\Mercurial' -f $env:ProgramFiles)
-    }
-    if (Test-Path $path) {
-      $target = ('{0}\{1}' -f $path, $filename)
-      if (Test-Path $target) {
-        Remove-Item -path $target -force
-      }
-      Write-Log -message ('installing bundleclone (version: {0}) to: {1}' -f $version, $target) -severity 'INFO'
-      (New-Object Net.WebClient).DownloadFile($url, $target)
-    }
-  }
-  end {
-    Write-Log -message ("{0} :: Function ended" -f $($MyInvocation.MyCommand.Name)) -severity 'DEBUG'
-  }
-}
-
-function Enable-CloneBundle {
-  param (
-    [string] $hgrc = [IO.Path]::Combine([IO.Path]::Combine([IO.Path]::Combine(('{0}\' -f $env:SystemDrive), 'mozilla-build'), 'hg'), 'Mercurial.ini')
-  )
-  begin {
-    Write-Log -message ("{0} :: Function started" -f $($MyInvocation.MyCommand.Name)) -severity 'DEBUG'
-  }
-  process {
-    if (!(Test-Path (Split-Path $hgrc) -PathType Container)) {
-      Write-Log -message ("{0} :: detected missing mercurial installation" -f $($MyInvocation.MyCommand.Name)) -severity 'ERROR'
-    } else {
-      Remove-Item -path $hgrc -force
-      Out-IniFile -FilePath $hgrc -encoding 'UTF8' -InputObject @{
-        "ui"=@{
-          "traceback"="True";
-          "username"="Mozilla Release Engineering <release@mozilla.com>";
-          "clonebundleprefers"="VERSION=packed1"
-        };
-        "web"=@{
-          "cacerts"="C:\mozilla-build\hg\cacert.pem"
-        };
-        "hostfingerprints"=@{
-          "hg.mozilla.org"="73:7F:EF:AB:68:0F:49:3F:88:91:F0:B7:06:69:FD:8F:F2:55:C9:56"
-        };
-        "format"=@{
-          "dotencode"="False"
-        };
-        "diff"=@{
-          "git"="True";
-          "ignoreblanklines"="True";
-          "showfunc"="True"
-        };
-        "extensions"=@{
-          "rebase"="";
-          "mq"="";
-          "purge"="";
-          "share"=""
-        }
-      }
-    }
-  }
-  end {
-    Write-Log -message ("{0} :: Function ended" -f $($MyInvocation.MyCommand.Name)) -severity 'DEBUG'
-  }
-}
-
 function Create-SymbolicLink {
   param (
     [string] $link,
@@ -1649,7 +1575,6 @@ function Install-BasePrerequisites {
     [string] $domain = 'releng.use1.mozilla.com'
   )
   Install-RelOpsPrerequisites -aggregator $aggregator
-  #Enable-CloneBundle
   #Install-MozillaBuildAndPrerequisites
   #Install-BuildBot
   #Install-ToolTool
