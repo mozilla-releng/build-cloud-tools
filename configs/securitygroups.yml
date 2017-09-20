@@ -15,9 +15,21 @@ includes:
         hosts:
           - 0.0.0.0/0
 
-    # administrative hosts have unrestricted access on all ports
-    admin-access:
-        proto: -1
+    jumphost-admin-access:
+        proto: tcp
+        ports: [22, 3389, 5900]
+        hosts:
+          - rejh1.srv.releng.scl3.mozilla.com  # 10.26.48.19
+          - rejh2.srv.releng.scl3.mozilla.com  # 10.26.48.20
+          - rejh1.srv.releng.mdc1.mozilla.com  # 10.49.48.100
+          - rejh2.srv.releng.mdc1.mozilla.com  # 10.49.48.101
+          # TODO: REMOVE vpn and IT jumphost direct access
+          - 10.22.240.0/20  # scl3-vpn-net
+          - ssh1.corpdmz.scl3.mozilla.com
+
+    it-admin-access:
+        proto: tcp
+        ports: [22, 3389, 5900]
         hosts:
           - 10.22.75.6/31  # admin1a/b
           - admin1.private.scl3.mozilla.com
@@ -25,15 +37,20 @@ includes:
           - openvpn1.stage.corpdmz.scl3.mozilla.com
           - ssh1.corpdmz.scl3.mozilla.com
           - ssh1.stage.corpdmz.scl3.mozilla.com
-          - nagios1.private.releng.scl3.mozilla.com  # note: includes tcp/5666
-          - nagios1.private.releng.mdc1.mozilla.com  # note: includes tcp/5666
-          - vportal1a.ops.scl3.mozilla.com
           - 10.22.240.0/20  # scl3-vpn-net
           - 10.22.20.0/25  # admin1.scl3-vpn
-          - rejh1.srv.releng.scl3.mozilla.com  # 10.26.48.19
-          - rejh2.srv.releng.scl3.mozilla.com  # 10.26.48.20
-          - rejh1.srv.releng.mdc1.mozilla.com  # 10.49.48.100
-          - rejh2.srv.releng.mdc1.mozilla.com  # 10.49.48.101
+
+    nagios-any:
+        proto: -1
+        hosts:
+          - nagios1.private.releng.scl3.mozilla.com  # note: includes tcp/5666
+          - nagios1.private.releng.mdc1.mozilla.com  # note: includes tcp/5666
+
+    universal:
+        - include: aws-manager-ssh
+        - include: jumphost-admin-access
+        - include: nagios-any
+        - include: global-ping
 
     # infra puppetizes hosts by SSHing to them from the master
     infra-puppetize:
@@ -50,7 +67,7 @@ includes:
             - {include: slaveapi-servers}
             - aws-manager1.srv.releng.scl3.mozilla.com
             - aws-manager2.srv.releng.scl3.mozilla.com
-        - include: admin-access
+        - include: jumphost-admin-access
         - include: global-ping
 
     outbound-http-https:
@@ -353,9 +370,7 @@ buildbot-master:
             - buildduty-tools.srv.releng.usw2.mozilla.com
 
         # generic stuff
-        - include: aws-manager-ssh
-        - include: admin-access
-        - include: global-ping
+        - include: universal
     outbound:
         # TODO: bug 1210137
         - include: global-any
@@ -376,6 +391,7 @@ puppet-master:
             - 10.132.0.0/16
             - 10.134.0.0/16
 
+        # TODO: REMOVE; ONLY NEEDED FOR DISTINGUSHED MASTERS
         # SSH from other masters
         - proto: tcp
           ports: [22]
@@ -389,9 +405,7 @@ puppet-master:
             - releng-puppet1.srv.releng.usw2.mozilla.com
 
         # generic stuff
-        - include: aws-manager-ssh
-        - include: admin-access
-        - include: global-ping
+        - include: universal
     outbound:
         # TODO: bug 1210137
         - include: global-any
@@ -406,8 +420,7 @@ blobber:
         - proto: tcp
           ports: [443]
           hosts: {include: slave-vlans}
-        - include: admin-access
-        - include: global-ping
+        - include: universal
     outbound:
         # TODO: bug 1210137
         - include: global-any
@@ -419,9 +432,9 @@ nagios:
         us-west-2: vpc-cd63f2a4
         us-east-1: vpc-b42100df
     inbound:
-        - include: admin-access
+        - include: universal
+        - include: it-admin-access
         - include: infra-puppetize
-        - include: global-ping
     outbound:
         - include: global-any
 
@@ -443,9 +456,7 @@ proxxy-vpc-use1:
             - {include: test5-use1}
             - {include: try-use1}
             - {include: try2-use1}
-        - include: aws-manager-ssh
-        - include: admin-access
-        - include: global-ping
+        - include: universal
     outbound:
         # TODO: bug 1210137
         - include: global-any
@@ -464,9 +475,7 @@ proxxy-vpc-usw2:
             - {include: test3-usw2}
             - {include: test4-usw2}
             - {include: try-usw2}
-        - include: aws-manager-ssh
-        - include: admin-access
-        - include: global-ping
+        - include: universal
     outbound:
         # TODO: bug 1210137
         - include: global-any
@@ -485,9 +494,7 @@ LogAggregators:
             - 10.130.0.0/16
             - 10.132.0.0/16
             - 10.134.0.0/16
-        - include: aws-manager-ssh
-        - include: admin-access
-        - include: global-ping
+        - include: universal
     outbound:
         # TODO: bug 1210137
         - include: global-any
@@ -499,9 +506,7 @@ VCSSync:
         us-west-2: vpc-cd63f2a4
         us-east-1: vpc-b42100df
     inbound:
-        - include: aws-manager-ssh
-        - include: admin-access
-        - include: global-ping
+        - include: universal
     outbound:
         # TODO: bug 1210137
         - include: global-any
@@ -513,14 +518,7 @@ signing-worker:
         us-west-2: vpc-cd63f2a4
         us-east-1: vpc-b42100df
     inbound:
-        - proto: tcp
-          ports:
-            - 22  # ssh
-          hosts:
-          - 10.22.240.0/20  # scl3-vpn-net
-        - include: admin-access
-        - include: global-ping
-        - include: aws-manager-ssh
+        - include: universal
     outbound:
         # TODO: bug 1210137
         - include: global-any
@@ -531,14 +529,7 @@ balrogworker:
         us-east-1: vpc-b42100df
         us-west-2: vpc-cd63f2a4
     inbound:
-        - proto: tcp
-          ports:
-            - 22  # ssh
-          hosts:
-          - 10.22.240.0/20
-        - include: admin-access
-        - include: global-ping
-        - include: aws-manager-ssh
+        - include: universal
     outbound:
         - include: global-any
 
@@ -548,14 +539,7 @@ beetmoverworker:
         us-east-1: vpc-b42100df
         us-west-2: vpc-cd63f2a4
     inbound:
-        - proto: tcp
-          ports:
-            - 22  # ssh
-          hosts:
-          - 10.22.240.0/20
-        - include: admin-access
-        - include: global-ping
-        - include: aws-manager-ssh
+        - include: universal
     outbound:
         - include: global-any
 
@@ -564,14 +548,7 @@ pushapkworker:
     regions:
         us-east-1: vpc-b42100df
     inbound:
-        - proto: tcp
-          ports:
-            - 22  # ssh
-          hosts:
-            - 10.22.240.0/20
-        - include: admin-access
-        - include: global-ping
-        - include: aws-manager-ssh
+        - include: universal
     outbound:
         - include: global-any
 
@@ -581,13 +558,6 @@ binarytransparencyworker:
         us-east-1: vpc-b42100df
         us-west-2: vpc-cd63f2a4
     inbound:
-        - proto: tcp
-          ports:
-            - 22  # ssh
-          hosts:
-          - 10.22.240.0/20
-        - include: admin-access
-        - include: global-ping
-        - include: aws-manager-ssh
+        - include: universal
     outbound:
         - include: global-any
