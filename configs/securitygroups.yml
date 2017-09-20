@@ -35,13 +35,6 @@ includes:
           - rejh1.srv.releng.mdc1.mozilla.com  # 10.49.48.100
           - rejh2.srv.releng.mdc1.mozilla.com  # 10.49.48.101
 
-    # observium has universal SNMP access
-    observium:
-        proto: udp
-        ports: [161]
-        hosts:
-          - observium2.private.scl3.mozilla.com
-
     # infra puppetizes hosts by SSHing to them from the master
     infra-puppetize:
         proto: tcp
@@ -58,7 +51,6 @@ includes:
             - aws-manager1.srv.releng.scl3.mozilla.com
             - aws-manager2.srv.releng.scl3.mozilla.com
         - include: admin-access
-        - include: observium
         - include: global-ping
 
     outbound-http-https:
@@ -363,7 +355,6 @@ buildbot-master:
         # generic stuff
         - include: aws-manager-ssh
         - include: admin-access
-        - include: observium
         - include: global-ping
     outbound:
         # TODO: bug 1210137
@@ -400,7 +391,6 @@ puppet-master:
         # generic stuff
         - include: aws-manager-ssh
         - include: admin-access
-        - include: observium
         - include: global-ping
     outbound:
         # TODO: bug 1210137
@@ -417,7 +407,6 @@ blobber:
           ports: [443]
           hosts: {include: slave-vlans}
         - include: admin-access
-        - include: observium
         - include: global-ping
     outbound:
         # TODO: bug 1210137
@@ -431,7 +420,6 @@ nagios:
         us-east-1: vpc-b42100df
     inbound:
         - include: admin-access
-        - include: observium
         - include: infra-puppetize
         - include: global-ping
     outbound:
@@ -457,7 +445,6 @@ proxxy-vpc-use1:
             - {include: try2-use1}
         - include: aws-manager-ssh
         - include: admin-access
-        - include: observium
         - include: global-ping
     outbound:
         # TODO: bug 1210137
@@ -479,7 +466,6 @@ proxxy-vpc-usw2:
             - {include: try-usw2}
         - include: aws-manager-ssh
         - include: admin-access
-        - include: observium
         - include: global-ping
     outbound:
         # TODO: bug 1210137
@@ -501,7 +487,6 @@ LogAggregators:
             - 10.134.0.0/16
         - include: aws-manager-ssh
         - include: admin-access
-        - include: observium
         - include: global-ping
     outbound:
         # TODO: bug 1210137
@@ -516,7 +501,6 @@ VCSSync:
     inbound:
         - include: aws-manager-ssh
         - include: admin-access
-        - include: observium
         - include: global-ping
     outbound:
         # TODO: bug 1210137
@@ -535,7 +519,6 @@ signing-worker:
           hosts:
           - 10.22.240.0/20  # scl3-vpn-net
         - include: admin-access
-        - include: observium
         - include: global-ping
         - include: aws-manager-ssh
     outbound:
@@ -554,7 +537,6 @@ balrogworker:
           hosts:
           - 10.22.240.0/20
         - include: admin-access
-        - include: observium
         - include: global-ping
         - include: aws-manager-ssh
     outbound:
@@ -572,7 +554,6 @@ beetmoverworker:
           hosts:
           - 10.22.240.0/20
         - include: admin-access
-        - include: observium
         - include: global-ping
         - include: aws-manager-ssh
     outbound:
@@ -589,7 +570,6 @@ pushapkworker:
           hosts:
             - 10.22.240.0/20
         - include: admin-access
-        - include: observium
         - include: global-ping
         - include: aws-manager-ssh
     outbound:
@@ -607,7 +587,6 @@ binarytransparencyworker:
           hosts:
           - 10.22.240.0/20
         - include: admin-access
-        - include: observium
         - include: global-ping
         - include: aws-manager-ssh
     outbound:
