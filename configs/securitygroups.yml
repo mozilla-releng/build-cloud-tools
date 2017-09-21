@@ -40,16 +40,17 @@ includes:
           - 10.22.240.0/20  # scl3-vpn-net
           - 10.22.20.0/25  # admin1.scl3-vpn
 
-    nagios-any:
-        proto: -1
+    nagios-nrpe:
+        proto: tcp
+        ports: [5666]
         hosts:
-          - nagios1.private.releng.scl3.mozilla.com  # note: includes tcp/5666
-          - nagios1.private.releng.mdc1.mozilla.com  # note: includes tcp/5666
+          - nagios1.private.releng.scl3.mozilla.com
+          - nagios1.private.releng.mdc1.mozilla.com
 
     universal:
         - include: aws-manager-ssh
         - include: jumphost-admin-access
-        - include: nagios-any
+        - include: nagios-nrpe
         - include: global-ping
 
     # infra puppetizes hosts by SSHing to them from the master
@@ -390,6 +391,8 @@ puppet-master:
             - 10.130.0.0/16
             - 10.132.0.0/16
             - 10.134.0.0/16
+            - nagios1.private.releng.scl3.mozilla.com
+            - nagios1.private.releng.mdc1.mozilla.com
 
         # Only distinguished masters need inbound ssh from other masters
 
@@ -445,6 +448,8 @@ proxxy-vpc-use1:
             - {include: test5-use1}
             - {include: try-use1}
             - {include: try2-use1}
+            - nagios1.private.releng.scl3.mozilla.com
+            - nagios1.private.releng.mdc1.mozilla.com
         - include: universal
     outbound:
         # TODO: bug 1210137
@@ -464,6 +469,8 @@ proxxy-vpc-usw2:
             - {include: test3-usw2}
             - {include: test4-usw2}
             - {include: try-usw2}
+            - nagios1.private.releng.scl3.mozilla.com
+            - nagios1.private.releng.mdc1.mozilla.com
         - include: universal
     outbound:
         # TODO: bug 1210137
@@ -483,6 +490,8 @@ LogAggregators:
             - 10.130.0.0/16
             - 10.132.0.0/16
             - 10.134.0.0/16
+            - nagios1.private.releng.scl3.mozilla.com
+            - nagios1.private.releng.mdc1.mozilla.com
         - include: universal
     outbound:
         # TODO: bug 1210137
