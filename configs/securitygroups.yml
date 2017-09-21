@@ -27,19 +27,6 @@ includes:
           - 10.22.240.0/20  # scl3-vpn-net
           - ssh1.corpdmz.scl3.mozilla.com
 
-    it-admin-access:
-        proto: tcp
-        ports: [22, 3389, 5900]
-        hosts:
-          - 10.22.75.6/31  # admin1a/b
-          - admin1.private.scl3.mozilla.com
-          - openvpn1.corpdmz.scl3.mozilla.com
-          - openvpn1.stage.corpdmz.scl3.mozilla.com
-          - ssh1.corpdmz.scl3.mozilla.com
-          - ssh1.stage.corpdmz.scl3.mozilla.com
-          - 10.22.240.0/20  # scl3-vpn-net
-          - 10.22.20.0/25  # admin1.scl3-vpn
-
     nagios-nrpe:
         proto: tcp
         ports: [5666]
@@ -52,13 +39,6 @@ includes:
         - include: jumphost-admin-access
         - include: nagios-nrpe
         - include: global-ping
-
-    # infra puppetizes hosts by SSHing to them from the master
-    infra-puppetize:
-        proto: tcp
-        ports: [22]
-        hosts:
-          - puppet1.private.scl3.mozilla.com
 
     # all slave VLANs look the same
     slave-vlan-inbound:
@@ -415,19 +395,6 @@ blobber:
         - include: universal
     outbound:
         # TODO: bug 1210137
-        - include: global-any
-
-nagios:
-    description: security group for nagios servers
-    regions:
-        us-west-1: vpc-7a7dd613
-        us-west-2: vpc-cd63f2a4
-        us-east-1: vpc-b42100df
-    inbound:
-        - include: universal
-        - include: it-admin-access
-        - include: infra-puppetize
-    outbound:
         - include: global-any
 
 # proxxy is configured per-region; these two stanzas should be kept parallel
