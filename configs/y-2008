@@ -15,6 +15,7 @@
         "security_group_ids": [
             "sg-718b1214"
         ],
+        "loaner_security_group_ids": ["sg-d1519eac"],
         "instance_type": "c3.4xlarge",
         "distro": "win2008",
         "ssh_key": "aws-releng",
@@ -59,6 +60,7 @@
         "security_group_ids": [
             "sg-3aaa095f"
         ],
+        "loaner_security_group_ids": ["sg-d1519eac"],
         "instance_type": "c3.4xlarge",
         "distro": "win2008",
         "ssh_key": "aws-releng",

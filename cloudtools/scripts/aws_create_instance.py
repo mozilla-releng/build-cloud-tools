@@ -106,9 +106,13 @@ def create_instance(name, config, region, key_name, ssh_key, instance_data,
 
             bdm[device] = bd
 
+    security_group_ids = config.get('security_group_ids', [])
+    if loaned_to:
+        security_group_ids += config.get('loaner_security_group_ids', [])
+
     interfaces = make_instance_interfaces(
         region, instance_data['hostname'], ignore_subnet_check,
-        config.get('subnet_ids'), config.get('security_group_ids', []),
+        config.get('subnet_ids'), security_group_ids,
         config.get("use_public_ip"))
 
     keep_going, attempt = True, 1
