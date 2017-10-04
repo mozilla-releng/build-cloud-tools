@@ -35,10 +35,10 @@ includes:
           - nagios1.private.releng.mdc1.mozilla.com
 
     universal:
-        - include: aws-manager-ssh
-        - include: jumphost-admin-access
-        - include: nagios-nrpe
-        - include: global-ping
+        include: aws-manager-ssh
+        include: jumphost-admin-access
+        include: nagios-nrpe
+        include: global-ping
 
     # all slave VLANs look the same
     slave-vlan-inbound:
