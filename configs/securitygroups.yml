@@ -34,12 +34,6 @@ includes:
           - nagios1.private.releng.scl3.mozilla.com
           - nagios1.private.releng.mdc1.mozilla.com
 
-    universal:
-        - include: aws-manager-ssh
-        - include: jumphost-admin-access
-        - include: nagios-nrpe
-        - include: global-ping
-
     # all slave VLANs look the same
     slave-vlan-inbound:
         - proto: tcp
@@ -364,7 +358,10 @@ buildbot-master:
             - buildduty-tools.srv.releng.usw2.mozilla.com
 
         # generic stuff
-        - include: universal
+        - include: aws-manager-ssh
+        - include: jumphost-admin-access
+        - include: nagios-nrpe
+        - include: global-ping
     outbound:
         # TODO: bug 1210137
         - include: global-any
@@ -390,7 +387,10 @@ puppet-master:
         # Only distinguished masters need inbound ssh from other masters
 
         # generic stuff
-        - include: universal
+        - include: aws-manager-ssh
+        - include: jumphost-admin-access
+        - include: nagios-nrpe
+        - include: global-ping
     outbound:
         # TODO: bug 1210137
         - include: global-any
@@ -405,7 +405,10 @@ blobber:
         - proto: tcp
           ports: [443]
           hosts: {include: slave-vlans}
-        - include: universal
+        - include: aws-manager-ssh
+        - include: jumphost-admin-access
+        - include: nagios-nrpe
+        - include: global-ping
     outbound:
         # TODO: bug 1210137
         - include: global-any
@@ -430,7 +433,10 @@ proxxy-vpc-use1:
             - {include: try2-use1}
             - nagios1.private.releng.scl3.mozilla.com
             - nagios1.private.releng.mdc1.mozilla.com
-        - include: universal
+        - include: aws-manager-ssh
+        - include: jumphost-admin-access
+        - include: nagios-nrpe
+        - include: global-ping
     outbound:
         # TODO: bug 1210137
         - include: global-any
@@ -451,7 +457,10 @@ proxxy-vpc-usw2:
             - {include: try-usw2}
             - nagios1.private.releng.scl3.mozilla.com
             - nagios1.private.releng.mdc1.mozilla.com
-        - include: universal
+        - include: aws-manager-ssh
+        - include: jumphost-admin-access
+        - include: nagios-nrpe
+        - include: global-ping
     outbound:
         # TODO: bug 1210137
         - include: global-any
@@ -472,7 +481,10 @@ LogAggregators:
             - 10.134.0.0/16
             - nagios1.private.releng.scl3.mozilla.com
             - nagios1.private.releng.mdc1.mozilla.com
-        - include: universal
+        - include: aws-manager-ssh
+        - include: jumphost-admin-access
+        - include: nagios-nrpe
+        - include: global-ping
     outbound:
         # TODO: bug 1210137
         - include: global-any
@@ -484,7 +496,10 @@ VCSSync:
         us-west-2: vpc-cd63f2a4
         us-east-1: vpc-b42100df
     inbound:
-        - include: universal
+        - include: aws-manager-ssh
+        - include: jumphost-admin-access
+        - include: nagios-nrpe
+        - include: global-ping
     outbound:
         # TODO: bug 1210137
         - include: global-any
@@ -496,7 +511,10 @@ signing-worker:
         us-west-2: vpc-cd63f2a4
         us-east-1: vpc-b42100df
     inbound:
-        - include: universal
+        - include: aws-manager-ssh
+        - include: jumphost-admin-access
+        - include: nagios-nrpe
+        - include: global-ping
     outbound:
         # TODO: bug 1210137
         - include: global-any
@@ -507,7 +525,10 @@ balrogworker:
         us-east-1: vpc-b42100df
         us-west-2: vpc-cd63f2a4
     inbound:
-        - include: universal
+        - include: aws-manager-ssh
+        - include: jumphost-admin-access
+        - include: nagios-nrpe
+        - include: global-ping
     outbound:
         - include: global-any
 
@@ -517,7 +538,10 @@ beetmoverworker:
         us-east-1: vpc-b42100df
         us-west-2: vpc-cd63f2a4
     inbound:
-        - include: universal
+        - include: aws-manager-ssh
+        - include: jumphost-admin-access
+        - include: nagios-nrpe
+        - include: global-ping
     outbound:
         - include: global-any
 
@@ -526,7 +550,10 @@ pushapkworker:
     regions:
         us-east-1: vpc-b42100df
     inbound:
-        - include: universal
+        - include: aws-manager-ssh
+        - include: jumphost-admin-access
+        - include: nagios-nrpe
+        - include: global-ping
     outbound:
         - include: global-any
 
@@ -536,6 +563,9 @@ binarytransparencyworker:
         us-east-1: vpc-b42100df
         us-west-2: vpc-cd63f2a4
     inbound:
-        - include: universal
+        - include: aws-manager-ssh
+        - include: jumphost-admin-access
+        - include: nagios-nrpe
+        - include: global-ping
     outbound:
         - include: global-any
