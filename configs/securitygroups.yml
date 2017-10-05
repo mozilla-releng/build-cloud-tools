@@ -23,9 +23,6 @@ includes:
           - rejh2.srv.releng.scl3.mozilla.com  # 10.26.48.20
           - rejh1.srv.releng.mdc1.mozilla.com  # 10.49.48.100
           - rejh2.srv.releng.mdc1.mozilla.com  # 10.49.48.101
-          # TODO: REMOVE vpn and IT jumphost direct access
-          - 10.22.240.0/20  # scl3-vpn-net
-          - ssh1.corpdmz.scl3.mozilla.com
 
     nagios-nrpe:
         proto: tcp
@@ -348,6 +345,8 @@ buildbot-master:
             - {include: slaveapi-servers}
             - aws-manager1.srv.releng.scl3.mozilla.com
             - aws-manager2.srv.releng.scl3.mozilla.com
+            - 10.22.240.0/20  # scl3-vpn-net
+            - ssh1.corpdmz.scl3.mozilla.com
 
         # traffic from buildduty-tools
         - proto: tcp
