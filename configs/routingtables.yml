@@ -19,9 +19,9 @@ us-west-2:
 
             aus4.mozilla.org: IGW
             aus5.mozilla.org: IGW
-            upload.ffxbld.productdelivery.prod.mozaws.net: IGW
-            upload.trybld.productdelivery.prod.mozaws.net: IGW
-            upload.tbirdbld.productdelivery.prod.mozaws.net: IGW
+            upload.ffxbld.productdelivery.prod.mozaws.net: NAT
+            upload.trybld.productdelivery.prod.mozaws.net: NAT
+            upload.tbirdbld.productdelivery.prod.mozaws.net: NAT
             upload.ffxbld.productdelivery.stage.mozaws.net: NAT
             upload.trybld.productdelivery.stage.mozaws.net: NAT
             upload.tbirdbld.productdelivery.stage.mozaws.net: NAT
@@ -60,8 +60,8 @@ us-west-2:
             git.mozilla.org: IGW
             aus4.mozilla.org: IGW
             aus5.mozilla.org: IGW
-            upload.ffxbld.productdelivery.prod.mozaws.net: IGW
-            upload.tbirdbld.productdelivery.prod.mozaws.net: IGW
+            upload.ffxbld.productdelivery.prod.mozaws.net: NAT
+            upload.tbirdbld.productdelivery.prod.mozaws.net: NAT
             upload.seabld.productdelivery.prod.mozaws.net: IGW
             upload.ffxbld.productdelivery.stage.mozaws.net: NAT
             upload.tbirdbld.productdelivery.stage.mozaws.net: NAT
@@ -81,7 +81,7 @@ us-west-2:
             git.mozilla.org: IGW
             aus4.mozilla.org: IGW
             aus5.mozilla.org: IGW
-            upload.trybld.productdelivery.prod.mozaws.net: IGW
+            upload.trybld.productdelivery.prod.mozaws.net: NAT
             upload.trybld.productdelivery.stage.mozaws.net: NAT
             queue.taskcluster.net: IGW
 
@@ -123,9 +123,9 @@ us-east-1:
 
             aus4.mozilla.org: IGW
             aus5.mozilla.org: IGW
-            upload.ffxbld.productdelivery.prod.mozaws.net: IGW
-            upload.trybld.productdelivery.prod.mozaws.net: IGW
-            upload.tbirdbld.productdelivery.prod.mozaws.net: IGW
+            upload.ffxbld.productdelivery.prod.mozaws.net: NAT
+            upload.trybld.productdelivery.prod.mozaws.net: NAT
+            upload.tbirdbld.productdelivery.prod.mozaws.net: NAT
             upload.ffxbld.productdelivery.stage.mozaws.net: NAT
             upload.trybld.productdelivery.stage.mozaws.net: NAT
             upload.tbirdbld.productdelivery.stage.mozaws.net: NAT
@@ -164,8 +164,8 @@ us-east-1:
             git.mozilla.org: IGW
             aus4.mozilla.org: IGW
             aus5.mozilla.org: IGW
-            upload.ffxbld.productdelivery.prod.mozaws.net: IGW
-            upload.tbirdbld.productdelivery.prod.mozaws.net: IGW
+            upload.ffxbld.productdelivery.prod.mozaws.net: NAT
+            upload.tbirdbld.productdelivery.prod.mozaws.net: NAT
             upload.seabld.productdelivery.prod.mozaws.net: IGW
             upload.ffxbld.productdelivery.stage.mozaws.net: NAT
             upload.tbirdbld.productdelivery.stage.mozaws.net: NAT
@@ -186,7 +186,7 @@ us-east-1:
             git.mozilla.org: IGW
             aus4.mozilla.org: IGW
             aus5.mozilla.org: IGW
-            upload.trybld.productdelivery.prod.mozaws.net: IGW
+            upload.trybld.productdelivery.prod.mozaws.net: NAT
             upload.trybld.productdelivery.stage.mozaws.net: NAT
             queue.taskcluster.net: IGW
 
