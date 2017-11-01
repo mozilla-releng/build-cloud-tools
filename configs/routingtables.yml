@@ -101,6 +101,8 @@ us-west-2:
             67.214.208.0/20: IGW
             169.46.82.160/27: IGW
 
+            queue.taskcluster.net: IGW
+
             10.132.0.0/16: local
             0.0.0.0/0: VGW
 
@@ -218,6 +220,8 @@ us-east-1:
             173.247.96.0/19: IGW
             67.214.208.0/20: IGW
             169.46.82.160/27: IGW
+
+            queue.taskcluster.net: IGW
 
             10.134.0.0/16: local
             0.0.0.0/0: VGW
