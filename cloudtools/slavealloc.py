@@ -149,7 +149,7 @@ def get_slaves_json(url, cache):
 
     try:
         download_file(url, cache)
-    except:
+    except:  # noqa: E722
         log.warn("Cannot fetch slaves.json, reusing the existing file",
                  exc_info=True)
     return read_slaves_json(cache)

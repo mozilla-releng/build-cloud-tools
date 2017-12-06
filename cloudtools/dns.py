@@ -19,5 +19,5 @@ def get_ptr(ip):
 def get_cname(cname):
     try:
         return gethostbyname_ex(cname)[0]
-    except:
+    except:  # noqa: E722
         return None

@@ -69,7 +69,6 @@ def get_graphite_logger():
 
 
 def generate_instance_stats(instances):
-    l = _graphite_logger
     for i in instances:
         if i.state != "running":
             continue
@@ -84,4 +83,4 @@ def generate_instance_stats(instances):
         )
         name = "running.{region}.{moz_instance_type}.{instance_type}" \
             ".{life_cycle_type}.{virtualization}.{root_device_type}"
-        l.add(name.format(**template_values), 1, collect=True)
+        _graphite_logger.add(name.format(**template_values), 1, collect=True)

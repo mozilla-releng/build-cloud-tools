@@ -72,7 +72,7 @@ def attach_and_wait(host_instance, size, aws_dev_name, int_dev_name):
         try:
             v.attach(host_instance.id, aws_dev_name)
             break
-        except:
+        except:  # noqa: E722
             log.debug('waiting for volume to be attached')
             time.sleep(10)
 
@@ -81,7 +81,7 @@ def attach_and_wait(host_instance, size, aws_dev_name, int_dev_name):
         try:
             if run('ls %s' % int_dev_name).succeeded:
                 break
-        except:
+        except:  # noqa: E722
             log.debug('waiting for volume to appear', exc_info=True)
             time.sleep(10)
     return v
@@ -406,7 +406,7 @@ def create_ami(host_instance, args, config, instance_config, ssh_key,
             log.info('AMI created')
             log.info('ID: {id}, name: {name}'.format(id=ami.id, name=ami.name))
             break
-        except:
+        except:  # noqa: E722
             log.info('Wating for AMI')
             time.sleep(10)
 

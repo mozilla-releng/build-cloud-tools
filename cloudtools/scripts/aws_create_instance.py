@@ -183,7 +183,7 @@ def create_instance(name, config, region, key_name, ssh_key, instance_data,
                      instance.private_ip_address, e, FAILURE_TIMEOUT)
             time.sleep(FAILURE_TIMEOUT)
 
-        except:
+        except:  # noqa: E722
             # any other exception
             log.warn("problem assimilating %s (%s, %s), retrying in "
                      "%d sec ...", instance_data['hostname'], instance.id,

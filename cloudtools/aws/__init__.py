@@ -49,7 +49,7 @@ def wait_for_status(obj, attr_name, attr_value, update_method):
                 break
             else:
                 time.sleep(1)
-        except:
+        except:  # noqa: E722
             log.exception('hit error waiting')
             time.sleep(10)
 
@@ -62,7 +62,7 @@ def attach_and_wait_for_volume(volume, aws_dev_name, internal_dev_name,
         try:
             volume.attach(instance_id, aws_dev_name)
             break
-        except:
+        except:  # noqa: E722
             log.debug('hit error waiting for volume to be attached')
             time.sleep(10)
     while True:
@@ -71,7 +71,7 @@ def attach_and_wait_for_volume(volume, aws_dev_name, internal_dev_name,
             if volume.status == 'in-use':
                 if run('ls %s' % internal_dev_name).succeeded:
                     break
-        except:
+        except:  # noqa: E722
             log.debug('hit error waiting for volume to be attached')
             time.sleep(10)
 

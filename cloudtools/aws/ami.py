@@ -69,7 +69,7 @@ def volume_to_ami(volume, ami_name, arch, virtualization_type,
             log.info('AMI created')
             log.info('ID: {id}, name: {name}'.format(id=ami.id, name=ami.name))
             break
-        except:
+        except:  # noqa: E722
             log.info('Wating for AMI')
             time.sleep(10)
     wait_for_status(ami, "state", "available", "update")
@@ -91,7 +91,7 @@ def copy_ami(source_ami, region_to_copy):
             log.info('ID: {id}, name: {name}'.format(id=new_ami.id,
                                                      name=new_ami.name))
             break
-        except:
+        except:  # noqa: E722
             log.info('Wating for AMI')
             time.sleep(10)
     return new_ami

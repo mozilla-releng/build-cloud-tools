@@ -55,7 +55,7 @@ def run_instance(region, hostname, config, key_name, user='root',
         try:
             if run('date').succeeded:
                 break
-        except:
+        except:  # noqa: E722
             log.debug('hit error waiting for instance to come up')
         time.sleep(10)
 
