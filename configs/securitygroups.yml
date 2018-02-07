@@ -580,3 +580,16 @@ binarytransparencyworker:
         - include: global-ping
     outbound:
         - include: global-any
+
+treescriptworker:
+    description: security group for treescriptworker
+    regions:
+        us-east-1: vpc-b42100df
+        us-west-2: vpc-cd63f2a4
+    inbound:
+        - include: aws-manager-ssh
+        - include: jumphost-admin-access
+        - include: nagios-nrpe
+        - include: global-ping
+    outbound:
+        - include: global-any
