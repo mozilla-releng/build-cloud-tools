@@ -568,6 +568,18 @@ pushapkworker:
     outbound:
         - include: global-any
 
+pushsnapworker:
+    description: security group for pushsnap_scriptworkers
+    regions:
+        us-east-1: vpc-b42100df
+    inbound:
+        - include: aws-manager-ssh
+        - include: jumphost-admin-access
+        - include: nagios-nrpe
+        - include: global-ping
+    outbound:
+        - include: global-any
+
 shipitworker:
     description: security group for shipitworkers
     regions:
