@@ -175,6 +175,14 @@ resource "aws_route53_record" "heroku-uplift-shipit-cname-stage" {
     records = ["uplift.shipit.staging.mozilla-releng.net.herokudns.com"]
 }
 
+resource "aws_route53_record" "heroku-workflow-shipit-cname-stage" {
+    zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
+    name = "shipit-workflow.staging.mozilla-releng.net"
+    type = "CNAME"
+    ttl = "180"
+    records = ["shipit-workflow.staging.mozilla-releng.net.herokudns.com"]
+}
+
 ############################
 ## CloudFront CDN aliases ##
 ############################
