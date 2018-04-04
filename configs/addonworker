@@ -1,0 +1,24 @@
+{
+    "us-east-1": {
+        "type": "addonworker",
+        "domain": "srv.releng.use1.mozilla.com",
+        "ami": "ami-4dc07a26",
+        "subnet_ids": ["subnet-33a98358"],
+        "security_group_ids": ["sg-e67c9eaf"],
+        "instance_type": "t2.micro",
+        "distro": "centos",
+        "ssh_key": "aws-releng",
+        "use_public_ip": true,
+        "device_map": {
+            "/dev/xvda": {
+                "delete_on_termination": true,
+                "skip_resize": true,
+                "volume_type": "gp2",
+                "instance_dev": "/dev/xvda1"
+            }
+        },
+        "tags": {
+            "moz-type": "addonworker"
+        }
+    }
+}

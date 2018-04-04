@@ -518,6 +518,18 @@ signing-worker:
         # TODO: bug 1210137
         - include: global-any
 
+addonworker:
+    description: security group for addon_scriptworkers
+    regions:
+        us-east-1: vpc-b42100df
+    inbound:
+        - include: aws-manager-ssh
+        - include: jumphost-admin-access
+        - include: nagios-nrpe
+        - include: global-ping
+    outbound:
+        - include: global-any
+
 balrogworker:
     description: security group for balrogworkers
     regions:
