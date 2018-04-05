@@ -23,6 +23,8 @@ includes:
           - rejh2.srv.releng.scl3.mozilla.com  # 10.26.48.20
           - rejh1.srv.releng.mdc1.mozilla.com  # 10.49.48.100
           - rejh2.srv.releng.mdc1.mozilla.com  # 10.49.48.101
+          - rejh1.srv.releng.mdc2.mozilla.com  # 10.51.48.100
+          - rejh2.srv.releng.mdc2.mozilla.com  # 10.51.48.101
 
     nagios-nrpe:
         proto: tcp
@@ -377,6 +379,7 @@ puppet-master:
           hosts:
             - 10.26.0.0/16
             - 10.49.0.0/16
+            - 10.51.0.0/16
             - 10.130.0.0/16
             - 10.132.0.0/16
             - 10.134.0.0/16
