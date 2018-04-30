@@ -14,7 +14,7 @@ setup(
     install_requires=[
         'Fabric==1.8.0',
         'MySQL-python==1.2.5',
-        'PyYAML==3.11',
+        'PyYAML==3.12',
         'SQLAlchemy==0.8.3',
         'argparse>=1.2.1',
         'boto==2.27.0',
