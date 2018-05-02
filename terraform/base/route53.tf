@@ -49,7 +49,7 @@ resource "aws_route53_record" "heroku-treestatus-cname-prod" {
     name = "treestatus.mozilla-releng.net"
     type = "CNAME"
     ttl = "180"
-    records = ["treestatus.mozilla-releng.net.herokudns.com"]
+    records = ["kochi-31413.herokussl.com"]
 }
 
 
