@@ -5,6 +5,11 @@ resource "aws_route53_zone" "mozilla-releng" {
     name = "mozilla-releng.net."
 }
 
+# Hosted Zone for moz.tools
+resource "aws_route53_zone" "moztools" {
+    name = "moz.tools"
+}
+
 ##################################
 ## Heroku production app cnames ##
 ##################################
@@ -52,6 +57,18 @@ resource "aws_route53_record" "heroku-treestatus-cname-prod" {
     records = ["kochi-31413.herokussl.com"]
 }
 
+############################################
+## Heroku moz.tools production app cnames ##
+############################################
+
+resource "aws_route53_record" "heroku-coverage-cname-prod" {
+    zone_id = "${aws_route53_zone.moztools.zone_id}"
+    name = "coverage.moz.tools"
+    type = "CNAME"
+    ttl = "180"
+    records = ["coverage.moz.tools.herokudns.com"]
+}
+
 
 ###############################
 ## Heroku staging app cnames ##
@@ -93,6 +110,17 @@ resource "aws_route53_record" "heroku-tooltool-cname-stage" {
     records = ["shizuoka-60622.herokussl.com"]
 }
 
+#########################################
+## Heroku moz.tools staging app cnames ##
+#########################################
+
+resource "aws_route53_record" "heroku-coverage-cname-stage" {
+    zone_id = "${aws_route53_zone.moztools.zone_id}"
+    name = "coverage.staging.moz.tools"
+    type = "CNAME"
+    ttl = "180"
+    records = ["coverage.staging.moz.tools.herokudns.com"]
+}
 
 #########################################
 ## Heroku Shipit production app cnames ##
@@ -189,6 +217,18 @@ resource "aws_route53_record" "heroku-workflow-ui-shipit-cname-stage" {
     type = "CNAME"
     ttl = "180"
     records = ["shipit-ui-workflow.staging.mozilla-releng.net.herokudns.com"]
+}
+
+#########################################
+## Heroku moz.tools testing app cnames ##
+#########################################
+
+resource "aws_route53_record" "heroku-coverage-cname-test" {
+    zone_id = "${aws_route53_zone.moztools.zone_id}"
+    name = "coverage.testing.moz.tools"
+    type = "CNAME"
+    ttl = "180"
+    records = ["coverage.testing.moz.tools.herokudns.com"]
 }
 
 ############################
