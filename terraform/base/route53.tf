@@ -1,18 +1,23 @@
-# Route 53 resources
+######################################################################
+#                                                                    #
+# IMPORTANT: mozilla-releng.net resources were generated, do not     #
+#            change them manually!                                   #
+#                                                                    #
+#     https://docs.mozilla-releng.net/deploy/configure-dns.html      #
+#                                                                    #
+######################################################################
 
-# Hosted Zone for mozilla-releng.net
 resource "aws_route53_zone" "mozilla-releng" {
     name = "mozilla-releng.net."
 }
 
-# Hosted Zone for moz.tools
 resource "aws_route53_zone" "moztools" {
     name = "moz.tools"
 }
 
-##################################
-## Heroku production app cnames ##
-##################################
+#########################################
+## Heroku releng production app cnames ##
+#########################################
 
 resource "aws_route53_record" "heroku-coalease-cname" {
     zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
@@ -21,27 +26,23 @@ resource "aws_route53_record" "heroku-coalease-cname" {
     ttl = "180"
     records = ["oita-54541.herokussl.com"]
 }
-resource "aws_route53_record" "heroku-archiver-cname-prod" {
+
+resource "aws_route53_record" "heroku-notification-identity-cname-prod" {
     zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
-    name = "archiver.mozilla-releng.net"
+    name = "identity.notification.mozilla-releng.net"
     type = "CNAME"
     ttl = "180"
-    records = ["archiver.mozilla-releng.net.herokudns.com"]
+    records = ["identity.notification.mozilla-releng.net.herokudns.com"]
 }
-resource "aws_route53_record" "heroku-clobberer-cname-prod" {
+
+resource "aws_route53_record" "heroku-notification-policy-cname-prod" {
     zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
-    name = "clobberer.mozilla-releng.net"
+    name = "policy.notification.mozilla-releng.net"
     type = "CNAME"
     ttl = "180"
-    records = ["saitama-70467.herokussl.com"]
+    records = ["policy.notification.mozilla-releng.net.herokudns.com"]
 }
-resource "aws_route53_record" "heroku-mapper-cname-prod" {
-    zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
-    name = "mapper.mozilla-releng.net"
-    type = "CNAME"
-    ttl = "180"
-    records = ["mapper.mozilla-releng.net.herokudns.com"]
-}
+
 resource "aws_route53_record" "heroku-tooltool-cname-prod" {
     zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
     name = "tooltool.mozilla-releng.net"
@@ -49,6 +50,7 @@ resource "aws_route53_record" "heroku-tooltool-cname-prod" {
     ttl = "180"
     records = ["kochi-11433.herokussl.com"]
 }
+
 resource "aws_route53_record" "heroku-treestatus-cname-prod" {
     zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
     name = "treestatus.mozilla-releng.net"
@@ -57,22 +59,17 @@ resource "aws_route53_record" "heroku-treestatus-cname-prod" {
     records = ["kochi-31413.herokussl.com"]
 }
 
-############################################
-## Heroku moz.tools production app cnames ##
-############################################
+######################################
+## Heroku releng staging app cnames ##
+######################################
 
-resource "aws_route53_record" "heroku-coverage-cname-prod" {
-    zone_id = "${aws_route53_zone.moztools.zone_id}"
-    name = "coverage.moz.tools"
+resource "aws_route53_record" "heroku-workflow-ui-shipit-cname-stage" {
+    zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
+    name = "shipit-ui-workflow.staging.mozilla-releng.net"
     type = "CNAME"
     ttl = "180"
-    records = ["coverage.moz.tools.herokudns.com"]
+    records = ["shipit-ui-workflow.staging.mozilla-releng.net.herokudns.com"]
 }
-
-
-###############################
-## Heroku staging app cnames ##
-###############################
 
 resource "aws_route53_record" "heroku-archiver-cname-stage" {
     zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
@@ -81,6 +78,7 @@ resource "aws_route53_record" "heroku-archiver-cname-stage" {
     ttl = "180"
     records = ["archiver.staging.mozilla-releng.net.herokudns.com"]
 }
+
 resource "aws_route53_record" "heroku-clobberer-cname-stage" {
     zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
     name = "clobberer.staging.mozilla-releng.net"
@@ -88,6 +86,7 @@ resource "aws_route53_record" "heroku-clobberer-cname-stage" {
     ttl = "180"
     records = ["saitama-70467.herokussl.com"]
 }
+
 resource "aws_route53_record" "heroku-mapper-cname-stage" {
     zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
     name = "mapper.staging.mozilla-releng.net"
@@ -95,13 +94,23 @@ resource "aws_route53_record" "heroku-mapper-cname-stage" {
     ttl = "180"
     records = ["mapper.staging.mozilla-releng.net.herokudns.com"]
 }
-resource "aws_route53_record" "heroku-treestatus-cname-stage" {
+
+resource "aws_route53_record" "heroku-notification-identity-cname-stage" {
     zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
-    name = "treestatus.staging.mozilla-releng.net"
+    name = "identity.notification.staging.mozilla-releng.net"
     type = "CNAME"
     ttl = "180"
-    records = ["nagasaki-25852.herokussl.com"]
+    records = ["identity.notification.staging.mozilla-releng.net.herokudns.com"]
 }
+
+resource "aws_route53_record" "heroku-notification-policy-cname-stage" {
+    zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
+    name = "policy.notification.staging.mozilla-releng.net"
+    type = "CNAME"
+    ttl = "180"
+    records = ["policy.notification.staging.mozilla-releng.net.herokudns.com"]
+}
+
 resource "aws_route53_record" "heroku-tooltool-cname-stage" {
     zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
     name = "tooltool.staging.mozilla-releng.net"
@@ -110,50 +119,114 @@ resource "aws_route53_record" "heroku-tooltool-cname-stage" {
     records = ["shizuoka-60622.herokussl.com"]
 }
 
+resource "aws_route53_record" "heroku-treestatus-cname-stage" {
+    zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
+    name = "treestatus.staging.mozilla-releng.net"
+    type = "CNAME"
+    ttl = "180"
+    records = ["treestatus.staging.mozilla-releng.net.herokudns.com"]
+}
+
+######################################
+## Heroku releng testing app cnames ##
+######################################
+
+resource "aws_route53_record" "heroku-archiver-cname-test" {
+    zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
+    name = "archiver.testing.mozilla-releng.net"
+    type = "CNAME"
+    ttl = "180"
+    records = ["archiver.testing.mozilla-releng.net.herokudns.com"]
+}
+
+resource "aws_route53_record" "heroku-clobberer-cname-test" {
+    zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
+    name = "clobberer.testing.mozilla-releng.net"
+    type = "CNAME"
+    ttl = "180"
+    records = ["saitama-70467.herokussl.com"]
+}
+
+resource "aws_route53_record" "heroku-mapper-cname-test" {
+    zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
+    name = "mapper.testing.mozilla-releng.net"
+    type = "CNAME"
+    ttl = "180"
+    records = ["mapper.testing.mozilla-releng.net.herokudns.com"]
+}
+
+resource "aws_route53_record" "heroku-notification-identity-cname-test" {
+    zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
+    name = "identity.notification.testing.mozilla-releng.net"
+    type = "CNAME"
+    ttl = "180"
+    records = ["identity.notification.testing.mozilla-releng.net.herokudns.com"]
+}
+
+resource "aws_route53_record" "heroku-notification-policy-cname-test" {
+    zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
+    name = "policy.notification.testing.mozilla-releng.net"
+    type = "CNAME"
+    ttl = "180"
+    records = ["policy.notification.testing.mozilla-releng.net.herokudns.com"]
+}
+
+resource "aws_route53_record" "heroku-tooltool-cname-test" {
+    zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
+    name = "tooltool.testing.mozilla-releng.net"
+    type = "CNAME"
+    ttl = "180"
+    records = ["shizuoka-60622.herokussl.com"]
+}
+
+resource "aws_route53_record" "heroku-treestatus-cname-test" {
+    zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
+    name = "treestatus.testing.mozilla-releng.net"
+    type = "CNAME"
+    ttl = "180"
+    records = ["treestatus.testing.mozilla-releng.net.herokudns.com"]
+}
+
 #########################################
-## Heroku moz.tools staging app cnames ##
+## Heroku relman production app cnames ##
 #########################################
 
-resource "aws_route53_record" "heroku-coverage-cname-stage" {
-    zone_id = "${aws_route53_zone.moztools.zone_id}"
+resource "aws_route53_record" "heroku-code-coverage-backend-shipit-cname-prod" {
+    zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
+    name = "coverage.moz.tools"
+    type = "CNAME"
+    ttl = "180"
+    records = ["coverage.moz.tools.herokudns.com"]
+}
+
+######################################
+## Heroku relman staging app cnames ##
+######################################
+
+resource "aws_route53_record" "heroku-code-coverage-backend-shipit-cname-stage" {
+    zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
     name = "coverage.staging.moz.tools"
     type = "CNAME"
     ttl = "180"
     records = ["coverage.staging.moz.tools.herokudns.com"]
 }
 
+######################################
+## Heroku relman testing app cnames ##
+######################################
+
+resource "aws_route53_record" "heroku-code-coverage-backend-shipit-cname-test" {
+    zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
+    name = "coverage.testing.moz.tools"
+    type = "CNAME"
+    ttl = "180"
+    records = ["coverage.testing.moz.tools.herokudns.com"]
+}
+
 #########################################
-## Heroku Shipit production app cnames ##
+## Heroku shipit production app cnames ##
 #########################################
 
-resource "aws_route53_record" "heroku-dashboard-shipit-cname-prod" {
-    zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
-    name = "dashboard.shipit.mozilla-releng.net"
-    type = "CNAME"
-    ttl = "180"
-    records = ["dashboard.shipit.mozilla-releng.net.herokudns.com"]
-}
-resource "aws_route53_record" "heroku-pipeline-shipit-cname-prod" {
-    zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
-    name = "pipeline.shipit.mozilla-releng.net"
-    type = "CNAME"
-    ttl = "180"
-    records = ["pipeline.shipit.mozilla-releng.net.herokudns.com"]
-}
-resource "aws_route53_record" "heroku-signoff-shipit-cname-prod" {
-    zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
-    name = "signoff.shipit.mozilla-releng.net"
-    type = "CNAME"
-    ttl = "180"
-    records = ["signoff.shipit.mozilla-releng.net.herokudns.com"]
-}
-resource "aws_route53_record" "heroku-taskcluster-shipit-cname-prod" {
-    zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
-    name = "taskcluster.shipit.mozilla-releng.net"
-    type = "CNAME"
-    ttl = "180"
-    records = ["taskcluster.shipit.mozilla-releng.net.herokudns.com"]
-}
 resource "aws_route53_record" "heroku-uplift-shipit-cname-prod" {
     zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
     name = "uplift.shipit.mozilla-releng.net"
@@ -162,18 +235,10 @@ resource "aws_route53_record" "heroku-uplift-shipit-cname-prod" {
     records = ["uplift.shipit.mozilla-releng.net.herokudns.com"]
 }
 
-
 ######################################
-## Heroku Shipit staging app cnames ##
+## Heroku shipit staging app cnames ##
 ######################################
 
-resource "aws_route53_record" "heroku-dashboard-shipit-cname-stage" {
-    zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
-    name = "dashboard.shipit.staging.mozilla-releng.net"
-    type = "CNAME"
-    ttl = "180"
-    records = ["dashboard.shipit.staging.mozilla-releng.net.herokudns.com"]
-}
 resource "aws_route53_record" "heroku-pipeline-shipit-cname-stage" {
     zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
     name = "pipeline.shipit.staging.mozilla-releng.net"
@@ -181,6 +246,7 @@ resource "aws_route53_record" "heroku-pipeline-shipit-cname-stage" {
     ttl = "180"
     records = ["pipeline.shipit.staging.mozilla-releng.net.herokudns.com"]
 }
+
 resource "aws_route53_record" "heroku-signoff-shipit-cname-stage" {
     zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
     name = "signoff.shipit.staging.mozilla-releng.net"
@@ -188,6 +254,7 @@ resource "aws_route53_record" "heroku-signoff-shipit-cname-stage" {
     ttl = "180"
     records = ["signoff.shipit.staging.mozilla-releng.net.herokudns.com"]
 }
+
 resource "aws_route53_record" "heroku-taskcluster-shipit-cname-stage" {
     zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
     name = "taskcluster.shipit.staging.mozilla-releng.net"
@@ -195,6 +262,7 @@ resource "aws_route53_record" "heroku-taskcluster-shipit-cname-stage" {
     ttl = "180"
     records = ["taskcluster.shipit.staging.mozilla-releng.net.herokudns.com"]
 }
+
 resource "aws_route53_record" "heroku-uplift-shipit-cname-stage" {
     zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
     name = "uplift.shipit.staging.mozilla-releng.net"
@@ -211,24 +279,48 @@ resource "aws_route53_record" "heroku-workflow-shipit-cname-stage" {
     records = ["shipit-workflow.staging.mozilla-releng.net.herokudns.com"]
 }
 
-resource "aws_route53_record" "heroku-workflow-ui-shipit-cname-stage" {
+######################################
+## Heroku shipit testing app cnames ##
+######################################
+
+resource "aws_route53_record" "heroku-pipeline-shipit-cname-test" {
     zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
-    name = "shipit-ui-workflow.staging.mozilla-releng.net"
+    name = "pipeline.shipit.testing.mozilla-releng.net"
     type = "CNAME"
     ttl = "180"
-    records = ["shipit-ui-workflow.staging.mozilla-releng.net.herokudns.com"]
+    records = ["pipeline.shipit.testing.mozilla-releng.net.herokudns.com"]
 }
 
-#########################################
-## Heroku moz.tools testing app cnames ##
-#########################################
-
-resource "aws_route53_record" "heroku-coverage-cname-test" {
-    zone_id = "${aws_route53_zone.moztools.zone_id}"
-    name = "coverage.testing.moz.tools"
+resource "aws_route53_record" "heroku-signoff-shipit-cname-test" {
+    zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
+    name = "signoff.shipit.testing.mozilla-releng.net"
     type = "CNAME"
     ttl = "180"
-    records = ["coverage.testing.moz.tools.herokudns.com"]
+    records = ["signoff.shipit.testing.mozilla-releng.net.herokudns.com"]
+}
+
+resource "aws_route53_record" "heroku-taskcluster-shipit-cname-test" {
+    zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
+    name = "taskcluster.shipit.testing.mozilla-releng.net"
+    type = "CNAME"
+    ttl = "180"
+    records = ["taskcluster.shipit.testing.mozilla-releng.net.herokudns.com"]
+}
+
+resource "aws_route53_record" "heroku-uplift-shipit-cname-test" {
+    zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
+    name = "uplift.shipit.testing.mozilla-releng.net"
+    type = "CNAME"
+    ttl = "180"
+    records = ["uplift.shipit.testing.mozilla-releng.net.herokudns.com"]
+}
+
+resource "aws_route53_record" "heroku-workflow-shipit-cname-test" {
+    zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
+    name = "shipit-workflow.testing.mozilla-releng.net"
+    type = "CNAME"
+    ttl = "180"
+    records = ["shipit-workflow.testing.mozilla-releng.net.herokudns.com"]
 }
 
 ############################
@@ -238,10 +330,13 @@ resource "aws_route53_record" "heroku-coverage-cname-test" {
 variable "cloudfront_alias" {
     default = ["docs",
                "docs.staging",
+               "docs.testing",
                "shipit",
-               "shiptit.staging",
-               "www",
-               "staging"]
+               "shipit.staging",
+               "shipit.testing",
+               "staging",
+               "testing",
+               "www"]
 }
 
 # Cloudfront Alias Targets
@@ -252,10 +347,13 @@ variable "cloudfront_alias_domain" {
     default = {
         docs = "d1945er7u4liht"
         docs.staging = "d32jt14rospqzr"
+        docs.testing = "d1sw5c8kdn03y"
         shipit = "dve8yd1431ifz"
-        shiptit.staging = "d2ld4e8bl8yd1l"
-        www = "d1qqwps52z1e12"
+        shipit.staging = "d2ld4e8bl8yd1l"
+        shipit.testing = "d2jpisuzgldax2"
         staging = "dpwmwa9tge2p3"
+        testing = "d1l70lpksx3ik7"
+        www = "d1qqwps52z1e12"
     }
 }
 
@@ -285,4 +383,3 @@ resource "aws_route53_record" "root-alias" {
         evaluate_target_health = false
     }
 }
-
