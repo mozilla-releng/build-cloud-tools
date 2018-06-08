@@ -151,8 +151,8 @@ def assimilate_instance(instance, config, ssh_key, instance_data, deploypass,
         run_chroot('yum install -q -y puppet cloud-init wget')
 
     run_chroot("wget -O /root/puppetize.sh "
-               "https://hg.mozilla.org/build/puppet/"
-               "raw-file/production/modules/puppet/files/puppetize.sh")
+               "https://raw.githubusercontent.com/mozilla/build-puppet/"
+               "master/modules/puppet/files/puppetize.sh")
     run_chroot("chmod 755 /root/puppetize.sh")
     put(StringIO.StringIO(deploypass), "{}/root/deploypass".format(chroot))
     put(StringIO.StringIO("exit 0\n"),

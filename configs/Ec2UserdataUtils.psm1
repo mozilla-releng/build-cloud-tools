@@ -1433,8 +1433,8 @@ function Create-Hgrc {
 
 function Install-BuildBot {
   param (
-    [string] $version = '21b5392348c3', # latest: 'default'
-    [string] $url = ('https://hg.mozilla.org/build/puppet/raw-file/{0}/modules/buildslave/files/runslave.py' -f $version),
+    [string] $version = '072a37a3dae79f9be4e296895365fa37a3eba0f7', # latest: 'master'
+    [string] $url = ('https://raw.githubusercontent.com/mozilla/build-puppet/{0}/modules/buildslave/files/runslave.py' -f $version),
     [string] $target = ('{0}\mozilla-build\buildbot.py' -f $env:SystemDrive)
   )
   begin {
@@ -1483,8 +1483,8 @@ function Install-BuildBot {
 
 function Install-ToolTool {
   param (
-    [string] $version = 'ee2f1b1a5fdc', # latest: 'default'
-    [string] $url = ('https://hg.mozilla.org/build/puppet/raw-file/{0}/modules/packages/templates/tooltool.py' -f $version),
+    [string] $version = 'b56e99180e59134b3d382f6a989fa4ecb29f984e', # latest: 'master'
+    [string] $url = ('https://raw.githubusercontent.com/mozilla/build-puppet/{0}/modules/packages/templates/tooltool.py' -f $version),
     [string] $target = ('{0}\mozilla-build\tooltool.py' -f $env:SystemDrive)
   )
   begin {
@@ -1626,8 +1626,8 @@ function Get-EventlogOsTemplate {
 
 function Configure-NxLog {
   param (
-    [string] $version = 'c0fe5210f89a', # latest: 'tip'
-    [string] $url = ('https://hg.mozilla.org/build/puppet/raw-file/{0}/modules/nxlog/templates' -f $version), # latest: 'default'
+    [string] $version = 'a2ec06e2faeb909e645b68db98650de507dd480b', # latest: 'master'
+    [string] $url = ('https://raw.githubusercontent.com/mozilla/build-puppet/{0}/modules/nxlog/templates' -f $version), # latest: 'master'
     [string] $target = ('{0}\nxlog\conf' -f @{$true=${env:ProgramFiles(x86)};$false=$env:ProgramFiles}[(Test-Path Env:\'ProgramFiles(x86)')]),
     [string[]] $files = @('nxlog.conf', 'nxlog_route_eventlog_aggregator.conf', 'nxlog_target_aggregator.conf', 'nxlog_transform_syslog.conf'),
     [string] $aggregator
