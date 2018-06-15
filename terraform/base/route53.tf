@@ -192,7 +192,7 @@ resource "aws_route53_record" "heroku-treestatus-cname-test" {
 #########################################
 
 resource "aws_route53_record" "heroku-code-coverage-backend-shipit-cname-prod" {
-    zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
+    zone_id = "${aws_route53_zone.moztools.zone_id}"
     name = "coverage.moz.tools"
     type = "CNAME"
     ttl = "180"
@@ -204,7 +204,7 @@ resource "aws_route53_record" "heroku-code-coverage-backend-shipit-cname-prod" {
 ######################################
 
 resource "aws_route53_record" "heroku-code-coverage-backend-shipit-cname-stage" {
-    zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
+    zone_id = "${aws_route53_zone.moztools.zone_id}"
     name = "coverage.staging.moz.tools"
     type = "CNAME"
     ttl = "180"
@@ -216,7 +216,7 @@ resource "aws_route53_record" "heroku-code-coverage-backend-shipit-cname-stage" 
 ######################################
 
 resource "aws_route53_record" "heroku-code-coverage-backend-shipit-cname-test" {
-    zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
+    zone_id = "${aws_route53_zone.moztools.zone_id}"
     name = "coverage.testing.moz.tools"
     type = "CNAME"
     ttl = "180"
