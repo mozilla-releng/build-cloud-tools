@@ -262,9 +262,9 @@ resource "aws_route53_record" "heroku-code-coverage-backend-shipit-cname-test" {
 resource "aws_route53_record" "relman-ci-moz-tools-cname-prod" {
     zone_id = "${aws_route53_zone.moztools.zone_id}"
     name = "relman-ci.moz.tools"
-    type = "CNAME"
+    type = "A"
     ttl = "180"
-    records = ["ec2-35-180-75-156.eu-west-3.compute.amazonaws.com"]
+    records = ["35.180.7.143"]
 }
 
 #########################################
