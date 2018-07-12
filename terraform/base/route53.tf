@@ -27,6 +27,14 @@ resource "aws_route53_record" "heroku-coalease-cname" {
     records = ["oita-54541.herokussl.com"]
 }
 
+resource "aws_route53_record" "heroku-mapper-cname-prod" {
+    zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
+    name = "mapper.mozilla-releng.net"
+    type = "CNAME"
+    ttl = "180"
+    records = ["mapper.mozilla-releng.net.herokudns.com"]
+}
+
 resource "aws_route53_record" "heroku-notification-identity-cname-prod" {
     zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
     name = "identity.notification.mozilla-releng.net"
@@ -41,6 +49,14 @@ resource "aws_route53_record" "heroku-notification-policy-cname-prod" {
     type = "CNAME"
     ttl = "180"
     records = ["policy.notification.mozilla-releng.net.herokudns.com"]
+}
+
+resource "aws_route53_record" "heroku-tokens-cname-prod" {
+    zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
+    name = "tokens.mozilla-releng.net"
+    type = "CNAME"
+    ttl = "180"
+    records = ["tokens.mozilla-releng.net.herokudns.com"]
 }
 
 resource "aws_route53_record" "heroku-tooltool-cname-prod" {
@@ -111,6 +127,14 @@ resource "aws_route53_record" "heroku-notification-policy-cname-stage" {
     records = ["policy.notification.staging.mozilla-releng.net.herokudns.com"]
 }
 
+resource "aws_route53_record" "heroku-tokens-cname-stage" {
+    zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
+    name = "tokens.staging.mozilla-releng.net"
+    type = "CNAME"
+    ttl = "180"
+    records = ["tokens.staging.mozilla-releng.net.herokudns.com"]
+}
+
 resource "aws_route53_record" "heroku-tooltool-cname-stage" {
     zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
     name = "tooltool.staging.mozilla-releng.net"
@@ -169,6 +193,14 @@ resource "aws_route53_record" "heroku-notification-policy-cname-test" {
     type = "CNAME"
     ttl = "180"
     records = ["policy.notification.testing.mozilla-releng.net.herokudns.com"]
+}
+
+resource "aws_route53_record" "heroku-tokens-cname-test" {
+    zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
+    name = "tokens.testing.mozilla-releng.net"
+    type = "CNAME"
+    ttl = "180"
+    records = ["tokens.testing.mozilla-releng.net.herokudns.com"]
 }
 
 resource "aws_route53_record" "heroku-tooltool-cname-test" {
