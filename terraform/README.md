@@ -12,7 +12,7 @@ Each subdirectory under the `terraform/` directory contains an isolated set of t
 ### AWS Authentication
 Terraform requires AWS credentials in order to authenticate with the AWS API.  Make sure you have provided the credentials in your shell environment before using terraform
 
-	$ export AWS_ACCESS_KEY_ID=
+    $ export AWS_ACCESS_KEY_ID=
     $ export AWS_SECRET_ACCESS_KEY=
 
 You may also opt to use a temporary session key with MFA.  See: [https://github.com/mozilla-platform-ops/aws_mfa_scripts](https://github.com/mozilla-platform-ops/aws_mfa_scripts)
