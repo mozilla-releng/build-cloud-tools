@@ -15,6 +15,18 @@ resource "aws_route53_zone" "moztools" {
     name = "moz.tools"
 }
 
+#############################
+##  moz.tools other cnames ##
+#############################
+
+resource "aws_route53_record" "relman-ci-moz-tools-cname-prod" {
+  zone_id = "${aws_route53_zone.moztools.zone_id}"
+  name = "relman-ci.moz.tools"
+  type = "A"
+  ttl = "180"
+  records = ["35.180.7.143"]
+}
+
 #########################################
 ## Heroku releng production app cnames ##
 #########################################
@@ -253,18 +265,6 @@ resource "aws_route53_record" "heroku-code-coverage-backend-shipit-cname-test" {
     type = "CNAME"
     ttl = "180"
     records = ["coverage.testing.moz.tools.herokudns.com"]
-}
-
-#############################
-##  moz.tools other cnames ##
-#############################
-
-resource "aws_route53_record" "relman-ci-moz-tools-cname-prod" {
-    zone_id = "${aws_route53_zone.moztools.zone_id}"
-    name = "relman-ci.moz.tools"
-    type = "A"
-    ttl = "180"
-    records = ["35.180.7.143"]
 }
 
 #########################################
