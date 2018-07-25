@@ -27,6 +27,14 @@ resource "aws_route53_record" "relman-ci-moz-tools-cname-prod" {
   records = ["35.180.7.143"]
 }
 
+resource "aws_route53_record" "relman-clouseau-moz-tools-cname-prod" {
+  zone_id = "${aws_route53_zone.moztools.zone_id}"
+  name = "clouseau.moz.tools"
+  type = "CNAME"
+  ttl = "180"
+  records = ["clouseau.moz.tools.herokudns.com"]
+}
+
 #########################################
 ## Heroku releng production app cnames ##
 #########################################
