@@ -391,6 +391,12 @@ variable "cloudfront_alias" {
                "www"]
 }
 
+variable "cloudfront_moztools_alias" {
+    default = ["static-analysis",
+               "static-analysis.staging",
+               "static-analysis.testing"]
+}
+
 # Cloudfront Alias Targets
 # In the future, these may be sourced directly from terraform cloudfront resources
 # should we decide to manage cloudfronts in terraform
@@ -409,6 +415,15 @@ variable "cloudfront_alias_domain" {
     }
 }
 
+variable "cloudfront_moztools_alias_domain" {
+    type = "map"
+    default = {
+        static-analysis = "d2ezri92497z3m"
+        static-analysis.staging = "d21hzgxp28m0tc"
+        static-analysis.testing = "d1blqs705aw8h9"
+    }
+}
+
 # A (Alias) records for cloudfront apps
 resource "aws_route53_record" "cloudfront-alias" {
     zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
@@ -418,6 +433,19 @@ resource "aws_route53_record" "cloudfront-alias" {
 
     alias {
         name = "${var.cloudfront_alias_domain[element(var.cloudfront_alias, count.index)]}.cloudfront.net."
+        zone_id = "Z2FDTNDATAQYW2"
+        evaluate_target_health = false
+    }
+}
+
+resource "aws_route53_record" "cloudfront-moztools-alias" {
+    zone_id = "${aws_route53_zone.moztools.zone_id}"
+    name = "${element(var.cloudfront_moztools_alias, count.index)}.moz.tools"
+    type = "A"
+    count = "${length(var.cloudfront_moztools_alias)}"
+
+    alias {
+        name = "${var.cloudfront_moztools_alias_domain[element(var.cloudfront_moztools_alias, count.index)]}.cloudfront.net."
         zone_id = "Z2FDTNDATAQYW2"
         evaluate_target_health = false
     }
