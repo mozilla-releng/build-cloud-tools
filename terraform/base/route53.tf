@@ -1,11 +1,4 @@
-######################################################################
-#                                                                    #
-# IMPORTANT: mozilla-releng.net resources were generated, do not     #
-#            change them manually!                                   #
-#                                                                    #
-#     https://docs.mozilla-releng.net/deploy/configure-dns.html      #
-#                                                                    #
-######################################################################
+# Route 53 resources
 
 resource "aws_route53_zone" "mozilla-releng" {
     name = "mozilla-releng.net."
