@@ -387,7 +387,10 @@ variable "cloudfront_alias" {
 variable "cloudfront_moztools_alias" {
     default = ["static-analysis",
                "static-analysis.staging",
-               "static-analysis.testing"]
+               "static-analysis.testing",
+               "uplift",
+               "uplift.staging",
+               "uplift.testing"]
 }
 
 # Cloudfront Alias Targets
@@ -414,6 +417,9 @@ variable "cloudfront_moztools_alias_domain" {
         static-analysis = "d2ezri92497z3m"
         static-analysis.staging = "d21hzgxp28m0tc"
         static-analysis.testing = "d1blqs705aw8h9"
+        uplift = "d2j55he28msyhx"
+        uplift.staging = "d3voyguhnvtgyb"
+        uplift.testing = "d1swet7sulei5z"
     }
 }
 
