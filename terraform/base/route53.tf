@@ -462,3 +462,12 @@ resource "aws_route53_record" "root-alias" {
         evaluate_target_health = false
     }
 }
+
+# Ship-it production instance, hosted by CloudOps
+resource "aws_route53_record" "dockerflow-shipit-api-cname-prod" {
+    zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
+    name= "shipit-api.mozilla-releng.net"
+    type = "CNAME"
+    ttl = "180"
+    records = ["shipitbackend-default.prod.mozaws.net"]
+}
