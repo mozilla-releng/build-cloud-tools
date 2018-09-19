@@ -397,24 +397,6 @@ puppet-master:
         # TODO: bug 1210137
         - include: global-any
 
-blobber:
-    description: security group for blobber service
-    regions:
-        us-west-1: vpc-7a7dd613
-        us-west-2: vpc-cd63f2a4
-        us-east-1: vpc-b42100df
-    inbound:
-        - proto: tcp
-          ports: [443]
-          hosts: {include: slave-vlans}
-        - include: aws-manager-ssh
-        - include: jumphost-admin-access
-        - include: nagios-nrpe
-        - include: global-ping
-    outbound:
-        # TODO: bug 1210137
-        - include: global-any
-
 # proxxy is configured per-region; these two stanzas should be kept parallel
 proxxy-vpc-use1:
     description: security group for proxxy servers in use1
