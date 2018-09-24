@@ -103,6 +103,10 @@ us-west-2:
 
             queue.taskcluster.net: IGW
 
+            # Autograph
+            autograph-external.prod.autograph.services.mozaws.net: NAT
+            autograph-external.stage.autograph.services.mozaws.net: NAT
+
             10.132.0.0/16: local
             0.0.0.0/0: VGW
 
@@ -222,6 +226,10 @@ us-east-1:
             169.46.82.160/27: IGW
 
             queue.taskcluster.net: IGW
+
+            # Autograph
+            autograph-external.prod.autograph.services.mozaws.net: NAT
+            autograph-external.stage.autograph.services.mozaws.net: NAT
 
             10.134.0.0/16: local
             0.0.0.0/0: VGW
