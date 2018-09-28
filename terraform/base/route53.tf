@@ -129,7 +129,7 @@ resource "aws_route53_record" "heroku-tooltool-cname-stage" {
     name = "tooltool.staging.mozilla-releng.net"
     type = "CNAME"
     ttl = "180"
-    records = ["shizuoka-60622.herokussl.com"]
+    records = ["tooltool.staging.mozilla-releng.net.herokudns.com"]
 }
 
 resource "aws_route53_record" "heroku-treestatus-cname-stage" {
@@ -137,7 +137,7 @@ resource "aws_route53_record" "heroku-treestatus-cname-stage" {
     name = "treestatus.staging.mozilla-releng.net"
     type = "CNAME"
     ttl = "180"
-    records = ["nagasaki-25852.herokussl.com"]
+    records = ["treestatus.staging.mozilla-releng.net.herokudns.com"]
 }
 
 ######################################
@@ -181,7 +181,7 @@ resource "aws_route53_record" "heroku-tooltool-cname-test" {
     name = "tooltool.testing.mozilla-releng.net"
     type = "CNAME"
     ttl = "180"
-    records = ["shizuoka-60622.herokussl.com"]
+    records = ["tooltool.testing.mozilla-releng.net.herokudns.com"]
 }
 
 resource "aws_route53_record" "heroku-treestatus-cname-test" {
