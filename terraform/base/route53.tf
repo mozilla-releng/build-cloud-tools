@@ -92,30 +92,6 @@ resource "aws_route53_record" "heroku-treestatus-cname-prod" {
 ## Heroku releng staging app cnames ##
 ######################################
 
-resource "aws_route53_record" "heroku-workflow-ui-shipit-cname-stage" {
-    zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
-    name = "shipit-ui-workflow.staging.mozilla-releng.net"
-    type = "CNAME"
-    ttl = "180"
-    records = ["shipit-ui-workflow.staging.mozilla-releng.net.herokudns.com"]
-}
-
-resource "aws_route53_record" "heroku-archiver-cname-stage" {
-    zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
-    name = "archiver.staging.mozilla-releng.net"
-    type = "CNAME"
-    ttl = "180"
-    records = ["archiver.staging.mozilla-releng.net.herokudns.com"]
-}
-
-resource "aws_route53_record" "heroku-clobberer-cname-stage" {
-    zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
-    name = "clobberer.staging.mozilla-releng.net"
-    type = "CNAME"
-    ttl = "180"
-    records = ["saitama-70467.herokussl.com"]
-}
-
 resource "aws_route53_record" "heroku-mapper-cname-stage" {
     zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
     name = "mapper.staging.mozilla-releng.net"
@@ -167,22 +143,6 @@ resource "aws_route53_record" "heroku-treestatus-cname-stage" {
 ######################################
 ## Heroku releng testing app cnames ##
 ######################################
-
-resource "aws_route53_record" "heroku-archiver-cname-test" {
-    zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
-    name = "archiver.testing.mozilla-releng.net"
-    type = "CNAME"
-    ttl = "180"
-    records = ["archiver.testing.mozilla-releng.net.herokudns.com"]
-}
-
-resource "aws_route53_record" "heroku-clobberer-cname-test" {
-    zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
-    name = "clobberer.testing.mozilla-releng.net"
-    type = "CNAME"
-    ttl = "180"
-    records = ["saitama-70467.herokussl.com"]
-}
 
 resource "aws_route53_record" "heroku-mapper-cname-test" {
     zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
@@ -284,30 +244,6 @@ resource "aws_route53_record" "heroku-uplift-shipit-cname-prod" {
 ## Heroku shipit staging app cnames ##
 ######################################
 
-resource "aws_route53_record" "heroku-pipeline-shipit-cname-stage" {
-    zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
-    name = "pipeline.shipit.staging.mozilla-releng.net"
-    type = "CNAME"
-    ttl = "180"
-    records = ["pipeline.shipit.staging.mozilla-releng.net.herokudns.com"]
-}
-
-resource "aws_route53_record" "heroku-signoff-shipit-cname-stage" {
-    zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
-    name = "signoff.shipit.staging.mozilla-releng.net"
-    type = "CNAME"
-    ttl = "180"
-    records = ["signoff.shipit.staging.mozilla-releng.net.herokudns.com"]
-}
-
-resource "aws_route53_record" "heroku-taskcluster-shipit-cname-stage" {
-    zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
-    name = "taskcluster.shipit.staging.mozilla-releng.net"
-    type = "CNAME"
-    ttl = "180"
-    records = ["taskcluster.shipit.staging.mozilla-releng.net.herokudns.com"]
-}
-
 resource "aws_route53_record" "heroku-uplift-shipit-cname-stage" {
     zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
     name = "uplift.shipit.staging.mozilla-releng.net"
@@ -316,41 +252,9 @@ resource "aws_route53_record" "heroku-uplift-shipit-cname-stage" {
     records = ["uplift.shipit.staging.mozilla-releng.net.herokudns.com"]
 }
 
-resource "aws_route53_record" "heroku-workflow-shipit-cname-stage" {
-    zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
-    name = "shipit-workflow.staging.mozilla-releng.net"
-    type = "CNAME"
-    ttl = "180"
-    records = ["shipit-workflow.staging.mozilla-releng.net.herokudns.com"]
-}
-
 ######################################
 ## Heroku shipit testing app cnames ##
 ######################################
-
-resource "aws_route53_record" "heroku-pipeline-shipit-cname-test" {
-    zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
-    name = "pipeline.shipit.testing.mozilla-releng.net"
-    type = "CNAME"
-    ttl = "180"
-    records = ["pipeline.shipit.testing.mozilla-releng.net.herokudns.com"]
-}
-
-resource "aws_route53_record" "heroku-signoff-shipit-cname-test" {
-    zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
-    name = "signoff.shipit.testing.mozilla-releng.net"
-    type = "CNAME"
-    ttl = "180"
-    records = ["signoff.shipit.testing.mozilla-releng.net.herokudns.com"]
-}
-
-resource "aws_route53_record" "heroku-taskcluster-shipit-cname-test" {
-    zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
-    name = "taskcluster.shipit.testing.mozilla-releng.net"
-    type = "CNAME"
-    ttl = "180"
-    records = ["taskcluster.shipit.testing.mozilla-releng.net.herokudns.com"]
-}
 
 resource "aws_route53_record" "heroku-uplift-shipit-cname-test" {
     zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
@@ -358,14 +262,6 @@ resource "aws_route53_record" "heroku-uplift-shipit-cname-test" {
     type = "CNAME"
     ttl = "180"
     records = ["uplift.shipit.testing.mozilla-releng.net.herokudns.com"]
-}
-
-resource "aws_route53_record" "heroku-workflow-shipit-cname-test" {
-    zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
-    name = "shipit-workflow.testing.mozilla-releng.net"
-    type = "CNAME"
-    ttl = "180"
-    records = ["shipit-workflow.testing.mozilla-releng.net.herokudns.com"]
 }
 
 ############################
