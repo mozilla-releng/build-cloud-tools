@@ -77,7 +77,7 @@ resource "aws_route53_record" "heroku-tooltool-cname-prod" {
     name = "tooltool.mozilla-releng.net"
     type = "CNAME"
     ttl = "180"
-    records = ["kochi-11433.herokussl.com"]
+    records = ["tooltool.mozilla-releng.net.herokudns.com"]
 }
 
 resource "aws_route53_record" "heroku-treestatus-cname-prod" {
