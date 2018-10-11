@@ -37,7 +37,7 @@ resource "aws_route53_record" "heroku-coalease-cname" {
     name = "coalesce.mozilla-releng.net"
     type = "CNAME"
     ttl = "180"
-    records = ["oita-54541.herokussl.com"]
+    records = ["coalesce.mozilla-releng.net.herokudns.com"]
 }
 
 resource "aws_route53_record" "heroku-mapper-cname-prod" {
@@ -91,6 +91,14 @@ resource "aws_route53_record" "heroku-treestatus-cname-prod" {
 ######################################
 ## Heroku releng staging app cnames ##
 ######################################
+
+resource "aws_route53_record" "heroku-coalease-cname-stage" {
+    zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
+    name = "coalesce.staging.mozilla-releng.net"
+    type = "CNAME"
+    ttl = "180"
+    records = ["coalesce.staging.mozilla-releng.net.herokudns.com"]
+}
 
 resource "aws_route53_record" "heroku-mapper-cname-stage" {
     zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
