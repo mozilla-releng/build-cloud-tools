@@ -28,6 +28,43 @@ resource "aws_route53_record" "relman-clouseau-moz-tools-cname-prod" {
   records = ["clouseau.moz.tools.herokudns.com"]
 }
 
+################################
+##  mozilla-releng.net cnames ##
+################################
+
+resource "aws_route53_record" "dockerflow-shipit-api-cname-prod" {
+    zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
+    name= "shipit-api.mozilla-releng.net"
+    type = "CNAME"
+    ttl = "180"
+    records = ["shipitbackend-default.prod.mozaws.net"]
+}
+
+resource "aws_route53_record" "dockerflow-shipit-api-cname-pre" {
+  zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
+  name= "api.shipit.pre.mozilla-releng.net"
+  type = "CNAME"
+  ttl = "180"
+  records = ["stage.shipitapi.nonprod.cloudops.mozgcp.net"]
+}
+
+resource "aws_route53_record" "dockerflow-shipit-api-cname-stag" {
+  zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
+  name= "api.shipit.staging.mozilla-releng.net"
+  type = "CNAME"
+  ttl = "180"
+  records = ["dev.shipitapi.nonprod.cloudops.mozgcp.net"]
+}
+
+resource "aws_route53_record" "dockerflow-shipit-api-cname-test" {
+    zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
+    name= "api.shipit.testing.mozilla-releng.net"
+    type = "CNAME"
+    ttl = "180"
+    records = ["testing.shipitapi.nonprod.cloudops.mozgcp.net"]
+}
+
+
 #########################################
 ## Heroku releng production app cnames ##
 #########################################
@@ -365,13 +402,4 @@ resource "aws_route53_record" "root-alias" {
         zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
         evaluate_target_health = false
     }
-}
-
-# Ship-it production instance, hosted by CloudOps
-resource "aws_route53_record" "dockerflow-shipit-api-cname-prod" {
-    zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
-    name= "shipit-api.mozilla-releng.net"
-    type = "CNAME"
-    ttl = "180"
-    records = ["shipitbackend-default.prod.mozaws.net"]
 }
