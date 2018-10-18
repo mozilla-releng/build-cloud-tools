@@ -37,7 +37,7 @@ resource "aws_route53_record" "dockerflow-shipit-api-cname-prod" {
     name= "shipit-api.mozilla-releng.net"
     type = "CNAME"
     ttl = "180"
-    records = ["shipitbackend-default.prod.mozaws.net"]
+    records = ["prod.shipitapi.prod.cloudops.mozgcp.net"]
 }
 
 resource "aws_route53_record" "dockerflow-shipit-api-cname-pre" {
