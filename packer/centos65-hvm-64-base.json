@@ -1,0 +1,52 @@
+{
+  "builders": [
+    {
+        "type" : "amazon-ebssurrogate",
+        "region" : "us-east-1",
+        "ssh_username" : "ec2-user",
+        "instance_type" : "t2.medium",
+        "source_ami" : "ami-e9a18d80",
+        "ami_regions": [
+            "us-west-2"
+        ],
+        "ami_name": "centos65-hvm-64-base-{{timestamp}}",
+        "ami_description": "centos65-hvm-64-base EBS AMI",
+        "ami_virtualization_type": "hvm",
+        "subnet_id": "subnet-0aa98361",
+        "launch_block_device_mappings" : [
+            {
+            "volume_type" : "gp2",
+            "device_name" : "/dev/xvdf",
+            "delete_on_termination" : false,
+            "volume_size" : 10
+            }
+        ],
+        "ami_root_device": {
+            "source_device_name": "/dev/xvdf",
+            "device_name": "/dev/xvda",
+            "delete_on_termination": true,
+            "volume_size": 16,
+            "volume_type": "gp2"
+        },
+        "tags": {
+            "Name": "centos65-hvm-64-base-{{timestamp}}",
+            "Packer": "True",
+            "Git_repo": "https://github.com/mozilla-releng/build-cloud-tools.git"
+        }
+    }
+  ],
+  "provisioners": [
+    {
+      "destination": "/tmp/",
+      "source": "./src",
+      "type": "file"
+    },
+    {
+      "inline": [
+        "sudo chown -R root.root /tmp/src",
+        "sudo /bin/sh /tmp/src/install.sh"
+      ],
+      "type": "shell"
+    }
+  ]
+}
