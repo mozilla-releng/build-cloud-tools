@@ -28,6 +28,14 @@ resource "aws_route53_record" "relman-clouseau-moz-tools-cname-prod" {
   records = ["clouseau.moz.tools.herokudns.com"]
 }
 
+resource "aws_route53_record" "relman-buildhub-moz-tools-cname-prod" {
+  zone_id = "${aws_route53_zone.moztools.zone_id}"
+  name = "buildhub.moz.tools"
+  type = "CNAME"
+  ttl = "180"
+  records = ["prod.buildhub2.prod.cloudops.mozgcp.net"]
+}
+
 ################################
 ##  mozilla-releng.net cnames ##
 ################################
