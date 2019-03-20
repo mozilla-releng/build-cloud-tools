@@ -80,6 +80,14 @@ resource "aws_route53_record" "dockerflow-shipit-api-cname-test" {
     records = ["testing.shipitapi.nonprod.cloudops.mozgcp.net"]
 }
 
+resource "aws_route53_record" "dockerflow-product-details-cname-prod" {
+    zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
+    name= "product-details.mozilla-releng.net"
+    type = "CNAME"
+    ttl = "180"
+    records = ["productdetails-prod.prod.mozaws.net"]
+}
+
 resource "aws_route53_record" "dockerflow-product-details-cname-stage" {
     zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
     name= "product-details.staging.mozilla-releng.net"
