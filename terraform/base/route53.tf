@@ -288,6 +288,14 @@ resource "aws_route53_record" "heroku-code-coverage-backend-shipit-cname-prod" {
     records = ["coverage.moz.tools.herokudns.com"]
 }
 
+resource "aws_route53_record" "heroku-event-listener-cname-prod" {
+    zone_id = "${aws_route53_zone.moztools.zone_id}"
+    name = "eventlistener.moz.tools"
+    type = "CNAME"
+    ttl = "180"
+    records = ["convex-woodland-ilwk96s11s92e5otfkmb5ybe.herokudns.com"]
+}
+
 ######################################
 ## Heroku relman staging app cnames ##
 ######################################
@@ -300,6 +308,14 @@ resource "aws_route53_record" "heroku-code-coverage-backend-shipit-cname-stage" 
     records = ["coverage.staging.moz.tools.herokudns.com"]
 }
 
+resource "aws_route53_record" "heroku-event-listener-cname-stage" {
+    zone_id = "${aws_route53_zone.moztools.zone_id}"
+    name = "eventlistener.staging.moz.tools"
+    type = "CNAME"
+    ttl = "180"
+    records = ["immense-refuge-f4ii4ur88iq0x707ybzq5mfn.herokudns.com"]
+}
+
 ######################################
 ## Heroku relman testing app cnames ##
 ######################################
@@ -310,6 +326,14 @@ resource "aws_route53_record" "heroku-code-coverage-backend-shipit-cname-test" {
     type = "CNAME"
     ttl = "180"
     records = ["coverage.testing.moz.tools.herokudns.com"]
+}
+
+resource "aws_route53_record" "heroku-event-listener-cname-test" {
+    zone_id = "${aws_route53_zone.moztools.zone_id}"
+    name = "eventlistener.testing.moz.tools"
+    type = "CNAME"
+    ttl = "180"
+    records = ["adjacent-shelf-2mxct7inb0tl5tg1rwt73ev4.herokudns.com"]
 }
 
 #########################################
