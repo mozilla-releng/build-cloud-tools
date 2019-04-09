@@ -396,8 +396,6 @@ variable "cloudfront_alias_domain" {
         docs.staging = "d32jt14rospqzr"
         docs.testing = "d1sw5c8kdn03y"
         shipit = "dve8yd1431ifz"
-        shipit.staging = "d2ld4e8bl8yd1l"
-        shipit.testing = "d2jpisuzgldax2"
         staging = "dpwmwa9tge2p3"
         testing = "d1l70lpksx3ik7"
         www = "d1qqwps52z1e12"
