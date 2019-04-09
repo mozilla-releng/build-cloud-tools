@@ -104,6 +104,22 @@ resource "aws_route53_record" "dockerflow-product-details-cname-test" {
     records = ["productdetails-testing.dev.mozaws.net"]
 }
 
+resource "aws_route53_record" "dockerflow-shipit-frontend-cname-stage" {
+    zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
+    name= "shipit.staging.mozilla-releng.net"
+    type = "CNAME"
+    ttl = "180"
+    records = ["shipitfrontend-staging.stage.mozaws.net"]
+}
+
+resource "aws_route53_record" "dockerflow-shipit-frontend-cname-test" {
+    zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
+    name= "shipit.testing.mozilla-releng.net"
+    type = "CNAME"
+    ttl = "180"
+    records = ["shipitfrontend-testing.dev.mozaws.net"]
+}
+
 #########################################
 ## Heroku releng production app cnames ##
 #########################################
