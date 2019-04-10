@@ -104,6 +104,22 @@ resource "aws_route53_record" "dockerflow-product-details-cname-test" {
     records = ["productdetails-testing.dev.mozaws.net"]
 }
 
+resource "aws_route53_record" "dockerflow-shipit-frontend-cname-stage" {
+    zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
+    name= "shipit.staging.mozilla-releng.net"
+    type = "CNAME"
+    ttl = "180"
+    records = ["shipitfrontend-staging.stage.mozaws.net"]
+}
+
+resource "aws_route53_record" "dockerflow-shipit-frontend-cname-test" {
+    zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
+    name= "shipit.testing.mozilla-releng.net"
+    type = "CNAME"
+    ttl = "180"
+    records = ["shipitfrontend-testing.dev.mozaws.net"]
+}
+
 #########################################
 ## Heroku releng production app cnames ##
 #########################################
@@ -357,8 +373,6 @@ variable "cloudfront_alias" {
                "docs.staging",
                "docs.testing",
                "shipit",
-               "shipit.staging",
-               "shipit.testing",
                "staging",
                "testing",
                "www"]
@@ -380,8 +394,6 @@ variable "cloudfront_alias_domain" {
         docs.staging = "d32jt14rospqzr"
         docs.testing = "d1sw5c8kdn03y"
         shipit = "dve8yd1431ifz"
-        shipit.staging = "d2ld4e8bl8yd1l"
-        shipit.testing = "d2jpisuzgldax2"
         staging = "dpwmwa9tge2p3"
         testing = "d1l70lpksx3ik7"
         www = "d1qqwps52z1e12"
