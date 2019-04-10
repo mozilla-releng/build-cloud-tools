@@ -373,8 +373,6 @@ variable "cloudfront_alias" {
                "docs.staging",
                "docs.testing",
                "shipit",
-               "shipit.staging",
-               "shipit.testing",
                "staging",
                "testing",
                "www"]
