@@ -138,7 +138,7 @@ resource "aws_route53_record" "dockerflow-shipit-frontend-cname-test" {
 
 resource "aws_route53_record" "dockerflow-releng-frontend-cname-prod" {
     zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
-    name= "mozilla-releng.net"
+    name= "www.mozilla-releng.net"
     type = "CNAME"
     ttl = "180"
     records = ["relengfrontend-prod.prod.mozaws.net"]
