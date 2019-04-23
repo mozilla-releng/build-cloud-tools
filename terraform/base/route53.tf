@@ -112,78 +112,6 @@ resource "aws_route53_record" "dockerflow-product-details-cname-test" {
     records = ["productdetails-testing.dev.mozaws.net"]
 }
 
-resource "aws_route53_record" "dockerflow-shipit-frontend-cname-prod" {
-    zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
-    name= "shipit.mozilla-releng.net"
-    type = "CNAME"
-    ttl = "180"
-    records = ["shipitfrontend-prod.prod.mozaws.net"]
-}
-
-resource "aws_route53_record" "dockerflow-shipit-frontend-cname-stage" {
-    zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
-    name= "shipit.staging.mozilla-releng.net"
-    type = "CNAME"
-    ttl = "180"
-    records = ["shipitfrontend-staging.stage.mozaws.net"]
-}
-
-resource "aws_route53_record" "dockerflow-shipit-frontend-cname-test" {
-    zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
-    name= "shipit.testing.mozilla-releng.net"
-    type = "CNAME"
-    ttl = "180"
-    records = ["shipitfrontend-testing.dev.mozaws.net"]
-}
-
-resource "aws_route53_record" "dockerflow-releng-frontend-cname-prod" {
-    zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
-    name= "www.mozilla-releng.net"
-    type = "CNAME"
-    ttl = "180"
-    records = ["relengfrontend-prod.prod.mozaws.net"]
-}
-
-resource "aws_route53_record" "dockerflow-releng-frontend-cname-stage" {
-    zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
-    name= "staging.mozilla-releng.net"
-    type = "CNAME"
-    ttl = "180"
-    records = ["relengfrontend-staging.stage.mozaws.net"]
-}
-
-resource "aws_route53_record" "dockerflow-releng-frontend-cname-test" {
-    zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
-    name= "testing.mozilla-releng.net"
-    type = "CNAME"
-    ttl = "180"
-    records = ["relengfrontend-testing.dev.mozaws.net"]
-}
-
-resource "aws_route53_record" "dockerflow-releng-docs-cname-prod" {
-    zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
-    name= "docs.mozilla-releng.net"
-    type = "CNAME"
-    ttl = "180"
-    records = ["relengdocs-prod.prod.mozaws.net"]
-}
-
-resource "aws_route53_record" "dockerflow-releng-docs-cname-stage" {
-    zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
-    name= "docs.staging.mozilla-releng.net"
-    type = "CNAME"
-    ttl = "180"
-    records = ["relengdocs-staging.stage.mozaws.net"]
-}
-
-resource "aws_route53_record" "dockerflow-releng-docs-cname-test" {
-    zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
-    name= "docs.testing.mozilla-releng.net"
-    type = "CNAME"
-    ttl = "180"
-    records = ["relengdocs-testing.dev.mozaws.net"]
-}
-
 #########################################
 ## Heroku releng production app cnames ##
 #########################################
@@ -457,7 +385,15 @@ resource "aws_route53_record" "heroku-uplift-shipit-cname-test" {
 ############################
 
 variable "cloudfront_alias" {
-    default = []
+    default = ["docs",
+               "docs.staging",
+               "docs.testing",
+               "shipit",
+               "shipit.staging",
+               "shipit.testing",
+               "staging",
+               "testing",
+               "www"]
 }
 
 variable "cloudfront_moztools_alias" {
@@ -472,6 +408,15 @@ variable "cloudfront_moztools_alias" {
 variable "cloudfront_alias_domain" {
     type = "map"
     default = {
+        shipit = "d3phvtn087pdcs"
+        shipit.staging = "d1cttl07hxwjbl"
+        shipit.testing = "dt9vzct0e0pwk"
+        docs = "dkamdn8kujupl"
+        docs.staging = "d1cglo5i889p5y"
+        docs.testing = "d1s9qzzh9bruag"
+        www = "ddealaqd6tp6a"
+        staging = "d2qqjmci8ffy3k"
+        testing = "d1ja915kcjy2vv"
     }
 }
 
