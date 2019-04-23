@@ -5,7 +5,7 @@ resource "aws_route53_zone" "mozilla-releng" {
 }
 
 resource "aws_route53_zone" "moztools" {
-    name = "moz.tools"
+    name = "moz.tools."
 }
 
 #############################
