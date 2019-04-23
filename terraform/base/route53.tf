@@ -56,6 +56,14 @@ resource "aws_route53_record" "dockerflow-shipit-api-cname-prod" {
     records = ["prod.shipitapi.prod.cloudops.mozgcp.net"]
 }
 
+resource "aws_route53_record" "dockerflow-shipit-api-cname-prod2" {
+    zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
+    name= "api.shipit.mozilla-releng.net"
+    type = "CNAME"
+    ttl = "180"
+    records = ["prod.shipitapi.prod.cloudops.mozgcp.net"]
+}
+
 resource "aws_route53_record" "dockerflow-shipit-api-cname-pre" {
   zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
   name= "api.shipit.pre.mozilla-releng.net"
@@ -102,22 +110,6 @@ resource "aws_route53_record" "dockerflow-product-details-cname-test" {
     type = "CNAME"
     ttl = "180"
     records = ["productdetails-testing.dev.mozaws.net"]
-}
-
-resource "aws_route53_record" "dockerflow-shipit-frontend-cname-stage" {
-    zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
-    name= "shipit.staging.mozilla-releng.net"
-    type = "CNAME"
-    ttl = "180"
-    records = ["shipitfrontend-staging.stage.mozaws.net"]
-}
-
-resource "aws_route53_record" "dockerflow-shipit-frontend-cname-test" {
-    zone_id = "${aws_route53_zone.mozilla-releng.zone_id}"
-    name= "shipit.testing.mozilla-releng.net"
-    type = "CNAME"
-    ttl = "180"
-    records = ["shipitfrontend-testing.dev.mozaws.net"]
 }
 
 #########################################
@@ -397,6 +389,8 @@ variable "cloudfront_alias" {
                "docs.staging",
                "docs.testing",
                "shipit",
+               "shipit.staging",
+               "shipit.testing",
                "staging",
                "testing",
                "www"]
@@ -414,13 +408,15 @@ variable "cloudfront_moztools_alias" {
 variable "cloudfront_alias_domain" {
     type = "map"
     default = {
-        docs = "d1945er7u4liht"
-        docs.staging = "d32jt14rospqzr"
-        docs.testing = "d1sw5c8kdn03y"
-        shipit = "dve8yd1431ifz"
-        staging = "dpwmwa9tge2p3"
-        testing = "d1l70lpksx3ik7"
-        www = "d1qqwps52z1e12"
+        shipit = "d3phvtn087pdcs"
+        shipit.staging = "d1cttl07hxwjbl"
+        shipit.testing = "dt9vzct0e0pwk"
+        docs = "dkamdn8kujupl"
+        docs.staging = "d1cglo5i889p5y"
+        docs.testing = "d1s9qzzh9bruag"
+        www = "ddealaqd6tp6a"
+        staging = "d2qqjmci8ffy3k"
+        testing = "d1ja915kcjy2vv"
     }
 }
 
