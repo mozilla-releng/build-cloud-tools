@@ -44,6 +44,14 @@ resource "aws_route53_record" "relman-buildhub-moz-tools-cert-prod" {
   records = ["dcv.digicert.com"]
 }
 
+resource "aws_route53_record" "relman-coverity-moz-tools-cname-prod" {
+  zone_id = "${aws_route53_zone.moztools.zone_id}"
+  name = "coverity.moz.tools"
+  type = "CNAME"
+  ttl = "180"
+  records = ["prod.coverity.prod.cloudops.mozgcp.net"]
+}
+
 ################################
 ##  mozilla-releng.net cnames ##
 ################################
