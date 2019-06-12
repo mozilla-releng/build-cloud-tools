@@ -354,8 +354,7 @@ resource "aws_route53_record" "heroku-treestatus-cname-prod" {
     name = "treestatus.mozilla-releng.net"
     type = "CNAME"
     ttl = "180"
-    records = ["treestatus.mozilla-releng.net.herokudns.com"]
-    # records = ["prod.treestatus.prod.cloudops.mozgcp.net"]
+    records = ["prod.treestatus.prod.cloudops.mozgcp.net"]
 }
 
 resource "aws_route53_record" "heroku-treestatus-cname-stage" {
@@ -384,8 +383,7 @@ resource "aws_route53_record" "heroku-tooltool-cname-prod" {
     name = "tooltool.mozilla-releng.net"
     type = "CNAME"
     ttl = "180"
-    records = ["tooltool.mozilla-releng.net.herokudns.com"]
-    # records = ["prod.tooltool.prod.cloudops.mozgcp.net"]
+    records = ["prod.tooltool.prod.cloudops.mozgcp.net"]
 }
 
 resource "aws_route53_record" "heroku-tooltool-cname-stage" {
