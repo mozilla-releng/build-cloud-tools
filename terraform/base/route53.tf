@@ -58,26 +58,18 @@ resource "aws_route53_record" "relman-coverity-moz-tools-cname-prod" {
 
 resource "aws_route53_record" "heroku-code-coverage-backend-shipit-cname-prod" {
     zone_id = "${aws_route53_zone.moztools.zone_id}"
-    name = "coverage.moz.tools"
+    name = "api.coverage.moz.tools"
     type = "CNAME"
     ttl = "180"
-    records = ["coverage.moz.tools.herokudns.com"]
-}
-
-resource "aws_route53_record" "heroku-code-coverage-backend-shipit-cname-stage" {
-    zone_id = "${aws_route53_zone.moztools.zone_id}"
-    name = "coverage.staging.moz.tools"
-    type = "CNAME"
-    ttl = "180"
-    records = ["coverage.staging.moz.tools.herokudns.com"]
+    records = ["desolate-artichoke-1kra3z6kgs9mw2sa15u9abte.herokudns.com"]
 }
 
 resource "aws_route53_record" "heroku-code-coverage-backend-shipit-cname-test" {
     zone_id = "${aws_route53_zone.moztools.zone_id}"
-    name = "coverage.testing.moz.tools"
+    name = "api.coverage.testing.moz.tools"
     type = "CNAME"
     ttl = "180"
-    records = ["coverage.testing.moz.tools.herokudns.com"]
+    records = ["quiet-elk-4brvoeg6xv0mahvfwgtnveu6.herokudns.com"]
 }
 
 ####################
