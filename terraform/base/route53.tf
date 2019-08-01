@@ -58,10 +58,10 @@ resource "aws_route53_record" "relman-coverage-moz-tools-ns-prod" {
   type = "NS"
   ttl = "180"
   records = [
-    "ns-534.awsdns-02.net.",
-    "ns-1350.awsdns-40.org.",
-    "ns-1745.awsdns-26.co.uk.",
-    "ns-416.awsdns-52.com."
+    "ns-1151.awsdns-15.org.",
+    "ns-584.awsdns-09.net.",
+    "ns-1748.awsdns-26.co.uk.",
+    "ns-60.awsdns-07.com.",
   ]
 }
 
