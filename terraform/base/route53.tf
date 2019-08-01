@@ -52,6 +52,19 @@ resource "aws_route53_record" "relman-coverity-moz-tools-cname-prod" {
   records = ["prod.coverity.prod.cloudops.mozgcp.net"]
 }
 
+resource "aws_route53_record" "relman-coverage-moz-tools-ns-prod" {
+  zone_id = "${aws_route53_zone.moztools.zone_id}"
+  name = "coverage.moz.tools"
+  type = "NS"
+  ttl = "180"
+  records = [
+    "ns-534.awsdns-02.net.",
+    "ns-1350.awsdns-40.org.",
+    "ns-1745.awsdns-26.co.uk.",
+    "ns-416.awsdns-52.com."
+  ]
+}
+
 ###################
 ## Code Coverage ##
 ###################
