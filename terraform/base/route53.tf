@@ -383,8 +383,9 @@ variable "cloudfront_alias" {
 }
 
 variable "cloudfront_moztools_alias" {
-    default = ["code-review",
-               "code-review.testing"]
+    default = ["static-analysis",
+               "static-analysis.staging",
+               "static-analysis.testing"]
 }
 
 # Cloudfront Alias Targets
@@ -408,8 +409,9 @@ variable "cloudfront_alias_domain" {
 variable "cloudfront_moztools_alias_domain" {
     type = "map"
     default = {
-        code-review = "d2ezri92497z3m"
-        code-review.testing = "d1blqs705aw8h9"
+        static-analysis = "d2ezri92497z3m"
+        static-analysis.staging = "d21hzgxp28m0tc"
+        static-analysis.testing = "d1blqs705aw8h9"
     }
 }
 
